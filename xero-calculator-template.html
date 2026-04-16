@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xero [Tool Name] Calculator</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ─── Xero Brand Tokens ─── */
+    :root {
+      --xero-navy:       #1B3A4B;
+      --xero-blue:       #13B5EA;
+      --xero-blue-dark:  #0D8FBD;
+      --xero-panel-bg:   #EBF0F4;
+      --xero-border:     #C2CDD6;
+      --xero-bg:         #FFFFFF;
+      --xero-text:       #1B3A4B;
+      --xero-text-muted: #4A6070;
+      --xero-input-bg:   #FFFFFF;
+      --xero-green:      #1AB394;
+      --xero-red:        #E05A5A;
+      --radius:          4px;
+      --font:            'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      color: var(--xero-text);
+      background: var(--xero-bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── Outer wrapper — this is the embeddable section ─── */
+    .xero-tool {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    .xero-tool__heading {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 8px;
+    }
+
+    .xero-tool__subheading {
+      font-size: 0.9375rem;
+      color: var(--xero-text-muted);
+      margin-bottom: 32px;
+    }
+
+    /* ─── Two-column layout ─── */
+    .xero-tool__layout {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 32px;
+      align-items: start;
+    }
+
+    @media (max-width: 768px) {
+      .xero-tool__layout { grid-template-columns: 1fr; }
+      .xero-tool__panel { order: -1; }
+    }
+
+    /* ─── Form sections ─── */
+    .xero-section {
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--xero-border);
+      margin-bottom: 28px;
+    }
+
+    .xero-section:last-of-type {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .xero-section__title {
+      font-size: 1.0625rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 20px;
+    }
+
+    /* ─── Field grid ─── */
+    .xero-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .xero-fields--single { grid-template-columns: 1fr; }
+    .xero-field--full    { grid-column: 1 / -1; }
+
+    @media (max-width: 540px) {
+      .xero-fields { grid-template-columns: 1fr; }
+    }
+
+    /* ─── Field label + input ─── */
+    .xero-field__label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 6px;
+    }
+
+    /* Currency input wrapper */
+    .xero-input-wrap {
+      display: flex;
+      align-items: stretch;
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      background: var(--xero-input-bg);
+      transition: border-color 0.15s;
+    }
+
+    .xero-input-wrap:focus-within {
+      border-color: var(--xero-blue);
+    }
+
+    .xero-input-prefix {
+      display: flex;
+      align-items: center;
+      padding: 0 8px 0 14px;
+      color: var(--xero-text-muted);
+      font-size: 0.9375rem;
+      font-weight: 500;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .xero-input {
+      border: none;
+      outline: none;
+      padding: 10px 14px 10px 4px;
+      font-family: var(--font);
+      font-size: 0.9375rem;
+      color: var(--xero-text);
+      background: transparent;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .xero-input::placeholder { color: #9EB0BB; }
+
+    /* Plain text input (no currency prefix) */
+    .xero-input--plain {
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      font-family: var(--font);
+      font-size: 0.9375rem;
+      color: var(--xero-text);
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .xero-input--plain:focus { border-color: var(--xero-blue); }
+
+    /* Select */
+    .xero-select {
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      font-family: var(--font);
+      font-size: 0.9375rem;
+      color: var(--xero-text);
+      width: 100%;
+      outline: none;
+      background: var(--xero-input-bg);
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234A6070' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+      cursor: pointer;
+    }
+
+    .xero-select:focus { border-color: var(--xero-blue); }
+
+    /* ─── Actions ─── */
+    .xero-actions {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-top: 32px;
+    }
+
+    .xero-btn {
+      background: var(--xero-navy);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 12px 24px;
+      font-family: var(--font);
+      font-size: 0.9375rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .xero-btn:hover { background: #244d64; }
+    .xero-btn:active { background: #162e3a; }
+
+    .xero-reset {
+      background: none;
+      border: none;
+      color: var(--xero-blue);
+      font-family: var(--font);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
+    }
+
+    .xero-reset:hover { color: var(--xero-blue-dark); }
+
+    /* ─── Results panel ─── */
+    .xero-tool__panel {
+      background: var(--xero-panel-bg);
+      border-radius: var(--radius);
+      padding: 28px;
+      position: sticky;
+      top: 24px;
+    }
+
+    .xero-panel__label {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 4px;
+    }
+
+    .xero-panel__primary {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 12px;
+    }
+
+    .xero-panel__primary--positive { color: var(--xero-green); }
+    .xero-panel__primary--negative { color: var(--xero-red); }
+
+    .xero-panel__description {
+      font-size: 0.875rem;
+      color: var(--xero-text-muted);
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .xero-panel__divider {
+      border: none;
+      border-top: 1px solid var(--xero-border);
+      margin-bottom: 20px;
+    }
+
+    .xero-panel__item {
+      margin-bottom: 20px;
+    }
+
+    .xero-panel__item-label {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 2px;
+    }
+
+    .xero-panel__item-value {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 4px;
+    }
+
+    .xero-panel__item-value--positive { color: var(--xero-green); }
+    .xero-panel__item-value--negative { color: var(--xero-red); }
+
+    .xero-panel__item-description {
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      line-height: 1.45;
+    }
+
+    /* ─── CTA in panel ─── */
+    .xero-panel__cta {
+      font-size: 0.875rem;
+      color: var(--xero-text-muted);
+      line-height: 1.5;
+      padding-top: 16px;
+      border-top: 1px solid var(--xero-border);
+      margin-top: 8px;
+    }
+
+    .xero-panel__cta a {
+      color: var(--xero-blue);
+      font-weight: 700;
+      text-decoration: underline;
+    }
+
+    .xero-panel__cta a:hover { color: var(--xero-blue-dark); }
+
+    /* ─── Disclaimer ─── */
+    .xero-tool__disclaimer {
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      margin-top: 24px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════
+     XERO CALCULATOR PROTOTYPE — REPLACE THIS COMMENT BLOCK
+     WITH YOUR SPECIFIC TOOL NAME AND LOGIC
+     ════════════════════════════════════════════════════════ -->
+
+<div class="xero-tool" id="xero-tool">
+
+  <h2 class="xero-tool__heading">Xero [tool name] calculator</h2>
+  <p class="xero-tool__subheading">This calculator helps you to [what it does] from month to month.*</p>
+
+  <div class="xero-tool__layout">
+
+    <!-- ── LEFT: Form ── -->
+    <form class="xero-tool__form" id="calc-form" onsubmit="return false;">
+
+      <!-- SECTION 1 -->
+      <div class="xero-section">
+        <h3 class="xero-section__title">What is your [first question]?</h3>
+        <div class="xero-fields">
+          <div>
+            <label class="xero-field__label" for="field1">Field label one</label>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="field1" min="0" step="0.01" placeholder="0.00">
+            </div>
+          </div>
+          <div>
+            <label class="xero-field__label" for="field2">Field label two</label>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="field2" min="0" step="0.01" placeholder="0.00">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 2 — single wide input example -->
+      <div class="xero-section">
+        <h3 class="xero-section__title">What is the total value of your [X]?</h3>
+        <div class="xero-fields xero-fields--single">
+          <div>
+            <label class="xero-field__label" for="field3">Total amount of [X]</label>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="field3" min="0" step="0.01" placeholder="0.00">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 3 — multiple outgoings -->
+      <div class="xero-section">
+        <h3 class="xero-section__title">What is your projected monthly [Y]?</h3>
+        <div class="xero-fields">
+          <div>
+            <label class="xero-field__label" for="field4">Item A</label>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="field4" min="0" step="0.01" placeholder="0.00">
+            </div>
+          </div>
+          <div>
+            <label class="xero-field__label" for="field5">Item B</label>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="field5" min="0" step="0.01" placeholder="0.00">
+            </div>
+          </div>
+          <div>
+            <label class="xero-field__label" for="field6">Item C</label>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="field6" min="0" step="0.01" placeholder="0.00">
+            </div>
+          </div>
+          <div>
+            <label class="xero-field__label" for="field7">Item D</label>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="field7" min="0" step="0.01" placeholder="0.00">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="xero-actions">
+        <button class="xero-btn" type="button" onclick="calculate()">Calculate your [tool name]</button>
+        <button class="xero-reset" type="button" onclick="resetForm()">Reset</button>
+      </div>
+
+    </form>
+
+    <!-- ── RIGHT: Results panel ── -->
+    <aside class="xero-tool__panel" id="results-panel" aria-live="polite">
+      <p class="xero-panel__label">Your [result] is:</p>
+      <p class="xero-panel__primary" id="result-primary">To be calculated</p>
+      <p class="xero-panel__description">
+        [Brief explanation of what the primary result means for the user's business.]
+      </p>
+
+      <hr class="xero-panel__divider">
+
+      <div class="xero-panel__item">
+        <p class="xero-panel__item-label">Result line item 1</p>
+        <p class="xero-panel__item-value" id="result-line1">—</p>
+        <p class="xero-panel__item-description">[Short description of what this line item represents.]</p>
+      </div>
+
+      <hr class="xero-panel__divider">
+
+      <div class="xero-panel__item">
+        <p class="xero-panel__item-label">Result line item 2</p>
+        <p class="xero-panel__item-value" id="result-line2">—</p>
+        <p class="xero-panel__item-description">[Short description of what this line item represents.]</p>
+      </div>
+
+      <hr class="xero-panel__divider">
+
+      <div class="xero-panel__item">
+        <p class="xero-panel__item-label">Result line item 3</p>
+        <p class="xero-panel__item-value" id="result-line3">—</p>
+        <p class="xero-panel__item-description">[Short description of what this line item represents.]</p>
+      </div>
+
+      <div class="xero-panel__cta">
+        Get a real time view of your [metric] with Xero. Start a 30 day <a href="https://www.xero.com/au/signup/" target="_blank">free trial</a>
+      </div>
+    </aside>
+
+  </div><!-- /.xero-tool__layout -->
+
+  <p class="xero-tool__disclaimer">*This calculator provides estimates only and is not financial or accounting advice. We recommend consulting a qualified accountant or financial adviser.</p>
+
+</div><!-- /.xero-tool -->
+
+
+<script>
+  // ─── Utilities ───────────────────────────────────────────
+
+  function val(id) {
+    return parseFloat(document.getElementById(id).value) || 0;
+  }
+
+  function fmt(n) {
+    const abs = Math.abs(n);
+    const formatted = abs.toLocaleString('en-AU', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    return (n < 0 ? '-$' : '$') + formatted;
+  }
+
+  function setResult(id, value, showSign = false) {
+    const el = document.getElementById(id);
+    el.textContent = value === null ? '—' : fmt(value);
+    el.className = 'xero-panel__item-value';
+    if (value !== null && showSign) {
+      if (value >= 0) el.classList.add('xero-panel__item-value--positive');
+      else            el.classList.add('xero-panel__item-value--negative');
+    }
+  }
+
+  function setPrimary(value) {
+    const el = document.getElementById('result-primary');
+    if (value === null) {
+      el.textContent = 'To be calculated';
+      el.className = 'xero-panel__primary';
+      return;
+    }
+    el.textContent = fmt(value);
+    el.className = 'xero-panel__primary';
+    if (value >= 0) el.classList.add('xero-panel__primary--positive');
+    else            el.classList.add('xero-panel__primary--negative');
+  }
+
+  // ─── Calculation logic ───────────────────────────────────
+  // TODO: Replace this with your specific formula
+
+  function calculate() {
+    const a = val('field1');
+    const b = val('field2');
+    const c = val('field3');
+    const d = val('field4');
+    const e = val('field5');
+    const f = val('field6');
+    const g = val('field7');
+
+    const totalIn  = a + b;
+    const totalOut = d + e + f + g;
+    const net      = totalIn - totalOut;
+    const potential = net + c;
+
+    setPrimary(net);
+    setResult('result-line1', totalIn);
+    setResult('result-line2', totalOut);
+    setResult('result-line3', potential, true);
+  }
+
+  // ─── Reset ───────────────────────────────────────────────
+
+  function resetForm() {
+    document.querySelectorAll('.xero-input').forEach(i => i.value = '');
+    setPrimary(null);
+    setResult('result-line1', null);
+    setResult('result-line2', null);
+    setResult('result-line3', null);
+  }
+</script>
+
+</body>
+</html>

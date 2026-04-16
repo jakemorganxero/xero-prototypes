@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en-NZ">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xero NZ GST Calculator — Hero (Pattern B)</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!--
+    XERO PROTOTYPE
+    Tool: GST Calculator (NZ)
+    Locale: NZ
+    Pattern: B — Hero, full-width, above the fold
+    Built: 2026-04-16
+    Inputs: Amount (NZD), Mode (add GST / remove GST)
+    Output/formula:
+      Add GST:    GST = amount × 0.15 | Total = amount × 1.15
+      Remove GST: Net = amount / 1.15 | GST = amount − net
+    Notes for devs:
+      - Live calculation (no submit button) — results update on input
+      - GT Walsheim → DM Sans substitution (flag for prod)
+      - NZ GST rate is 15% (hardcoded — update via CMS variable if needed)
+      - Full-width band; inner content max-width 1200px
+  -->
+
+  <style>
+    /* ─── Xero Brand Tokens ─── */
+    :root {
+      --xero-navy:       #1B3A4B;
+      --xero-blue:       #13B5EA;
+      --xero-blue-dark:  #0D8FBD;
+      --xero-panel-bg:   #EBF0F4;
+      --xero-border:     #C2CDD6;
+      --xero-bg:         #FFFFFF;
+      --xero-text:       #1B3A4B;
+      --xero-text-muted: #4A6070;
+      --xero-input-bg:   #FFFFFF;
+      --xero-green:      #1AB394;
+      --xero-red:        #E05A5A;
+      --radius:          4px;
+      --font:            'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      color: var(--xero-text);
+      background: var(--xero-bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── Hero band — full viewport width ─── */
+    .xero-hero {
+      background: var(--xero-panel-bg);
+      padding: 72px 5%;
+      width: 100%;
+    }
+
+    .xero-hero__inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 480px;
+      gap: 64px;
+      align-items: center;
+    }
+
+    @media (max-width: 900px) {
+      .xero-hero__inner {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+    }
+
+    /* ─── Left: heading + copy ─── */
+    .xero-hero__copy {}
+
+    .xero-hero__title {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 700;
+      color: var(--xero-navy);
+      line-height: 1.15;
+      margin-bottom: 20px;
+    }
+
+    .xero-hero__body {
+      font-size: 1rem;
+      color: var(--xero-text-muted);
+      line-height: 1.65;
+      margin-bottom: 24px;
+      max-width: 480px;
+    }
+
+    .xero-hero__bullets {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .xero-hero__bullets li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.9375rem;
+      color: var(--xero-text-muted);
+      line-height: 1.5;
+    }
+
+    .xero-hero__bullets li::before {
+      content: '';
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      background: var(--xero-blue);
+      border-radius: 50%;
+      display: block;
+      margin-top: 2px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M4 9l3.5 3.5L14 6' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    /* ─── Right: calculator card ─── */
+    .xero-hero__card {
+      background: var(--xero-bg);
+      border-radius: 8px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 32px;
+    }
+
+    .xero-hero__card-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 20px;
+    }
+
+    /* ─── Amount input ─── */
+    .xero-field__label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 6px;
+    }
+
+    .xero-input-wrap {
+      display: flex;
+      align-items: stretch;
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      background: var(--xero-input-bg);
+      transition: border-color 0.15s;
+      margin-bottom: 20px;
+    }
+
+    .xero-input-wrap:focus-within {
+      border-color: var(--xero-blue);
+    }
+
+    .xero-input-prefix {
+      display: flex;
+      align-items: center;
+      padding: 0 8px 0 14px;
+      color: var(--xero-text-muted);
+      font-size: 0.9375rem;
+      font-weight: 500;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .xero-input {
+      border: none;
+      outline: none;
+      padding: 12px 14px 12px 4px;
+      font-family: var(--font);
+      font-size: 1rem;
+      color: var(--xero-text);
+      background: transparent;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .xero-input::placeholder { color: #9EB0BB; }
+
+    /* ─── Radio group ─── */
+    .xero-radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .xero-radio {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .xero-radio:has(input:checked) { border-color: var(--xero-navy); background: #f5f8fa; }
+
+    .xero-radio input { position: absolute; opacity: 0; width: 0; height: 0; }
+
+    .xero-radio__box {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--xero-border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: border-color 0.15s;
+    }
+
+    .xero-radio:has(input:checked) .xero-radio__box { border-color: var(--xero-navy); }
+
+    .xero-radio__dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--xero-navy);
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .xero-radio:has(input:checked) .xero-radio__dot { opacity: 1; }
+
+    .xero-radio__label {
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--xero-navy);
+    }
+
+    /* ─── Result band inside card ─── */
+    .xero-hero__result-band {
+      background: var(--xero-panel-bg);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-top: 4px;
+    }
+
+    .xero-result__row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--xero-border);
+    }
+
+    .xero-result__row:last-of-type { border-bottom: none; padding-bottom: 0; }
+    .xero-result__row:first-of-type { padding-top: 0; }
+
+    .xero-result__label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--xero-navy);
+    }
+
+    .xero-result__value {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+    }
+
+    .xero-result__value--primary {
+      font-size: 1.25rem;
+      color: var(--xero-green);
+    }
+
+    .xero-result__value--muted {
+      color: var(--xero-text-muted);
+      font-weight: 400;
+    }
+
+    /* ─── CTA inside card ─── */
+    .xero-hero__card-cta {
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      line-height: 1.5;
+      margin-top: 20px;
+    }
+
+    .xero-hero__card-cta a {
+      color: var(--xero-blue);
+      font-weight: 700;
+      text-decoration: underline;
+    }
+
+    .xero-hero__card-cta a:hover { color: var(--xero-blue-dark); }
+
+    /* ─── Disclaimer below hero ─── */
+    .xero-hero__disclaimer {
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      margin-top: 16px;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 0 5%;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Pattern B: Hero, full-width. The outer .xero-hero band is full-viewport-width. -->
+
+<div class="xero-hero">
+  <div class="xero-hero__inner">
+
+    <!-- ── LEFT: Copy ── -->
+    <div class="xero-hero__copy">
+      <h1 class="xero-hero__title">Free NZ GST<br>calculator</h1>
+      <p class="xero-hero__body">
+        Quickly work out how much GST to add or remove from any amount. Built for New Zealand businesses at the 15% GST rate.
+      </p>
+      <ul class="xero-hero__bullets">
+        <li>Add GST to a price exclusive of tax</li>
+        <li>Remove GST from a GST-inclusive amount</li>
+        <li>Instant results — no need to click calculate</li>
+      </ul>
+    </div>
+
+    <!-- ── RIGHT: Calculator card ── -->
+    <div class="xero-hero__card" role="region" aria-label="GST Calculator">
+
+      <h2 class="xero-hero__card-title">Calculate GST</h2>
+
+      <!-- Amount input -->
+      <label class="xero-field__label" for="amount">Amount (NZD)</label>
+      <div class="xero-input-wrap">
+        <span class="xero-input-prefix">$</span>
+        <input
+          class="xero-input"
+          type="number"
+          id="amount"
+          min="0"
+          step="0.01"
+          placeholder="0.00"
+          aria-label="Amount in NZD"
+          oninput="calculate()"
+        >
+      </div>
+
+      <!-- Mode radio buttons -->
+      <div class="xero-radio-group" role="radiogroup" aria-label="GST mode">
+        <label class="xero-radio">
+          <input type="radio" name="gst-mode" value="add" checked onchange="calculate()">
+          <span class="xero-radio__box"><span class="xero-radio__dot"></span></span>
+          <span class="xero-radio__label">Add GST to amount</span>
+        </label>
+        <label class="xero-radio">
+          <input type="radio" name="gst-mode" value="remove" onchange="calculate()">
+          <span class="xero-radio__box"><span class="xero-radio__dot"></span></span>
+          <span class="xero-radio__label">Remove GST from amount</span>
+        </label>
+      </div>
+
+      <!-- Result band -->
+      <div class="xero-hero__result-band" aria-live="polite">
+        <div class="xero-result__row">
+          <span class="xero-result__label" id="label-base">Price (ex GST)</span>
+          <span class="xero-result__value" id="result-base">—</span>
+        </div>
+        <div class="xero-result__row">
+          <span class="xero-result__label">GST (15%)</span>
+          <span class="xero-result__value" id="result-gst">—</span>
+        </div>
+        <div class="xero-result__row">
+          <span class="xero-result__label" id="label-total">Total (incl. GST)</span>
+          <span class="xero-result__value xero-result__value--primary" id="result-total">—</span>
+        </div>
+      </div>
+
+      <p class="xero-hero__card-cta">
+        Get a real time view of your GST obligations with Xero. Start a 30 day <a href="https://www.xero.com/nz/signup/" target="_blank" rel="noopener">free trial</a>.
+      </p>
+
+    </div><!-- /.xero-hero__card -->
+
+  </div><!-- /.xero-hero__inner -->
+</div><!-- /.xero-hero -->
+
+<p class="xero-hero__disclaimer">*This calculator provides estimates only and is not financial or accounting advice. We recommend consulting a qualified accountant or tax adviser.</p>
+
+
+<script>
+  const GST_RATE = 0.15;
+
+  function fmt(n) {
+    return '$' + n.toLocaleString('en-NZ', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  function calculate() {
+    const raw = parseFloat(document.getElementById('amount').value);
+    const mode = document.querySelector('input[name="gst-mode"]:checked').value;
+
+    const labelBase  = document.getElementById('label-base');
+    const labelTotal = document.getElementById('label-total');
+    const resBase    = document.getElementById('result-base');
+    const resGst     = document.getElementById('result-gst');
+    const resTotal   = document.getElementById('result-total');
+
+    if (isNaN(raw) || raw === 0) {
+      resBase.textContent  = '—';
+      resGst.textContent   = '—';
+      resTotal.textContent = '—';
+      resBase.className    = 'xero-result__value';
+      resTotal.className   = 'xero-result__value xero-result__value--primary';
+      return;
+    }
+
+    let base, gst, total;
+
+    if (mode === 'add') {
+      // Input is GST-exclusive; calculate what to add
+      base  = raw;
+      gst   = raw * GST_RATE;
+      total = raw + gst;
+      labelBase.textContent  = 'Price (ex GST)';
+      labelTotal.textContent = 'Total (incl. GST)';
+    } else {
+      // Input is GST-inclusive; extract the GST component
+      base  = raw / (1 + GST_RATE);
+      gst   = raw - base;
+      total = raw;
+      labelBase.textContent  = 'Price (ex GST)';
+      labelTotal.textContent = 'GST-inclusive amount';
+    }
+
+    resBase.textContent  = fmt(base);
+    resGst.textContent   = fmt(gst);
+    resTotal.textContent = fmt(total);
+  }
+</script>
+
+</body>
+</html>
