@@ -1,0 +1,499 @@
+<!--
+  XERO PROTOTYPE
+  Tool: Markup Calculator (NZ)
+  Locale: NZ
+  Pattern: B — Hero, full-width
+  Built: 2026-04-16
+  Inputs: Mode toggle, cost price (NZD), selling price OR markup %
+  Output/formula:
+    Find markup %:    markup% = (sell - cost) / cost × 100 | margin% = (sell - cost) / sell × 100
+    Find sell price:  sell = cost × (1 + markup% / 100)
+  Notes for devs:
+    - Two-mode card: find markup % vs find selling price
+    - Live calculation — no submit button
+    - GT Walsheim → Plus Jakarta Sans substitution (flag for prod)
+    - Hero band bg is white (#FFFFFF) per spec; inner card has box-shadow for lift
+-->
+<!DOCTYPE html>
+<html lang="en-NZ">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xero's free markup calculator – NZ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ── Brand tokens ── */
+    :root {
+      --xero-navy:       #1B3A4B;
+      --xero-blue:       #13B5EA;
+      --xero-blue-dark:  #0D8FBD;
+      --xero-panel-bg:   #EBF0F4;
+      --xero-border:     #C2CDD6;
+      --xero-bg:         #FFFFFF;
+      --xero-text:       #1B3A4B;
+      --xero-text-muted: #4A6070;
+      --xero-green:      #1AB394;
+      --radius:          4px;
+      --font:            'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    .xero-hero {
+      background: var(--xero-bg);
+      padding: 72px 5%;
+      font-family: var(--font);
+      color: var(--xero-text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .xero-hero__inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 480px;
+      gap: 64px;
+      align-items: center;
+    }
+
+    .xero-hero__title {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800;
+      color: var(--xero-navy);
+      line-height: 1.15;
+      margin-bottom: 20px;
+    }
+
+    .xero-hero__body {
+      font-size: 1rem;
+      line-height: 1.65;
+      color: var(--xero-text-muted);
+      max-width: 480px;
+      margin-bottom: 24px;
+    }
+
+    .xero-hero__bullets {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+
+    .xero-hero__bullets li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--xero-navy);
+    }
+
+    .xero-hero__bullets li::before {
+      content: "✓";
+      color: var(--xero-navy);
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .xero-hero__cta-row {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .xero-btn-primary {
+      background: var(--xero-navy);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 12px 24px;
+      font-family: var(--font);
+      font-size: 0.9375rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: background 0.15s;
+    }
+    .xero-btn-primary:hover { background: #244d64; }
+
+    .xero-btn-secondary {
+      color: var(--xero-navy);
+      font-family: var(--font);
+      font-size: 0.9375rem;
+      font-weight: 700;
+      text-decoration: underline;
+      text-decoration-color: var(--xero-blue);
+      text-underline-offset: 3px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      display: inline-block;
+    }
+    .xero-btn-secondary:hover { text-decoration-color: var(--xero-blue-dark); }
+
+    .xero-hero__card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+      padding: 32px;
+    }
+
+    .xero-card__title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 20px;
+    }
+
+    .xero-radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .xero-radio {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .xero-radio:has(input:checked) { border-color: var(--xero-navy); }
+
+    .xero-radio input { position: absolute; opacity: 0; width: 0; height: 0; }
+
+    .xero-radio__box {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--xero-border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: border-color 0.15s;
+    }
+    .xero-radio:has(input:checked) .xero-radio__box { border-color: var(--xero-navy); }
+
+    .xero-radio__dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--xero-navy);
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .xero-radio:has(input:checked) .xero-radio__dot { opacity: 1; }
+
+    .xero-radio__label {
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--xero-navy);
+    }
+
+    .xero-field {
+      margin-bottom: 16px;
+    }
+
+    .xero-field__label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 6px;
+    }
+
+    .xero-input-wrap {
+      display: flex;
+      align-items: stretch;
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      background: #fff;
+      transition: border-color 0.15s;
+    }
+    .xero-input-wrap:focus-within { border-color: var(--xero-blue); }
+
+    .xero-input-prefix,
+    .xero-input-suffix {
+      display: flex;
+      align-items: center;
+      padding: 0 8px 0 14px;
+      color: var(--xero-text-muted);
+      font-size: 0.9375rem;
+      font-weight: 500;
+      user-select: none;
+      flex-shrink: 0;
+      font-family: var(--font);
+    }
+    .xero-input-suffix {
+      padding: 0 14px 0 8px;
+    }
+
+    .xero-input {
+      border: none;
+      outline: none;
+      padding: 10px 14px 10px 4px;
+      font-family: var(--font);
+      font-size: 0.9375rem;
+      color: var(--xero-text);
+      background: transparent;
+      width: 100%;
+      min-width: 0;
+    }
+    .xero-input::placeholder { color: #9EB0BB; }
+
+    .xero-result-band {
+      background: var(--xero-panel-bg);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-top: 8px;
+    }
+
+    .xero-result-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--xero-border);
+    }
+    .xero-result-row:last-of-type { border-bottom: none; }
+
+    .xero-result-row__label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--xero-text-muted);
+    }
+
+    .xero-result-row__value {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+    }
+
+    .xero-result-row__value--primary {
+      font-size: 1.25rem;
+      color: var(--xero-green);
+    }
+
+    .xero-card__cta {
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      line-height: 1.55;
+      margin-top: 16px;
+    }
+    .xero-card__cta a {
+      color: var(--xero-blue);
+      font-weight: 700;
+      text-decoration: underline;
+    }
+    .xero-card__cta a:hover { color: var(--xero-blue-dark); }
+
+    .xero-disclaimer {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 5% 32px;
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      line-height: 1.5;
+      font-family: var(--font);
+    }
+
+    @media (max-width: 900px) {
+      .xero-hero__inner {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+      .xero-hero {
+        padding: 48px 5%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="xero-hero">
+  <div class="xero-hero__inner">
+
+    <!-- Left column -->
+    <div class="xero-hero__left">
+      <h1 class="xero-hero__title">Xero's free markup calculator</h1>
+      <p class="xero-hero__body">Work out the right price for your products and services with Xero's markup calculator. Enter your cost and selling price to see your markup percentage instantly – no downloads required.</p>
+      <ul class="xero-hero__bullets">
+        <li>Calculate your markup percentage instantly</li>
+        <li>Find the right selling price for any cost</li>
+        <li>Understand the difference between markup and margin</li>
+      </ul>
+      <div class="xero-hero__cta-row">
+        <a href="https://www.xero.com/nz/signup/" class="xero-btn-primary" target="_blank">Try Xero for free</a>
+        <a href="https://www.xero.com/nz/pricing/" class="xero-btn-secondary" target="_blank">Compare plans and pricing</a>
+      </div>
+    </div>
+
+    <!-- Right column: calculator card -->
+    <div class="xero-hero__card" role="region" aria-label="Markup calculator">
+
+      <p class="xero-card__title">Calculate markup</p>
+
+      <!-- Mode toggle -->
+      <div class="xero-radio-group" role="radiogroup" aria-label="Calculation mode">
+        <label class="xero-radio">
+          <input type="radio" name="calc-mode" value="find-markup" checked onchange="switchMode(); calculate();">
+          <span class="xero-radio__box"><span class="xero-radio__dot"></span></span>
+          <span class="xero-radio__label">Find my markup %</span>
+        </label>
+        <label class="xero-radio">
+          <input type="radio" name="calc-mode" value="find-price" onchange="switchMode(); calculate();">
+          <span class="xero-radio__box"><span class="xero-radio__dot"></span></span>
+          <span class="xero-radio__label">Find my selling price</span>
+        </label>
+      </div>
+
+      <!-- Mode 1: Find markup % -->
+      <div id="mode-find-markup">
+        <div class="xero-field">
+          <label class="xero-field__label" for="cost-price">Cost price (NZD)</label>
+          <div class="xero-input-wrap">
+            <span class="xero-input-prefix">$</span>
+            <input class="xero-input" type="number" id="cost-price" min="0" step="0.01" placeholder="0.00" oninput="calculate()" autocomplete="off">
+          </div>
+        </div>
+        <div class="xero-field">
+          <label class="xero-field__label" for="sell-price">Selling price (NZD)</label>
+          <div class="xero-input-wrap">
+            <span class="xero-input-prefix">$</span>
+            <input class="xero-input" type="number" id="sell-price" min="0" step="0.01" placeholder="0.00" oninput="calculate()" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="xero-result-band" aria-live="polite">
+          <div class="xero-result-row">
+            <span class="xero-result-row__label">Markup %</span>
+            <span class="xero-result-row__value xero-result-row__value--primary" id="result-markup-pct">—</span>
+          </div>
+          <div class="xero-result-row">
+            <span class="xero-result-row__label">Markup amount</span>
+            <span class="xero-result-row__value" id="result-markup-amt">—</span>
+          </div>
+          <div class="xero-result-row">
+            <span class="xero-result-row__label">Gross margin %</span>
+            <span class="xero-result-row__value" id="result-margin">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mode 2: Find selling price -->
+      <div id="mode-find-price" style="display:none;">
+        <div class="xero-field">
+          <label class="xero-field__label" for="cost-price2">Cost price (NZD)</label>
+          <div class="xero-input-wrap">
+            <span class="xero-input-prefix">$</span>
+            <input class="xero-input" type="number" id="cost-price2" min="0" step="0.01" placeholder="0.00" oninput="calculate()" autocomplete="off">
+          </div>
+        </div>
+        <div class="xero-field">
+          <label class="xero-field__label" for="markup-pct-input">Markup (%)</label>
+          <div class="xero-input-wrap">
+            <input class="xero-input" type="number" id="markup-pct-input" min="0" step="0.01" placeholder="0.00" oninput="calculate()" autocomplete="off" style="padding-left:14px;">
+            <span class="xero-input-suffix">%</span>
+          </div>
+        </div>
+
+        <div class="xero-result-band" aria-live="polite">
+          <div class="xero-result-row">
+            <span class="xero-result-row__label">Selling price</span>
+            <span class="xero-result-row__value xero-result-row__value--primary" id="result-sell-price">—</span>
+          </div>
+          <div class="xero-result-row">
+            <span class="xero-result-row__label">Markup amount</span>
+            <span class="xero-result-row__value" id="result-markup-amt2">—</span>
+          </div>
+          <div class="xero-result-row">
+            <span class="xero-result-row__label">Gross margin %</span>
+            <span class="xero-result-row__value" id="result-margin2">—</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="xero-card__cta">Track markup across all your products with Xero. Start a 30 day <a href="https://www.xero.com/nz/signup/" target="_blank">free trial</a>.</p>
+
+    </div><!-- /.xero-hero__card -->
+
+  </div><!-- /.xero-hero__inner -->
+</div><!-- /.xero-hero -->
+
+<p class="xero-disclaimer">*This calculator provides estimates only and is not financial or accounting advice.</p>
+
+<script>
+  var CURRENCY_SYMBOL = '$';
+  var LOCALE_STRING   = 'en-NZ';
+
+  function fmtCurrency(n) {
+    return CURRENCY_SYMBOL + n.toLocaleString(LOCALE_STRING, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  function switchMode() {
+    var mode = document.querySelector('input[name="calc-mode"]:checked').value;
+    document.getElementById('mode-find-markup').style.display = (mode === 'find-markup') ? '' : 'none';
+    document.getElementById('mode-find-price').style.display  = (mode === 'find-price')  ? '' : 'none';
+    resetResults();
+  }
+
+  function resetResults() {
+    ['result-markup-pct','result-markup-amt','result-margin',
+     'result-sell-price','result-markup-amt2','result-margin2'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = '—';
+    });
+  }
+
+  function calculate() {
+    var mode = document.querySelector('input[name="calc-mode"]:checked').value;
+
+    if (mode === 'find-markup') {
+      var cost = parseFloat(document.getElementById('cost-price').value);
+      var sell = parseFloat(document.getElementById('sell-price').value);
+      if (isNaN(cost) || isNaN(sell) || cost <= 0 || sell < cost) {
+        document.getElementById('result-markup-pct').textContent = '—';
+        document.getElementById('result-markup-amt').textContent = '—';
+        document.getElementById('result-margin').textContent     = '—';
+        return;
+      }
+      var markupAmt = sell - cost;
+      var markupPct = (markupAmt / cost) * 100;
+      var margin    = (markupAmt / sell) * 100;
+      document.getElementById('result-markup-pct').textContent = markupPct.toFixed(2) + '%';
+      document.getElementById('result-markup-amt').textContent = fmtCurrency(markupAmt);
+      document.getElementById('result-margin').textContent     = margin.toFixed(2) + '%';
+    } else {
+      var cost2      = parseFloat(document.getElementById('cost-price2').value);
+      var markupPct2 = parseFloat(document.getElementById('markup-pct-input').value);
+      if (isNaN(cost2) || isNaN(markupPct2) || cost2 <= 0 || markupPct2 < 0) {
+        document.getElementById('result-sell-price').textContent  = '—';
+        document.getElementById('result-markup-amt2').textContent = '—';
+        document.getElementById('result-margin2').textContent     = '—';
+        return;
+      }
+      var sellPrice  = cost2 * (1 + markupPct2 / 100);
+      var markupAmt2 = sellPrice - cost2;
+      var margin2    = (markupAmt2 / sellPrice) * 100;
+      document.getElementById('result-sell-price').textContent  = fmtCurrency(sellPrice);
+      document.getElementById('result-markup-amt2').textContent = fmtCurrency(markupAmt2);
+      document.getElementById('result-margin2').textContent     = margin2.toFixed(2) + '%';
+    }
+  }
+</script>
+
+</body>
+</html>

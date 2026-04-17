@@ -1,0 +1,997 @@
+<!--
+  XERO PROTOTYPE
+  Tool: Income Tax Calculator (NZ)
+  Locale: NZ
+  Pattern: A — Standard body section
+  Built: 2026-04-16
+  Inputs: Annual income, employment type, KiwiSaver rate, student loan, secondary income flag
+  Output: PAYE tax, ACC levy, KiwiSaver, student loan repayment, take-home (weekly/fortnightly/monthly/annually)
+  Rates: 2025–26 IRD rates — verify annually
+  Notes for devs:
+    - KiwiSaver default rate changing from 3% to 3.5% from 1 April 2026 — update default radio
+    - ACC levy rate changes annually — source from ACC website (currently 1.60% for 2025–26)
+    - ACC maximum liable earnings cap (~$142,283) should be updated annually
+    - Student loan threshold ($24,128) should be verified annually with StudyLink/IRD
+    - Secondary income calculation simplified — full implementation needs tax code logic (M SL, ME, etc.)
+    - Sole trader path: same marginal rates apply to net profit; provisional tax not modelled
+    - KiwiSaver for sole traders is voluntary — calculator shows a note rather than the contribution section
+    - GT Walsheim → Plus Jakarta Sans substitution used in this prototype (flag for prod)
+    - Font: Plus Jakarta Sans from Google Fonts (not GT Walsheim — licensed separately by Xero)
+-->
+<!DOCTYPE html>
+<html lang="en-NZ">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Zealand Income Tax Calculator 2025–26 | Xero NZ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ─── Xero Brand Tokens ─── */
+    :root {
+      --xero-navy:       #1B3A4B;
+      --xero-blue:       #13B5EA;
+      --xero-blue-dark:  #0D8FBD;
+      --xero-panel-bg:   #EBF0F4;
+      --xero-border:     #C2CDD6;
+      --xero-bg:         #FFFFFF;
+      --xero-text:       #1B3A4B;
+      --xero-text-muted: #4A6070;
+      --xero-input-bg:   #FFFFFF;
+      --xero-green:      #1AB394;
+      --xero-red:        #E05A5A;
+      --radius:          4px;
+      --font:            'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      color: var(--xero-text);
+      background: var(--xero-bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── Outer wrapper — embeddable section ─── */
+    .xero-tool {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 48px 5%;
+    }
+
+    .xero-tool__heading {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--xero-navy);
+      margin-bottom: 6px;
+      line-height: 1.2;
+    }
+
+    .xero-tool__subheading {
+      font-size: 0.875rem;
+      color: var(--xero-text-muted);
+      margin-bottom: 36px;
+    }
+
+    /* ─── Two-column layout ─── */
+    .xero-tool__layout {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 40px;
+      align-items: start;
+    }
+
+    @media (max-width: 768px) {
+      .xero-tool__layout {
+        grid-template-columns: 1fr;
+      }
+      .xero-tool__panel {
+        order: -1;
+      }
+    }
+
+    /* ─── Form sections ─── */
+    .xero-section {
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--xero-border);
+      margin-bottom: 28px;
+    }
+
+    .xero-section:last-of-type {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .xero-section__title {
+      font-size: 1.0625rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 20px;
+    }
+
+    /* ─── Field label ─── */
+    .xero-field__label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 6px;
+      letter-spacing: 0.01em;
+    }
+
+    /* ─── Currency input wrapper ─── */
+    .xero-input-wrap {
+      display: flex;
+      align-items: stretch;
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      background: var(--xero-input-bg);
+      transition: border-color 0.15s;
+    }
+
+    .xero-input-wrap:focus-within {
+      border-color: var(--xero-blue);
+      outline: 2px solid rgba(19, 181, 234, 0.2);
+      outline-offset: 0;
+    }
+
+    .xero-input-prefix {
+      display: flex;
+      align-items: center;
+      padding: 0 8px 0 14px;
+      color: var(--xero-text-muted);
+      font-size: 0.9375rem;
+      font-weight: 500;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .xero-input {
+      border: none;
+      outline: none;
+      padding: 10px 14px 10px 4px;
+      font-family: var(--font);
+      font-size: 0.9375rem;
+      color: var(--xero-text);
+      background: transparent;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .xero-input::placeholder { color: #9EB0BB; }
+
+    /* Remove number input spinners */
+    .xero-input::-webkit-outer-spin-button,
+    .xero-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .xero-input[type=number] { -moz-appearance: textfield; }
+
+    /* ─── Radio groups — full-width bordered rows ─── */
+    .xero-radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .xero-radio-group--inline {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .xero-radio {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 11px 16px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      user-select: none;
+    }
+
+    .xero-radio:has(input:checked) {
+      border-color: var(--xero-navy);
+      background: rgba(27, 58, 75, 0.03);
+    }
+
+    .xero-radio-group--inline .xero-radio {
+      flex: 1;
+      min-width: calc(33% - 8px);
+      justify-content: center;
+    }
+
+    .xero-radio input {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+      pointer-events: none;
+    }
+
+    .xero-radio__box {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--xero-border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: border-color 0.15s;
+    }
+
+    .xero-radio:has(input:checked) .xero-radio__box {
+      border-color: var(--xero-navy);
+    }
+
+    .xero-radio__dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--xero-navy);
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .xero-radio:has(input:checked) .xero-radio__dot { opacity: 1; }
+
+    .xero-radio__label {
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--xero-navy);
+      line-height: 1.3;
+    }
+
+    .xero-radio__label small {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 400;
+      color: var(--xero-text-muted);
+      margin-top: 1px;
+    }
+
+    /* ─── Inline note / helper text ─── */
+    .xero-note {
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      line-height: 1.5;
+      margin-top: 10px;
+      padding: 10px 14px;
+      background: var(--xero-panel-bg);
+      border-radius: var(--radius);
+      border-left: 3px solid var(--xero-border);
+    }
+
+    /* ─── Actions ─── */
+    .xero-actions {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-top: 32px;
+    }
+
+    .xero-btn {
+      background: var(--xero-navy);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 12px 24px;
+      font-family: var(--font);
+      font-size: 0.9375rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+
+    .xero-btn:hover  { background: #244d64; }
+    .xero-btn:active { background: #162e3a; }
+    .xero-btn:focus-visible {
+      outline: 3px solid var(--xero-blue);
+      outline-offset: 2px;
+    }
+
+    .xero-reset {
+      background: none;
+      border: none;
+      color: var(--xero-blue);
+      font-family: var(--font);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
+    }
+
+    .xero-reset:hover { color: var(--xero-blue-dark); }
+
+    /* ─── Results panel ─── */
+    .xero-tool__panel {
+      background: var(--xero-panel-bg);
+      border-radius: var(--radius);
+      padding: 28px;
+      position: sticky;
+      top: 24px;
+    }
+
+    /* Pre-calculate state */
+    .panel-placeholder {
+      text-align: center;
+      padding: 20px 0 8px;
+    }
+
+    .panel-placeholder__icon {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+      display: block;
+      opacity: 0.35;
+    }
+
+    .panel-placeholder__text {
+      font-size: 0.9375rem;
+      color: var(--xero-text-muted);
+      line-height: 1.5;
+    }
+
+    /* Results content */
+    .panel-results { display: none; }
+    .panel-results.is-visible { display: block; }
+
+    .panel-primary-label {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--xero-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .panel-primary-value {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--xero-green);
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .panel-primary-sub {
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      margin-bottom: 20px;
+    }
+
+    /* Frequency table */
+    .freq-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      margin-bottom: 20px;
+    }
+
+    .freq-table thead th {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--xero-text-muted);
+      text-align: left;
+      padding: 0 0 8px 0;
+      border-bottom: 1px solid var(--xero-border);
+    }
+
+    .freq-table thead th:not(:first-child) {
+      text-align: right;
+    }
+
+    .freq-table tbody tr {
+      border-bottom: 1px solid var(--xero-border);
+    }
+
+    .freq-table tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    .freq-table td {
+      padding: 9px 0;
+      color: var(--xero-navy);
+    }
+
+    .freq-table td:not(:first-child) {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .freq-table td:first-child {
+      font-weight: 600;
+    }
+
+    .freq-table td.take-home {
+      font-weight: 700;
+      color: var(--xero-green);
+    }
+
+    /* Divider */
+    .panel-divider {
+      border: none;
+      border-top: 1px solid var(--xero-border);
+      margin: 16px 0;
+    }
+
+    /* Breakdown heading */
+    .breakdown-heading {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 12px;
+    }
+
+    /* Breakdown line items */
+    .breakdown-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      padding: 7px 0;
+      font-size: 0.875rem;
+      border-bottom: 1px solid var(--xero-border);
+    }
+
+    .breakdown-item:last-child {
+      border-bottom: none;
+    }
+
+    .breakdown-item__label {
+      color: var(--xero-text-muted);
+      flex: 1;
+      line-height: 1.3;
+    }
+
+    .breakdown-item__value {
+      font-variant-numeric: tabular-nums;
+      font-weight: 500;
+      color: var(--xero-navy);
+      white-space: nowrap;
+    }
+
+    .breakdown-item--total .breakdown-item__label {
+      font-weight: 700;
+      color: var(--xero-navy);
+    }
+
+    .breakdown-item--total .breakdown-item__value {
+      font-weight: 800;
+      color: var(--xero-green);
+      font-size: 0.9375rem;
+    }
+
+    .breakdown-item--deduction .breakdown-item__value {
+      color: var(--xero-red);
+    }
+
+    /* Employer KiwiSaver note */
+    .employer-kiwi-note {
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      line-height: 1.5;
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: rgba(26, 179, 148, 0.08);
+      border-radius: var(--radius);
+      border-left: 3px solid var(--xero-green);
+    }
+
+    /* CTA */
+    .xero-panel__cta {
+      font-size: 0.875rem;
+      color: var(--xero-text-muted);
+      line-height: 1.55;
+      padding-top: 16px;
+      border-top: 1px solid var(--xero-border);
+      margin-top: 16px;
+    }
+
+    .xero-panel__cta a {
+      color: var(--xero-blue);
+      font-weight: 700;
+      text-decoration: underline;
+    }
+
+    .xero-panel__cta a:hover { color: var(--xero-blue-dark); }
+
+    /* ─── Disclaimer ─── */
+    .xero-tool__disclaimer {
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      margin-top: 28px;
+      line-height: 1.55;
+    }
+
+    /* ─── Hidden utility ─── */
+    .is-hidden { display: none !important; }
+
+    /* ─── Mobile adjustments ─── */
+    @media (max-width: 540px) {
+      .xero-radio-group--inline {
+        flex-direction: column;
+      }
+      .xero-radio-group--inline .xero-radio {
+        min-width: unset;
+        justify-content: flex-start;
+      }
+      .xero-actions {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="xero-tool" id="xero-tool">
+
+  <h1 class="xero-tool__heading">New Zealand income tax calculator</h1>
+  <p class="xero-tool__subheading">2025–26 tax year</p>
+
+  <div class="xero-tool__layout">
+
+    <!-- ── LEFT: Form ── -->
+    <form class="xero-tool__form" id="calc-form" onsubmit="return false;" novalidate>
+
+      <!-- SECTION 1 — Your Income -->
+      <div class="xero-section">
+        <h2 class="xero-section__title">Your income</h2>
+
+        <div style="margin-bottom: 20px;">
+          <label class="xero-field__label" for="income">Annual income</label>
+          <div class="xero-input-wrap">
+            <span class="xero-input-prefix">$</span>
+            <input
+              class="xero-input"
+              type="number"
+              id="income"
+              min="0"
+              step="1"
+              placeholder="0"
+              autocomplete="off"
+              inputmode="numeric"
+            >
+          </div>
+        </div>
+
+        <div>
+          <label class="xero-field__label">Employment type</label>
+          <div class="xero-radio-group" id="emp-type-group">
+            <label class="xero-radio">
+              <input type="radio" name="emp-type" value="paye" checked>
+              <span class="xero-radio__box"><span class="xero-radio__dot"></span></span>
+              <span class="xero-radio__label">
+                PAYE employee
+                <small>Tax is deducted by your employer each pay period</small>
+              </span>
+            </label>
+            <label class="xero-radio">
+              <input type="radio" name="emp-type" value="sole-trader">
+              <span class="xero-radio__box"><span class="xero-radio__dot"></span></span>
+              <span class="xero-radio__label">
+                Sole trader / self-employed
+                <small>You file and pay tax directly to Inland Revenue</small>
+              </span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 2 — KiwiSaver (PAYE only) -->
+      <div class="xero-section" id="kiwisaver-section">
+        <h2 class="xero-section__title">KiwiSaver</h2>
+        <label class="xero-field__label">KiwiSaver contribution rate</label>
+        <div class="xero-radio-group" id="kiwi-rate-group">
+          <label class="xero-radio">
+            <input type="radio" name="kiwi-rate" value="0">
+            <span class="xero-radio__box"><span class="xero-radio__dot"></span></span>
+            <span class="xero-radio__label">Opt out</span>
+          </label>
+          <label class="xero-radio">
+            <input type="radio" name="kiwi-rate" value="3" checked>
+            <span class="xero-radio__box"><span class="xero-radio__dot"></span></span>
+            <span class="xero-radio__label">3%</span>
+          </label>
+          <label class="xero-radio">
+            <input type="radio" name="kiwi-rate" value="3.5">
+            <span class="xero-radio__box"><span class="xero-radio__dot"></span></span>
+            <span class="xero-radio__label">3.5% <small style="display:inline; font-size: 0.75rem;">(new default from 1 Apr 2026)</small></span>
+          </label>
+          <label class="xero-radio">
+            <input type="radio" name="kiwi-rate" value="4">
+            <span class="xero-radio__box"><span class="xero-radio__dot"></span></span>
+            <span class="xero-radio__label">4%</span>
+          </label>
+          <label class="xero-radio">
+            <input type="radio" name="kiwi-rate" value="6">
+            <span class="xero-radio__box"><span class="xero-radio__dot"></span></span>
+            <span class="xero-radio__label">6%</span>
+          </label>
+          <label class="xero-radio">
+            <input type="radio" name="kiwi-rate" value="8">
+            <span class="xero-radio__box"><span class="xero-radio__dot"></span></span>
+            <span class="xero-radio__label">8%</span>
+          </label>
+          <label class="xero-radio">
+            <input type="radio" name="kiwi-rate" value="10">
+            <span class="xero-radio__box"><span class="xero-radio__dot"></span></span>
+            <span class="xero-radio__label">10%</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- KiwiSaver note for sole traders (hidden by default) -->
+      <div class="xero-section is-hidden" id="kiwisaver-sole-trader-note">
+        <h2 class="xero-section__title">KiwiSaver</h2>
+        <div class="xero-note">
+          KiwiSaver is voluntary for self-employed people. If you contribute, your payments come from your own income — there's no employer contribution. This calculator doesn't include voluntary KiwiSaver contributions for sole traders.
+        </div>
+      </div>
+
+      <!-- SECTION 3 — Other Deductions -->
+      <div class="xero-section">
+        <h2 class="xero-section__title">Other deductions</h2>
+
+        <div style="margin-bottom: 16px;">
+          <label class="xero-field__label">Do you have a student loan?</label>
+          <div class="xero-radio-group xero-radio-group--inline" id="student-loan-group">
+            <label class="xero-radio">
+              <input type="radio" name="student-loan" value="no" checked>
+              <span class="xero-radio__box"><span class="xero-radio__dot"></span></span>
+              <span class="xero-radio__label">No</span>
+            </label>
+            <label class="xero-radio">
+              <input type="radio" name="student-loan" value="yes">
+              <span class="xero-radio__box"><span class="xero-radio__dot"></span></span>
+              <span class="xero-radio__label">Yes</span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label class="xero-field__label">Do you have secondary income?</label>
+          <div class="xero-radio-group xero-radio-group--inline" id="secondary-income-group">
+            <label class="xero-radio">
+              <input type="radio" name="secondary-income" value="no" checked>
+              <span class="xero-radio__box"><span class="xero-radio__dot"></span></span>
+              <span class="xero-radio__label">No</span>
+            </label>
+            <label class="xero-radio">
+              <input type="radio" name="secondary-income" value="yes">
+              <span class="xero-radio__box"><span class="xero-radio__dot"></span></span>
+              <span class="xero-radio__label">Yes</span>
+            </label>
+          </div>
+          <div class="xero-note is-hidden" id="secondary-income-note">
+            Secondary income is taxed at a flat rate based on your expected total income. This calculator uses the standard tax code (M) — consult an accountant for the exact secondary tax code.
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="xero-actions">
+        <button class="xero-btn" type="button" id="calc-btn" onclick="calculate()">
+          Calculate your income tax
+        </button>
+        <button class="xero-reset" type="button" onclick="resetForm()">Reset</button>
+      </div>
+
+    </form>
+
+    <!-- ── RIGHT: Results panel ── -->
+    <aside class="xero-tool__panel" id="results-panel" aria-live="polite" aria-label="Tax calculation results">
+
+      <!-- Pre-calculate placeholder -->
+      <div class="panel-placeholder" id="panel-placeholder">
+        <span class="panel-placeholder__icon">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="6" width="32" height="36" rx="3" stroke="#C2CDD6" stroke-width="2" fill="none"/>
+            <path d="M16 16h16M16 22h16M16 28h10" stroke="#C2CDD6" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="35" cy="34" r="7" fill="#EBF0F4" stroke="#C2CDD6" stroke-width="2"/>
+            <path d="M32.5 34h5M35 31.5v5" stroke="#C2CDD6" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <p class="panel-placeholder__text">
+          Enter your annual income and<br>hit <strong>Calculate</strong> to see your<br>estimated take-home pay.
+        </p>
+      </div>
+
+      <!-- Results (hidden until calculated) -->
+      <div class="panel-results" id="panel-results">
+
+        <p class="panel-primary-label">Estimated take-home pay</p>
+        <p class="panel-primary-value" id="res-takehome-annual">$0</p>
+        <p class="panel-primary-sub">per year after tax &amp; deductions</p>
+
+        <hr class="panel-divider">
+
+        <!-- Frequency table -->
+        <table class="freq-table" aria-label="Pay frequency breakdown">
+          <thead>
+            <tr>
+              <th>Frequency</th>
+              <th>Gross</th>
+              <th>Take-home</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Weekly</td>
+              <td id="freq-gross-weekly">—</td>
+              <td class="take-home" id="freq-net-weekly">—</td>
+            </tr>
+            <tr>
+              <td>Fortnightly</td>
+              <td id="freq-gross-fortnightly">—</td>
+              <td class="take-home" id="freq-net-fortnightly">—</td>
+            </tr>
+            <tr>
+              <td>Monthly</td>
+              <td id="freq-gross-monthly">—</td>
+              <td class="take-home" id="freq-net-monthly">—</td>
+            </tr>
+            <tr>
+              <td>Annually</td>
+              <td id="freq-gross-annual">—</td>
+              <td class="take-home" id="freq-net-annual">—</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <hr class="panel-divider">
+
+        <!-- Breakdown -->
+        <p class="breakdown-heading">How it's calculated</p>
+
+        <div class="breakdown-item">
+          <span class="breakdown-item__label">Gross income</span>
+          <span class="breakdown-item__value" id="bd-gross">—</span>
+        </div>
+        <div class="breakdown-item breakdown-item--deduction">
+          <span class="breakdown-item__label">PAYE income tax</span>
+          <span class="breakdown-item__value" id="bd-paye">—</span>
+        </div>
+        <div class="breakdown-item breakdown-item--deduction">
+          <span class="breakdown-item__label">ACC earners' levy</span>
+          <span class="breakdown-item__value" id="bd-acc">—</span>
+        </div>
+        <div class="breakdown-item breakdown-item--deduction is-hidden" id="bd-kiwi-row">
+          <span class="breakdown-item__label" id="bd-kiwi-label">KiwiSaver contribution</span>
+          <span class="breakdown-item__value" id="bd-kiwi">—</span>
+        </div>
+        <div class="breakdown-item breakdown-item--deduction is-hidden" id="bd-student-row">
+          <span class="breakdown-item__label">Student loan repayment</span>
+          <span class="breakdown-item__value" id="bd-student">—</span>
+        </div>
+        <div class="breakdown-item breakdown-item--total">
+          <span class="breakdown-item__label">Net take-home (annual)</span>
+          <span class="breakdown-item__value" id="bd-net">—</span>
+        </div>
+
+        <!-- Employer KiwiSaver note -->
+        <div class="employer-kiwi-note is-hidden" id="employer-kiwi-note">
+          Your employer also contributes 3% (<span id="employer-kiwi-amount">$0</span>) to your KiwiSaver — this doesn't reduce your take-home pay.
+        </div>
+
+        <!-- CTA -->
+        <div class="xero-panel__cta">
+          Get a real time view of your finances with Xero. Start a 30 day <a href="https://www.xero.com/nz/signup/" target="_blank" rel="noopener">free trial</a>.
+        </div>
+
+      </div><!-- /.panel-results -->
+
+    </aside>
+
+  </div><!-- /.xero-tool__layout -->
+
+  <p class="xero-tool__disclaimer">*Estimates only. Based on 2025–26 IRD rates for NZ tax residents. Does not account for all credits or individual circumstances. Not financial or tax advice.</p>
+
+</div><!-- /.xero-tool -->
+
+<script>
+  // ─── Constants (2025–26 NZ rates) ───────────────────────────
+  const ACC_RATE = 0.0160;          // 1.60% — verify annually with ACC
+  const ACC_MAX  = 142283;          // Maximum liable earnings — verify annually
+  const STUDENT_THRESHOLD = 24128;  // Repayment threshold — verify annually with StudyLink/IRD
+  const STUDENT_RATE = 0.12;        // 12% of income above threshold
+
+  // ─── Income tax brackets ─────────────────────────────────────
+  function calcPAYE(income) {
+    let tax = 0;
+    if (income > 180000) tax += (income - 180000) * 0.39;
+    if (income > 70000)  tax += (Math.min(income, 180000) - 70000) * 0.33;
+    if (income > 48000)  tax += (Math.min(income, 70000) - 48000) * 0.30;
+    if (income > 14000)  tax += (Math.min(income, 48000) - 14000) * 0.175;
+    if (income > 0)      tax += Math.min(income, 14000) * 0.105;
+    return tax;
+  }
+
+  // ─── Formatting ───────────────────────────────────────────────
+  function fmt(n, decimals = 0) {
+    return '$' + Math.abs(n).toLocaleString('en-NZ', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    });
+  }
+
+  function fmtSigned(n) {
+    // Returns value with a minus prefix for deductions (shown in red via CSS)
+    return '\u2212' + fmt(n); // use proper minus sign
+  }
+
+  // ─── Get form values ──────────────────────────────────────────
+  function getRadioValue(name) {
+    const el = document.querySelector(`input[name="${name}"]:checked`);
+    return el ? el.value : null;
+  }
+
+  function getIncome() {
+    return Math.max(0, parseFloat(document.getElementById('income').value) || 0);
+  }
+
+  // ─── UI state ─────────────────────────────────────────────────
+  function setText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+
+  function show(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('is-hidden');
+  }
+
+  function hide(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('is-hidden');
+  }
+
+  // ─── Employment type toggle ───────────────────────────────────
+  document.querySelectorAll('input[name="emp-type"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      if (this.value === 'sole-trader') {
+        hide('kiwisaver-section');
+        show('kiwisaver-sole-trader-note');
+      } else {
+        show('kiwisaver-section');
+        hide('kiwisaver-sole-trader-note');
+      }
+    });
+  });
+
+  // ─── Secondary income note toggle ────────────────────────────
+  document.querySelectorAll('input[name="secondary-income"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      if (this.value === 'yes') {
+        show('secondary-income-note');
+      } else {
+        hide('secondary-income-note');
+      }
+    });
+  });
+
+  // ─── Main calculation ─────────────────────────────────────────
+  function calculate() {
+    const income        = getIncome();
+    const empType       = getRadioValue('emp-type');
+    const kiwiRate      = empType === 'paye' ? parseFloat(getRadioValue('kiwi-rate') || '0') : 0;
+    const hasStudentLoan = getRadioValue('student-loan') === 'yes';
+
+    // Tax
+    const payeTax = calcPAYE(income);
+
+    // ACC earners' levy
+    const accLevy = Math.min(income, ACC_MAX) * ACC_RATE;
+
+    // KiwiSaver (PAYE only, if not opted out)
+    const kiwiContrib  = (empType === 'paye') ? income * (kiwiRate / 100) : 0;
+    const employerKiwi = (empType === 'paye' && kiwiRate > 0) ? income * 0.03 : 0;
+
+    // Student loan
+    const studentLoan = hasStudentLoan && income > STUDENT_THRESHOLD
+      ? (income - STUDENT_THRESHOLD) * STUDENT_RATE
+      : 0;
+
+    // Take-home
+    const totalDeductions = payeTax + accLevy + kiwiContrib + studentLoan;
+    const annualTakeHome  = income - totalDeductions;
+
+    // Frequencies
+    const grossWeekly       = income / 52;
+    const grossFortnightly  = income / 26;
+    const grossMonthly      = income / 12;
+    const netWeekly         = annualTakeHome / 52;
+    const netFortnightly    = annualTakeHome / 26;
+    const netMonthly        = annualTakeHome / 12;
+
+    // ── Update DOM ───────────────────────────────────────────
+
+    // Primary result
+    setText('res-takehome-annual', fmt(annualTakeHome));
+
+    // Frequency table
+    setText('freq-gross-weekly',       fmt(grossWeekly, 2));
+    setText('freq-gross-fortnightly',  fmt(grossFortnightly, 2));
+    setText('freq-gross-monthly',      fmt(grossMonthly, 2));
+    setText('freq-gross-annual',       fmt(income, 0));
+    setText('freq-net-weekly',         fmt(netWeekly, 2));
+    setText('freq-net-fortnightly',    fmt(netFortnightly, 2));
+    setText('freq-net-monthly',        fmt(netMonthly, 2));
+    setText('freq-net-annual',         fmt(annualTakeHome, 0));
+
+    // Breakdown
+    setText('bd-gross', fmt(income));
+    setText('bd-paye',  fmtSigned(payeTax));
+    setText('bd-acc',   fmtSigned(accLevy));
+
+    // KiwiSaver row
+    if (empType === 'paye' && kiwiRate > 0) {
+      show('bd-kiwi-row');
+      setText('bd-kiwi-label', 'KiwiSaver (' + kiwiRate + '%)');
+      setText('bd-kiwi', fmtSigned(kiwiContrib));
+    } else {
+      hide('bd-kiwi-row');
+    }
+
+    // Student loan row
+    if (hasStudentLoan && studentLoan > 0) {
+      show('bd-student-row');
+      setText('bd-student', fmtSigned(studentLoan));
+    } else {
+      hide('bd-student-row');
+    }
+
+    setText('bd-net', fmt(annualTakeHome));
+
+    // Employer KiwiSaver note
+    if (empType === 'paye' && kiwiRate > 0) {
+      show('employer-kiwi-note');
+      setText('employer-kiwi-amount', fmt(employerKiwi));
+    } else {
+      hide('employer-kiwi-note');
+    }
+
+    // Show results, hide placeholder
+    hide('panel-placeholder');
+    const panelResults = document.getElementById('panel-results');
+    panelResults.classList.add('is-visible');
+
+    // Scroll panel into view on mobile
+    if (window.innerWidth <= 768) {
+      document.getElementById('results-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  // ─── Reset ────────────────────────────────────────────────────
+  function resetForm() {
+    // Clear income input
+    document.getElementById('income').value = '';
+
+    // Reset radios to defaults
+    document.querySelector('input[name="emp-type"][value="paye"]').checked = true;
+    document.querySelector('input[name="kiwi-rate"][value="3"]').checked = true;
+    document.querySelector('input[name="student-loan"][value="no"]').checked = true;
+    document.querySelector('input[name="secondary-income"][value="no"]').checked = true;
+
+    // Reset UI state
+    show('kiwisaver-section');
+    hide('kiwisaver-sole-trader-note');
+    hide('secondary-income-note');
+
+    // Hide results, show placeholder
+    show('panel-placeholder');
+    document.getElementById('panel-results').classList.remove('is-visible');
+  }
+
+  // ─── Allow Enter key on income input to trigger calculate ────
+  document.getElementById('income').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') calculate();
+  });
+</script>
+
+</body>
+</html>

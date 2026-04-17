@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xero US Sales Tax Calculator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!--
+    XERO PROTOTYPE
+    Tool: Sales Tax Calculator (US)
+    Locale: US
+    Pattern: B — Hero, full-width
+    Built: 2026-04-17
+    Inputs: Amount (USD), US State (dropdown)
+    Output/formula: Tax = amount × (state_rate / 100) | Total = amount + tax
+    Notes for devs:
+      - Rates are combined state + average local rates (approximate) — Tax Foundation data
+      - 4 states have 0% (DE, MT, NH, OR); Alaska has no state tax but allows local taxes (~1.76%)
+      - For production, replace rate table with a live API (e.g. TaxJar, Avalara) for per-address accuracy
+      - Live calculation — no submit button
+      - GT Walsheim → Plus Jakarta Sans substitution (flag for prod)
+  -->
+
+  <style>
+    :root {
+      --xero-navy:       #1B3A4B;
+      --xero-blue:       #13B5EA;
+      --xero-blue-dark:  #0D8FBD;
+      --xero-panel-bg:   #EBF0F4;
+      --xero-border:     #C2CDD6;
+      --xero-bg:         #FFFFFF;
+      --xero-text:       #1B3A4B;
+      --xero-text-muted: #4A6070;
+      --xero-green:      #1AB394;
+      --radius:          4px;
+      --font:            'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      color: var(--xero-text);
+      background: var(--xero-bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .xero-hero {
+      background: var(--xero-bg);
+      padding: 72px 5%;
+      width: 100%;
+    }
+
+    .xero-hero__inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 480px;
+      gap: 64px;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .xero-hero__inner { grid-template-columns: 1fr; gap: 40px; }
+    }
+
+    /* ─── Left copy ─── */
+    .xero-hero__title {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800;
+      color: var(--xero-navy);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 20px;
+    }
+
+    .xero-hero__body {
+      font-size: 1rem;
+      color: var(--xero-text-muted);
+      line-height: 1.65;
+      margin-bottom: 24px;
+      max-width: 480px;
+    }
+
+    .xero-hero__bullets {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .xero-hero__bullets li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.9375rem;
+      color: var(--xero-text-muted);
+      line-height: 1.5;
+    }
+
+    .xero-hero__bullets li::before {
+      content: '✓';
+      color: var(--xero-navy);
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .xero-hero__actions {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-top: 32px;
+      flex-wrap: wrap;
+    }
+
+    .xero-hero__btn {
+      display: inline-block;
+      background: var(--xero-navy);
+      color: #fff;
+      font-family: var(--font);
+      font-size: 0.9375rem;
+      font-weight: 700;
+      padding: 12px 24px;
+      border-radius: 6px;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+
+    .xero-hero__btn:hover { background: #244d64; }
+
+    .xero-hero__link {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      text-decoration: underline;
+      text-decoration-color: var(--xero-blue);
+      text-underline-offset: 3px;
+      white-space: nowrap;
+    }
+
+    .xero-hero__link:hover { text-decoration-color: var(--xero-blue-dark); }
+
+    /* ─── Calculator card ─── */
+    .xero-hero__card {
+      background: var(--xero-bg);
+      border-radius: 8px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 32px;
+    }
+
+    .xero-hero__card-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 20px;
+    }
+
+    .xero-field__label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 6px;
+    }
+
+    /* Amount input with $ prefix */
+    .xero-input-wrap {
+      display: flex;
+      align-items: stretch;
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      background: var(--xero-bg);
+      transition: border-color 0.15s;
+      margin-bottom: 16px;
+    }
+
+    .xero-input-wrap:focus-within { border-color: var(--xero-blue); }
+
+    .xero-input-prefix {
+      display: flex;
+      align-items: center;
+      padding: 0 8px 0 14px;
+      color: var(--xero-text-muted);
+      font-size: 0.9375rem;
+      font-weight: 500;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .xero-input {
+      border: none;
+      outline: none;
+      padding: 12px 14px 12px 4px;
+      font-family: var(--font);
+      font-size: 1rem;
+      color: var(--xero-text);
+      background: transparent;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .xero-input::placeholder { color: #9EB0BB; }
+
+    /* Address input */
+    .xero-address-input {
+      display: block;
+      width: 100%;
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      font-family: var(--font);
+      font-size: 0.9375rem;
+      color: var(--xero-text);
+      background: var(--xero-bg);
+      outline: none;
+      transition: border-color 0.15s;
+      margin-bottom: 8px;
+    }
+
+    .xero-address-input:focus { border-color: var(--xero-blue); }
+    .xero-address-input::placeholder { color: #9EB0BB; }
+
+    /* Detected state pill */
+    .xero-state-detected {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--xero-green);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .xero-state-detected.visible { display: flex; }
+
+    .xero-state-detected__dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--xero-green);
+      flex-shrink: 0;
+    }
+
+    /* Prototype notice */
+    .xero-proto-notice {
+      font-size: 0.6875rem;
+      color: var(--xero-text-muted);
+      background: #f5f8fa;
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .xero-proto-notice strong { color: var(--xero-navy); }
+
+    /* ─── Result band ─── */
+    .xero-result-band {
+      background: var(--xero-panel-bg);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+
+    .xero-result__row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--xero-border);
+    }
+
+    .xero-result__row:first-of-type { padding-top: 0; }
+    .xero-result__row:last-of-type  { border-bottom: none; padding-bottom: 0; }
+
+    .xero-result__label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--xero-navy);
+    }
+
+    .xero-result__value {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+    }
+
+    .xero-result__value--primary {
+      font-size: 1.25rem;
+      color: var(--xero-green);
+    }
+
+    /* ─── Card CTA ─── */
+    .xero-hero__card-cta {
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      line-height: 1.5;
+      margin-top: 20px;
+    }
+
+    .xero-hero__card-cta a {
+      color: var(--xero-blue);
+      font-weight: 700;
+      text-decoration: underline;
+    }
+
+    .xero-hero__card-cta a:hover { color: var(--xero-blue-dark); }
+
+    /* ─── Disclaimer ─── */
+    .xero-hero__disclaimer {
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      margin-top: 16px;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 0 5%;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+<div class="xero-hero">
+  <div class="xero-hero__inner">
+
+    <!-- LEFT: Copy -->
+    <div class="xero-hero__copy">
+      <h1 class="xero-hero__title">Xero's free sales<br>tax calculator</h1>
+      <p class="xero-hero__body">
+        Work out the right sales tax for any transaction with Xero's US sales tax calculator. Select your state and enter the sale amount to get accurate figures instantly – no downloads required.
+      </p>
+      <ul class="xero-hero__bullets">
+        <li>Calculate sales tax by state instantly</li>
+        <li>Add the right rate to any sale amount</li>
+        <li>Get the total price including tax</li>
+      </ul>
+      <div class="xero-hero__actions">
+        <a href="https://www.xero.com/us/signup/" class="xero-hero__btn" target="_blank" rel="noopener">Try Xero for free</a>
+        <a href="https://www.xero.com/us/pricing/" class="xero-hero__link" target="_blank" rel="noopener">Compare plans and pricing</a>
+      </div>
+    </div>
+
+    <!-- RIGHT: Calculator card -->
+    <div class="xero-hero__card" role="region" aria-label="Sales Tax Calculator">
+
+      <h2 class="xero-hero__card-title">Calculate sales tax</h2>
+
+      <label class="xero-field__label" for="address">Address</label>
+      <input
+        class="xero-address-input"
+        type="text"
+        id="address"
+        placeholder="123 Main St, Austin, TX 78701"
+        aria-label="Street address"
+        oninput="onAddressInput()"
+        autocomplete="street-address"
+      >
+      <div class="xero-state-detected" id="state-detected">
+        <span class="xero-state-detected__dot"></span>
+        <span id="state-detected-label">State detected</span>
+      </div>
+      <div class="xero-proto-notice">
+        <strong>Prototype:</strong> In production, this address will be passed to <strong>Avalara</strong> for an exact per-address rate. Currently showing estimated state average rates.
+      </div>
+
+      <label class="xero-field__label" for="amount">Sale amount (USD)</label>
+      <div class="xero-input-wrap">
+        <span class="xero-input-prefix">$</span>
+        <input
+          class="xero-input"
+          type="number"
+          id="amount"
+          min="0"
+          step="0.01"
+          placeholder="0.00"
+          aria-label="Amount in USD"
+          oninput="calculate()"
+        >
+      </div>
+
+      <div class="xero-result-band" aria-live="polite">
+        <div class="xero-result__row">
+          <span class="xero-result__label">Sale amount</span>
+          <span class="xero-result__value" id="result-sale">—</span>
+        </div>
+        <div class="xero-result__row">
+          <span class="xero-result__label" id="label-rate">Sales tax</span>
+          <span class="xero-result__value" id="result-tax">—</span>
+        </div>
+        <div class="xero-result__row">
+          <span class="xero-result__label">Total</span>
+          <span class="xero-result__value xero-result__value--primary" id="result-total">—</span>
+        </div>
+      </div>
+
+      <p class="xero-hero__card-cta">
+        Get a real time view of your sales tax with Xero. Start a 30 day <a href="https://www.xero.com/us/signup/" target="_blank" rel="noopener">free trial</a>.
+      </p>
+
+    </div>
+
+  </div>
+</div>
+
+<p class="xero-hero__disclaimer">*This calculator provides estimates only. Rates shown are combined state and average local rates and may not reflect your exact jurisdiction. Not financial or tax advice.</p>
+
+<script>
+  const RATES = {
+    AL:9.22, AK:1.76, AZ:8.37, AR:9.47, CA:8.68, CO:7.77, CT:6.35, DE:0,
+    FL:7.09, GA:7.38, HI:4.44, ID:6.03, IL:8.82, IN:7.00, IA:6.94, KS:8.70,
+    KY:6.00, LA:9.56, ME:5.50, MD:6.00, MA:6.25, MI:6.00, MN:7.49, MS:7.07,
+    MO:8.27, MT:0,   NE:6.94, NV:8.23, NH:0,    NJ:6.60, NM:7.83, NY:8.52,
+    NC:6.99, ND:6.87, OH:7.24, OK:8.95, OR:0,   PA:6.34, RI:7.00, SC:7.46,
+    SD:6.40, TN:9.55, TX:8.19, UT:7.19, VT:6.30, VA:5.75, WA:9.37, WV:6.55,
+    WI:5.43, WY:5.39, DC:6.00
+  };
+
+  // State name → code lookup for full-name matching
+  const STATE_NAMES = {
+    'ALABAMA':'AL','ALASKA':'AK','ARIZONA':'AZ','ARKANSAS':'AR','CALIFORNIA':'CA',
+    'COLORADO':'CO','CONNECTICUT':'CT','DELAWARE':'DE','FLORIDA':'FL','GEORGIA':'GA',
+    'HAWAII':'HI','IDAHO':'ID','ILLINOIS':'IL','INDIANA':'IN','IOWA':'IA',
+    'KANSAS':'KS','KENTUCKY':'KY','LOUISIANA':'LA','MAINE':'ME','MARYLAND':'MD',
+    'MASSACHUSETTS':'MA','MICHIGAN':'MI','MINNESOTA':'MN','MISSISSIPPI':'MS',
+    'MISSOURI':'MO','MONTANA':'MT','NEBRASKA':'NE','NEVADA':'NV',
+    'NEW HAMPSHIRE':'NH','NEW JERSEY':'NJ','NEW MEXICO':'NM','NEW YORK':'NY',
+    'NORTH CAROLINA':'NC','NORTH DAKOTA':'ND','OHIO':'OH','OKLAHOMA':'OK',
+    'OREGON':'OR','PENNSYLVANIA':'PA','RHODE ISLAND':'RI','SOUTH CAROLINA':'SC',
+    'SOUTH DAKOTA':'SD','TENNESSEE':'TN','TEXAS':'TX','UTAH':'UT','VERMONT':'VT',
+    'VIRGINIA':'VA','WASHINGTON':'WA','WEST VIRGINIA':'WV','WISCONSIN':'WI',
+    'WYOMING':'WY','DISTRICT OF COLUMBIA':'DC','WASHINGTON DC':'DC','WASHINGTON D.C.':'DC'
+  };
+
+  let detectedState = null;
+
+  function extractState(address) {
+    const upper = address.toUpperCase().trim();
+    if (!upper) return null;
+
+    // 1. Match ", XX" or ", XX NNNNN" (state abbr after comma — most reliable)
+    const abbrMatch = upper.match(/,\s*([A-Z]{2})(?:\s+\d{5}(?:-\d{4})?)?(?:\s*$|[^A-Z])/);
+    if (abbrMatch && RATES[abbrMatch[1]] !== undefined) return abbrMatch[1];
+
+    // 2. Match standalone 2-letter state code followed by ZIP
+    const zipMatch = upper.match(/\b([A-Z]{2})\s+\d{5}/);
+    if (zipMatch && RATES[zipMatch[1]] !== undefined) return zipMatch[1];
+
+    // 3. Match full state name (longest first to avoid "NEW" matching before "NEW YORK")
+    const names = Object.keys(STATE_NAMES).sort((a,b) => b.length - a.length);
+    for (const name of names) {
+      if (upper.includes(name)) return STATE_NAMES[name];
+    }
+
+    return null;
+  }
+
+  function fmt(n) {
+    return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function reset() {
+    document.getElementById('result-sale').textContent  = '—';
+    document.getElementById('result-tax').textContent   = '—';
+    document.getElementById('result-total').textContent = '—';
+    document.getElementById('label-rate').textContent   = 'Sales tax';
+  }
+
+  function onAddressInput() {
+    const address = document.getElementById('address').value;
+    detectedState = extractState(address);
+
+    const pill  = document.getElementById('state-detected');
+    const label = document.getElementById('state-detected-label');
+
+    if (detectedState) {
+      const rate = RATES[detectedState];
+      label.textContent = `${detectedState} detected — ${rate === 0 ? 'no state tax' : rate + '% avg combined rate'}`;
+      pill.classList.add('visible');
+    } else {
+      pill.classList.remove('visible');
+    }
+
+    calculate();
+  }
+
+  function calculate() {
+    const raw = parseFloat(document.getElementById('amount').value);
+
+    if (isNaN(raw) || raw <= 0 || !detectedState) { reset(); return; }
+
+    const rate   = RATES[detectedState];
+    const taxAmt = raw * rate / 100;
+    const total  = raw + taxAmt;
+
+    document.getElementById('result-sale').textContent  = fmt(raw);
+    document.getElementById('result-tax').textContent   = fmt(taxAmt);
+    document.getElementById('result-total').textContent = fmt(total);
+    document.getElementById('label-rate').textContent   = rate === 0
+      ? 'Sales tax (no state tax)'
+      : `Sales tax (${rate}%)`;
+  }
+</script>
+
+</body>
+</html>

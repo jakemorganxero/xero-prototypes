@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xero UK Income Tax Calculator — Hero (Pattern B)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!--
+    XERO PROTOTYPE
+    Tool: Income Tax Calculator (UK)
+    Locale: UK
+    Pattern: B — Hero, full-width
+    Built: 2026-04-16
+    Inputs: Annual income (GBP), employment type (employee/self-employed), allowable expenses (self-employed only)
+    Output: Income tax, National Insurance (Class 1 or Class 4), monthly and annual take-home
+    Rates: 2025–26 HMRC rates
+    Notes for devs:
+      - Personal allowance tapers above £100,000 (£1 reduction per £2 over £100k — zero at £125,140)
+      - Class 2 NI abolished April 2024; self-employed pay Class 4 only
+      - Employee NI: 8% on £12,570–£50,270, 2% above (rate from April 2024)
+      - Self-employed NI (Class 4): 6% on £12,570–£50,270, 2% above (from April 2024)
+      - Scotland and Wales have different income tax rates — this uses England/NI rates only
+      - Live calculation — no submit button; recalculates on any input change
+      - Full-width band; inner content max-width 1200px, grid 1fr 480px, gap 64px
+      - Mobile stacks at 900px breakpoint
+      - Expenses row shown/hidden based on employment type radio
+      - GT Walsheim → Plus Jakarta Sans substitution (flag for prod)
+  -->
+
+  <style>
+    /* ─── Xero Brand Tokens ─── */
+    :root {
+      --xero-navy:       #1B3A4B;
+      --xero-blue:       #13B5EA;
+      --xero-blue-dark:  #0D8FBD;
+      --xero-panel-bg:   #EBF0F4;
+      --xero-border:     #C2CDD6;
+      --xero-bg:         #FFFFFF;
+      --xero-text:       #1B3A4B;
+      --xero-text-muted: #4A6070;
+      --xero-input-bg:   #FFFFFF;
+      --xero-green:      #1AB394;
+      --xero-red:        #E05A5A;
+      --radius:          4px;
+      --font:            'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      color: var(--xero-text);
+      background: var(--xero-bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── Hero band — full viewport width ─── */
+    .xero-hero {
+      background: var(--xero-bg);
+      padding: 72px 5%;
+      width: 100%;
+    }
+
+    .xero-hero__inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 480px;
+      gap: 64px;
+      align-items: center;
+    }
+
+    /* ─── Left column ─── */
+    .xero-hero__copy {
+      /* natural flow */
+    }
+
+    .xero-hero__title {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800;
+      color: var(--xero-navy);
+      line-height: 1.15;
+      margin-bottom: 20px;
+    }
+
+    .xero-hero__body {
+      font-size: 1rem;
+      line-height: 1.65;
+      color: var(--xero-text-muted);
+      max-width: 480px;
+      margin-bottom: 28px;
+    }
+
+    .xero-hero__bullets {
+      list-style: none;
+      margin-bottom: 36px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .xero-hero__bullets li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--xero-navy);
+      line-height: 1.5;
+    }
+
+    .xero-hero__bullets li::before {
+      content: '✓';
+      color: var(--xero-navy);
+      font-weight: 700;
+      font-size: 1rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .xero-hero__ctas {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      display: inline-block;
+      background: var(--xero-navy);
+      color: #fff;
+      border-radius: 6px;
+      padding: 12px 24px;
+      font-weight: 700;
+      font-size: 0.9375rem;
+      font-family: var(--font);
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .btn-primary:hover { background: #122d3b; }
+
+    .btn-secondary {
+      display: inline-block;
+      color: var(--xero-navy);
+      font-weight: 700;
+      font-size: 0.9375rem;
+      font-family: var(--font);
+      text-decoration: underline;
+      text-decoration-color: var(--xero-blue);
+      text-underline-offset: 3px;
+      transition: text-decoration-color 0.15s;
+      white-space: nowrap;
+    }
+    .btn-secondary:hover { text-decoration-color: var(--xero-blue-dark); }
+
+    /* ─── Calculator card ─── */
+    .xero-hero__card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+      padding: 32px;
+    }
+
+    .xero-card__title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 24px;
+    }
+
+    /* ─── Field group ─── */
+    .xero-field {
+      margin-bottom: 20px;
+    }
+
+    .xero-field:last-of-type {
+      margin-bottom: 0;
+    }
+
+    .xero-label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 8px;
+      letter-spacing: 0.01em;
+    }
+
+    /* ─── Currency input ─── */
+    .xero-input-wrap {
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      background: var(--xero-input-bg);
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+    .xero-input-wrap:focus-within { border-color: var(--xero-blue); }
+
+    .xero-input-prefix {
+      padding: 10px 10px 10px 14px;
+      color: var(--xero-text-muted);
+      font-weight: 500;
+      font-size: 0.9375rem;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .xero-input {
+      border: none;
+      outline: none;
+      padding: 10px 14px 10px 4px;
+      font-family: var(--font);
+      font-size: 0.9375rem;
+      color: var(--xero-text);
+      width: 100%;
+      background: transparent;
+    }
+    .xero-input::placeholder { color: #9BAEBB; }
+
+    /* Remove number input spinners */
+    .xero-input::-webkit-outer-spin-button,
+    .xero-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .xero-input[type=number] { -moz-appearance: textfield; }
+
+    /* ─── Helper text ─── */
+    .xero-helper {
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+
+    /* ─── Radio group ─── */
+    .xero-radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .xero-radio {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .xero-radio:has(input:checked) { border-color: var(--xero-navy); }
+
+    .xero-radio input {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .xero-radio__box {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--xero-border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: border-color 0.15s;
+    }
+    .xero-radio:has(input:checked) .xero-radio__box { border-color: var(--xero-navy); }
+
+    .xero-radio__dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--xero-navy);
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .xero-radio:has(input:checked) .xero-radio__dot { opacity: 1; }
+
+    .xero-radio__label {
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--xero-navy);
+    }
+
+    /* ─── Expenses row — shown/hidden ─── */
+    #expenses-row {
+      display: none;
+      margin-top: 20px;
+    }
+    #expenses-row.visible {
+      display: block;
+    }
+
+    /* ─── Result band ─── */
+    .xero-result-band {
+      background: var(--xero-panel-bg);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-top: 24px;
+    }
+
+    .xero-result-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--xero-border);
+      gap: 12px;
+    }
+    .xero-result-row:first-child { padding-top: 0; }
+    .xero-result-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .xero-result-label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--xero-text-muted);
+      flex-shrink: 0;
+    }
+
+    .xero-result-value {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--xero-navy);
+      text-align: right;
+    }
+
+    .xero-result-value--primary {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--xero-green);
+    }
+
+    /* ─── Card CTA ─── */
+    .xero-card-cta {
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      line-height: 1.55;
+      margin-top: 20px;
+    }
+
+    .xero-card-cta a {
+      color: var(--xero-navy);
+      font-weight: 600;
+      text-decoration: underline;
+      text-decoration-color: var(--xero-blue);
+      text-underline-offset: 2px;
+    }
+    .xero-card-cta a:hover { text-decoration-color: var(--xero-blue-dark); }
+
+    /* ─── Disclaimer ─── */
+    .xero-disclaimer {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 5% 40px;
+    }
+
+    .xero-disclaimer p {
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      line-height: 1.5;
+    }
+
+    /* ─── Responsive — stack at 900px ─── */
+    @media (max-width: 900px) {
+      .xero-hero__inner {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+
+      .xero-hero {
+        padding: 56px 5% 48px;
+      }
+
+      .xero-hero__body {
+        max-width: none;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .xero-hero__ctas {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      }
+
+      .xero-hero__card {
+        padding: 24px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Hero band ── -->
+  <section class="xero-hero" aria-label="Income tax calculator">
+    <div class="xero-hero__inner">
+
+      <!-- Left column: copy -->
+      <div class="xero-hero__copy">
+        <h1 class="xero-hero__title">Xero's free income tax calculator</h1>
+        <p class="xero-hero__body">
+          Estimate your take-home pay in seconds with Xero's UK income tax calculator.
+          Get a clear picture of your income tax and National Insurance – no downloads required.
+        </p>
+        <ul class="xero-hero__bullets">
+          <li>Estimate your income tax instantly</li>
+          <li>See your National Insurance contribution</li>
+          <li>Calculate your monthly and annual take-home pay</li>
+        </ul>
+        <div class="xero-hero__ctas">
+          <a href="https://www.xero.com/uk/signup/" class="btn-primary">Try Xero for free</a>
+          <a href="https://www.xero.com/uk/pricing/" class="btn-secondary">Compare plans and pricing</a>
+        </div>
+      </div>
+
+      <!-- Right column: calculator card -->
+      <div class="xero-hero__card" role="region" aria-label="Income tax calculator">
+        <h2 class="xero-card__title">Calculate your take-home pay</h2>
+
+        <!-- Input: Annual income -->
+        <div class="xero-field">
+          <label class="xero-label" for="income">Annual income (GBP)</label>
+          <div class="xero-input-wrap">
+            <span class="xero-input-prefix" aria-hidden="true">£</span>
+            <input
+              type="number"
+              id="income"
+              class="xero-input"
+              min="0"
+              step="1"
+              placeholder="0"
+              oninput="calculate()"
+              aria-label="Annual income in GBP"
+            >
+          </div>
+        </div>
+
+        <!-- Input: Employment type -->
+        <div class="xero-field">
+          <span class="xero-label" id="emp-type-label">Employment type</span>
+          <div class="xero-radio-group" role="radiogroup" aria-labelledby="emp-type-label">
+            <label class="xero-radio">
+              <input
+                type="radio"
+                name="emp-type"
+                value="employee"
+                checked
+                onchange="onTypeChange()"
+                aria-label="Employee"
+              >
+              <span class="xero-radio__box" aria-hidden="true">
+                <span class="xero-radio__dot"></span>
+              </span>
+              <span class="xero-radio__label">Employee</span>
+            </label>
+            <label class="xero-radio">
+              <input
+                type="radio"
+                name="emp-type"
+                value="self-employed"
+                onchange="onTypeChange()"
+                aria-label="Self-employed"
+              >
+              <span class="xero-radio__box" aria-hidden="true">
+                <span class="xero-radio__dot"></span>
+              </span>
+              <span class="xero-radio__label">Self-employed</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Input: Allowable expenses (self-employed only) -->
+        <div id="expenses-row">
+          <label class="xero-label" for="expenses">Allowable expenses (GBP)</label>
+          <div class="xero-input-wrap">
+            <span class="xero-input-prefix" aria-hidden="true">£</span>
+            <input
+              type="number"
+              id="expenses"
+              class="xero-input"
+              min="0"
+              step="1"
+              placeholder="0"
+              oninput="calculate()"
+              aria-label="Allowable business expenses in GBP"
+            >
+          </div>
+          <p class="xero-helper">Deducted from income before tax.</p>
+        </div>
+
+        <!-- Result band -->
+        <div class="xero-result-band" aria-live="polite" aria-label="Calculation results">
+          <div class="xero-result-row">
+            <span class="xero-result-label">Income tax</span>
+            <span class="xero-result-value" id="result-tax">—</span>
+          </div>
+          <div class="xero-result-row">
+            <span class="xero-result-label" id="label-ni">National Insurance (Class 1)</span>
+            <span class="xero-result-value" id="result-ni">—</span>
+          </div>
+          <div class="xero-result-row">
+            <span class="xero-result-label">Monthly take-home</span>
+            <span class="xero-result-value" id="result-monthly">—</span>
+          </div>
+          <div class="xero-result-row">
+            <span class="xero-result-label">Annual take-home</span>
+            <span class="xero-result-value xero-result-value--primary" id="result-annual">—</span>
+          </div>
+        </div>
+
+        <!-- Card CTA -->
+        <p class="xero-card-cta">
+          Get a real time view of your income with Xero.
+          Start a 30 day <a href="https://www.xero.com/uk/signup/">free trial</a>.
+        </p>
+      </div>
+      <!-- /card -->
+
+    </div>
+    <!-- /inner -->
+  </section>
+
+  <!-- Disclaimer -->
+  <div class="xero-disclaimer">
+    <p>*Estimates only. Based on 2025–26 HMRC rates for England and Northern Ireland. Scotland and Wales have different rates. Not financial or tax advice.</p>
+  </div>
+
+  <script>
+    /* ─────────────────────────────────────────────
+       UK Income Tax Calculator — 2025–26 HMRC rates
+       England & Northern Ireland only
+    ───────────────────────────────────────────── */
+
+    /**
+     * Personal allowance: £12,570, tapering above £100,000.
+     * Reduced by £1 for every £2 over £100k; reaches zero at £125,140.
+     */
+    function getPersonalAllowance(income) {
+      if (income <= 100000) return 12570;
+      const reduction = Math.min(12570, Math.floor((income - 100000) / 2));
+      return 12570 - reduction;
+    }
+
+    /**
+     * Income tax bands (2025–26, England/NI):
+     *   Basic rate  20% — first £37,700 of taxable income
+     *   Higher rate 40% — £37,701–£125,140 of taxable income
+     *   Additional  45% — above £125,140 of taxable income
+     *
+     * For self-employed, taxable income = income − expenses (before personal allowance).
+     */
+    function calcIncomeTax(income, expenses) {
+      const taxableGross = Math.max(0, income - expenses);
+      const pa = getPersonalAllowance(taxableGross);
+      const taxableIncome = Math.max(0, taxableGross - pa);
+
+      let tax = 0;
+
+      // Basic rate: 20% on first £37,700
+      const basic = Math.min(taxableIncome, 37700);
+      tax += basic * 0.20;
+
+      // Higher rate: 40% on £37,701–£125,140
+      if (taxableIncome > 37700) {
+        const higher = Math.min(taxableIncome - 37700, 125140 - 37700);
+        tax += higher * 0.40;
+      }
+
+      // Additional rate: 45% above £125,140
+      if (taxableIncome > 125140) {
+        tax += (taxableIncome - 125140) * 0.45;
+      }
+
+      return tax;
+    }
+
+    /**
+     * National Insurance:
+     *   Employee (Class 1): 8% on £12,570–£50,270; 2% above £50,270
+     *   Self-employed (Class 4): 6% on profits £12,570–£50,270; 2% above
+     *   Class 2 NI was abolished April 2024.
+     */
+    function calcNI(income, expenses, type) {
+      if (type === 'employee') {
+        let ni = 0;
+        if (income > 12570) ni += Math.min(income - 12570, 50270 - 12570) * 0.08;
+        if (income > 50270) ni += (income - 50270) * 0.02;
+        return ni;
+      } else {
+        // Class 4 — based on profits (income − expenses)
+        const profit = Math.max(0, income - expenses);
+        let ni = 0;
+        if (profit > 12570) ni += Math.min(profit - 12570, 50270 - 12570) * 0.06;
+        if (profit > 50270) ni += (profit - 50270) * 0.02;
+        return ni;
+      }
+    }
+
+    /** Format a number as £GBP with 2 decimal places */
+    function fmt(n) {
+      return '£' + Math.max(0, n).toLocaleString('en-GB', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    /** Reset result display to dashes */
+    function resetResults() {
+      document.getElementById('result-tax').textContent     = '—';
+      document.getElementById('result-ni').textContent      = '—';
+      document.getElementById('result-monthly').textContent = '—';
+      document.getElementById('result-annual').textContent  = '—';
+    }
+
+    /** Main calculation — fires on any input change */
+    function calculate() {
+      const income   = parseFloat(document.getElementById('income').value) || 0;
+      const type     = document.querySelector('input[name="emp-type"]:checked').value;
+      const expenses = type === 'self-employed'
+        ? (parseFloat(document.getElementById('expenses').value) || 0)
+        : 0;
+
+      if (income <= 0) {
+        resetResults();
+        return;
+      }
+
+      const tax      = calcIncomeTax(income, expenses);
+      const ni       = calcNI(income, expenses, type);
+      const takeHome = income - tax - ni;
+      const monthly  = takeHome / 12;
+
+      document.getElementById('result-tax').textContent     = fmt(tax);
+      document.getElementById('result-ni').textContent      = fmt(ni);
+      document.getElementById('result-monthly').textContent = fmt(monthly);
+      document.getElementById('result-annual').textContent  = fmt(takeHome);
+
+      document.getElementById('label-ni').textContent = type === 'employee'
+        ? 'National Insurance (Class 1)'
+        : 'National Insurance (Class 4)';
+    }
+
+    /** Show/hide expenses row and recalculate when employment type changes */
+    function onTypeChange() {
+      const type       = document.querySelector('input[name="emp-type"]:checked').value;
+      const expRow     = document.getElementById('expenses-row');
+      const expInput   = document.getElementById('expenses');
+
+      if (type === 'self-employed') {
+        expRow.classList.add('visible');
+      } else {
+        expRow.classList.remove('visible');
+        expInput.value = '';  // clear expenses when switching back to employee
+      }
+
+      calculate();
+    }
+  </script>
+
+</body>
+</html>

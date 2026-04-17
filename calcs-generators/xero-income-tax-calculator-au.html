@@ -1,0 +1,957 @@
+<!--
+  XERO PROTOTYPE
+  Tool: Income Tax Calculator (AU)
+  Locale: AU
+  Pattern: A — Standard body section
+  Built: 2026-04-16
+  Inputs: Annual income, income type (base salary / total package inc. super), employment type (employee / sole trader), HECS/HELP debt (yes/no), private hospital cover (yes/no)
+  Output/formula: Income tax (Stage 3 brackets from 1 July 2024), LITO reduction, Medicare levy (2%), Medicare Levy Surcharge (conditional, 1–1.5%), HECS/HELP repayment (conditional), superannuation (11.5% SGC), net take-home weekly / fortnightly / monthly / annually
+  Rates: 2024–25 ATO rates — verify annually
+  Notes for devs:
+    - Stage 3 tax cuts apply from 1 July 2024
+    - Super rate is 11.5% (SGC) from 1 July 2024; rises to 12% from 1 July 2025 — update super_rate constant
+    - Medicare levy phase-in (below ~$26k) is simplified here — see ATO for exact low-income thresholds
+    - MLS thresholds are approximate (FY2024–25) — verify against ATO each year
+    - HECS repayment rates sourced from ATO Study and Training Loan repayment thresholds 2024–25
+    - Sole trader note: provisional tax note shown; no employer super obligation shown
+    - GT Walsheim is Xero's licensed production font; Plus Jakarta Sans used here as a stand-in — swap for prod
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --xero-navy:      #1B3A4B;
+    --xero-blue:      #13B5EA;
+    --xero-blue-dark: #0D8FBD;
+    --xero-panel-bg:  #EBF0F4;
+    --xero-border:    #C2CDD6;
+    --xero-bg:        #FFFFFF;
+    --xero-text:      #1B3A4B;
+    --xero-text-muted:#4A6070;
+    --xero-green:     #1AB394;
+    --xero-red:       #E05A5A;
+    --radius:         4px;
+    --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  .xtax-wrap {
+    font-family: var(--font);
+    color: var(--xero-text);
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 5%;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Page heading ───────────────────────────────────── */
+  .xtax-heading { margin-bottom: 32px; }
+  .xtax-heading h1 {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--xero-navy);
+    margin-bottom: 6px;
+    line-height: 1.2;
+  }
+  .xtax-heading .xtax-subtitle {
+    font-size: 0.875rem;
+    color: var(--xero-text-muted);
+    font-weight: 400;
+  }
+
+  /* ── Two-column layout ──────────────────────────────── */
+  .xtax-layout {
+    display: grid;
+    grid-template-columns: 60% 40%;
+    gap: 32px;
+    align-items: start;
+  }
+
+  /* ── Form column ────────────────────────────────────── */
+  .xtax-form-col {}
+
+  .xtax-section {
+    margin-bottom: 28px;
+  }
+  .xtax-section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--xero-text-muted);
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--xero-border);
+  }
+
+  /* Input group */
+  .xtax-field { margin-bottom: 18px; }
+  .xtax-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--xero-navy);
+    margin-bottom: 6px;
+  }
+  .xtax-input-wrap {
+    display: flex;
+    align-items: center;
+    border: 1.5px solid var(--xero-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--xero-bg);
+    transition: border-color 0.15s;
+  }
+  .xtax-input-wrap:focus-within { border-color: var(--xero-blue); }
+  .xtax-prefix {
+    padding: 0 12px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--xero-text-muted);
+    background: var(--xero-panel-bg);
+    border-right: 1.5px solid var(--xero-border);
+    height: 44px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .xtax-input-wrap input[type="number"] {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 0 14px;
+    font-size: 0.9375rem;
+    font-family: var(--font);
+    font-weight: 500;
+    color: var(--xero-text);
+    background: transparent;
+    height: 44px;
+    -moz-appearance: textfield;
+  }
+  .xtax-input-wrap input[type="number"]::-webkit-outer-spin-button,
+  .xtax-input-wrap input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  /* Radio rows */
+  .xtax-radio-group { display: flex; flex-direction: column; gap: 8px; }
+  .xtax-radio-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    border: 1.5px solid var(--xero-border);
+    border-radius: var(--radius);
+    padding: 11px 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    background: var(--xero-bg);
+    user-select: none;
+  }
+  .xtax-radio-row:hover { border-color: var(--xero-blue); }
+  .xtax-radio-row.is-checked {
+    border-color: var(--xero-blue);
+    background: #F0FAFF;
+  }
+  .xtax-radio-row input[type="radio"] {
+    margin-top: 2px;
+    flex-shrink: 0;
+    accent-color: var(--xero-blue);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+  .xtax-radio-text { flex: 1; }
+  .xtax-radio-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--xero-navy);
+    display: block;
+    line-height: 1.3;
+  }
+  .xtax-radio-hint {
+    font-size: 0.8125rem;
+    color: var(--xero-text-muted);
+    margin-top: 2px;
+    font-weight: 400;
+    display: block;
+  }
+
+  /* Yes/No inline radios */
+  .xtax-radio-inline { display: flex; gap: 8px; }
+  .xtax-radio-inline .xtax-radio-row {
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+  }
+  .xtax-radio-inline .xtax-radio-row .xtax-radio-label { margin: 0; }
+
+  /* CTA area */
+  .xtax-cta {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-top: 8px;
+  }
+  .xtax-btn-calculate {
+    background: var(--xero-navy);
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 12px 28px;
+    font-weight: 700;
+    font-size: 0.9375rem;
+    cursor: pointer;
+    border: none;
+    font-family: var(--font);
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .xtax-btn-calculate:hover { background: #132e3c; }
+  .xtax-btn-reset {
+    background: none;
+    border: none;
+    color: var(--xero-navy);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: underline;
+    cursor: pointer;
+    font-family: var(--font);
+    padding: 0;
+  }
+  .xtax-btn-reset:hover { color: var(--xero-blue-dark); }
+
+  /* ── Results panel ──────────────────────────────────── */
+  .xtax-results-col {
+    position: sticky;
+    top: 24px;
+  }
+  .xtax-panel {
+    background: var(--xero-panel-bg);
+    border-radius: var(--radius);
+    padding: 28px;
+    border: 1px solid var(--xero-border);
+  }
+
+  .xtax-placeholder {
+    color: var(--xero-text-muted);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    text-align: center;
+    padding: 24px 0;
+  }
+  .xtax-placeholder svg {
+    display: block;
+    margin: 0 auto 16px;
+    opacity: 0.35;
+  }
+
+  .xtax-results { display: none; }
+  .xtax-results.is-visible { display: block; }
+
+  /* Primary take-home */
+  .xtax-primary {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--xero-border);
+    text-align: center;
+  }
+  .xtax-primary-label {
+    font-size: 0.875rem;
+    color: var(--xero-text-muted);
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  .xtax-primary-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--xero-green);
+    line-height: 1.15;
+  }
+  .xtax-primary-sub {
+    font-size: 0.8125rem;
+    color: var(--xero-text-muted);
+    margin-top: 3px;
+  }
+
+  /* Frequency table */
+  .xtax-freq-section { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--xero-border); }
+  .xtax-freq-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--xero-text-muted);
+    margin-bottom: 10px;
+  }
+  .xtax-freq-table { width: 100%; border-collapse: collapse; }
+  .xtax-freq-table th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--xero-text-muted);
+    text-align: right;
+    padding: 4px 0;
+  }
+  .xtax-freq-table th:first-child { text-align: left; }
+  .xtax-freq-table td {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--xero-navy);
+    text-align: right;
+    padding: 8px 0;
+    border-top: 1px solid var(--xero-border);
+  }
+  .xtax-freq-table td:first-child { text-align: left; font-weight: 400; color: var(--xero-text-muted); }
+  .xtax-freq-table tr:first-child td { border-top: 1px solid var(--xero-border); }
+  .xtax-freq-table .col-takehome { color: var(--xero-green); font-weight: 700; }
+
+  /* Tax breakdown */
+  .xtax-breakdown-section { margin-bottom: 20px; }
+  .xtax-breakdown-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--xero-text-muted);
+    margin-bottom: 10px;
+  }
+  .xtax-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 8px 0;
+    border-top: 1px solid var(--xero-border);
+    gap: 8px;
+  }
+  .xtax-line:first-of-type { border-top: 1px solid var(--xero-border); }
+  .xtax-line-label {
+    font-size: 0.875rem;
+    color: var(--xero-text-muted);
+    flex: 1;
+    line-height: 1.35;
+  }
+  .xtax-line-label .xtax-line-note {
+    display: block;
+    font-size: 0.75rem;
+    margin-top: 1px;
+    color: var(--xero-text-muted);
+    opacity: 0.8;
+  }
+  .xtax-line-value {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--xero-navy);
+    white-space: nowrap;
+  }
+  .xtax-line-value.is-reduction { color: var(--xero-green); }
+  .xtax-line.is-total {
+    border-top: 2px solid var(--xero-navy);
+    margin-top: 4px;
+    padding-top: 10px;
+  }
+  .xtax-line.is-total .xtax-line-label {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--xero-navy);
+  }
+  .xtax-line.is-total .xtax-line-value {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--xero-navy);
+  }
+
+  /* Sole trader notice */
+  .xtax-sole-trader-notice {
+    background: #FFF8EC;
+    border: 1px solid #F5C97A;
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-size: 0.8125rem;
+    color: #7A5500;
+    margin-bottom: 16px;
+    line-height: 1.45;
+    display: none;
+  }
+  .xtax-sole-trader-notice.is-visible { display: block; }
+
+  /* CTA */
+  .xtax-panel-cta {
+    border-top: 1px solid var(--xero-border);
+    padding-top: 16px;
+    font-size: 0.8125rem;
+    color: var(--xero-text-muted);
+    line-height: 1.55;
+  }
+  .xtax-panel-cta a {
+    color: var(--xero-blue-dark);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .xtax-panel-cta a:hover { text-decoration: underline; }
+
+  /* Disclaimer */
+  .xtax-disclaimer {
+    margin-top: 28px;
+    font-size: 0.8rem;
+    color: var(--xero-text-muted);
+    line-height: 1.55;
+  }
+
+  /* ── Responsive ─────────────────────────────────────── */
+  @media (max-width: 768px) {
+    .xtax-layout {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    .xtax-results-col {
+      position: static;
+    }
+    .xtax-heading h1 { font-size: 1.4rem; }
+    .xtax-primary-value { font-size: 1.65rem; }
+  }
+</style>
+
+<div class="xtax-wrap">
+
+  <!-- Page heading -->
+  <div class="xtax-heading">
+    <h1>Australian income tax calculator</h1>
+    <span class="xtax-subtitle">2024–25 financial year</span>
+  </div>
+
+  <div class="xtax-layout">
+
+    <!-- ══ FORM COLUMN ══════════════════════════════════ -->
+    <div class="xtax-form-col">
+      <form id="xtaxForm" novalidate>
+
+        <!-- Section 1: Your income -->
+        <div class="xtax-section">
+          <div class="xtax-section-title">Your income</div>
+
+          <div class="xtax-field">
+            <label class="xtax-label" for="income">Annual income</label>
+            <div class="xtax-input-wrap">
+              <span class="xtax-prefix">$</span>
+              <input type="number" id="income" name="income" placeholder="0" min="0" step="1" autocomplete="off">
+            </div>
+          </div>
+
+          <div class="xtax-field">
+            <label class="xtax-label">Income type</label>
+            <div class="xtax-radio-group" id="incomeTypeGroup">
+              <label class="xtax-radio-row is-checked">
+                <input type="radio" name="incomeType" value="base" checked>
+                <span class="xtax-radio-text">
+                  <span class="xtax-radio-label">Base salary</span>
+                  <span class="xtax-radio-hint">Your employer pays super on top of this amount</span>
+                </span>
+              </label>
+              <label class="xtax-radio-row">
+                <input type="radio" name="incomeType" value="package">
+                <span class="xtax-radio-text">
+                  <span class="xtax-radio-label">Total package (inc. super)</span>
+                  <span class="xtax-radio-hint">Super is included in your total package figure</span>
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Employment -->
+        <div class="xtax-section">
+          <div class="xtax-section-title">Employment</div>
+
+          <div class="xtax-field">
+            <label class="xtax-label">Employment type</label>
+            <div class="xtax-radio-group" id="employmentTypeGroup">
+              <label class="xtax-radio-row is-checked">
+                <input type="radio" name="employmentType" value="employee" checked>
+                <span class="xtax-radio-text">
+                  <span class="xtax-radio-label">Employee (PAYE)</span>
+                  <span class="xtax-radio-hint">Tax is withheld by your employer each pay period</span>
+                </span>
+              </label>
+              <label class="xtax-radio-row">
+                <input type="radio" name="employmentType" value="sole-trader">
+                <span class="xtax-radio-text">
+                  <span class="xtax-radio-label">Sole trader / self-employed</span>
+                  <span class="xtax-radio-hint">You manage your own tax obligations</span>
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Deductions & levies -->
+        <div class="xtax-section">
+          <div class="xtax-section-title">Deductions &amp; levies</div>
+
+          <div class="xtax-field">
+            <label class="xtax-label">Do you have a HELP/HECS debt?</label>
+            <div class="xtax-radio-inline" id="hecsGroup">
+              <label class="xtax-radio-row">
+                <input type="radio" name="hecs" value="yes">
+                <span class="xtax-radio-text"><span class="xtax-radio-label">Yes</span></span>
+              </label>
+              <label class="xtax-radio-row is-checked">
+                <input type="radio" name="hecs" value="no" checked>
+                <span class="xtax-radio-text"><span class="xtax-radio-label">No</span></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="xtax-field">
+            <label class="xtax-label">Do you have private hospital cover?</label>
+            <div class="xtax-radio-inline" id="privateCoverGroup">
+              <label class="xtax-radio-row">
+                <input type="radio" name="privateCover" value="yes">
+                <span class="xtax-radio-text"><span class="xtax-radio-label">Yes</span></span>
+              </label>
+              <label class="xtax-radio-row is-checked">
+                <input type="radio" name="privateCover" value="no" checked>
+                <span class="xtax-radio-text"><span class="xtax-radio-label">No</span></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="xtax-cta">
+          <button type="submit" class="xtax-btn-calculate">Calculate your income tax</button>
+          <button type="button" class="xtax-btn-reset" id="xtaxReset">Reset</button>
+        </div>
+
+      </form>
+    </div>
+    <!-- end form col -->
+
+    <!-- ══ RESULTS COLUMN ══════════════════════════════ -->
+    <div class="xtax-results-col">
+      <div class="xtax-panel">
+
+        <!-- Placeholder state -->
+        <div class="xtax-placeholder" id="xtaxPlaceholder">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="4" y="8" width="32" height="24" rx="2" stroke="#1B3A4B" stroke-width="2"/>
+            <line x1="4" y1="15" x2="36" y2="15" stroke="#1B3A4B" stroke-width="2"/>
+            <line x1="12" y1="22" x2="28" y2="22" stroke="#1B3A4B" stroke-width="1.5"/>
+            <line x1="12" y1="27" x2="22" y2="27" stroke="#1B3A4B" stroke-width="1.5"/>
+          </svg>
+          Enter your income and click Calculate to see your estimated tax breakdown.
+        </div>
+
+        <!-- Results state -->
+        <div class="xtax-results" id="xtaxResults">
+
+          <!-- Sole trader notice -->
+          <div class="xtax-sole-trader-notice" id="soleTraderNotice">
+            <strong>Note for sole traders:</strong> Provisional tax (PAYG instalments) applies — your tax is paid in quarterly instalments rather than withheld. Consider speaking with an accountant about your obligations.
+          </div>
+
+          <!-- Primary take-home -->
+          <div class="xtax-primary">
+            <div class="xtax-primary-label">Estimated take-home pay</div>
+            <div class="xtax-primary-value" id="rPrimaryValue">$0</div>
+            <div class="xtax-primary-sub">per year after tax</div>
+          </div>
+
+          <!-- Frequency breakdown -->
+          <div class="xtax-freq-section">
+            <div class="xtax-freq-title">Pay period breakdown</div>
+            <table class="xtax-freq-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Gross</th>
+                  <th>Take-home</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Weekly</td>
+                  <td id="rGrossWeekly">—</td>
+                  <td class="col-takehome" id="rTakeWeekly">—</td>
+                </tr>
+                <tr>
+                  <td>Fortnightly</td>
+                  <td id="rGrossFortnightly">—</td>
+                  <td class="col-takehome" id="rTakeFortnightly">—</td>
+                </tr>
+                <tr>
+                  <td>Monthly</td>
+                  <td id="rGrossMonthly">—</td>
+                  <td class="col-takehome" id="rTakeMonthly">—</td>
+                </tr>
+                <tr>
+                  <td>Annually</td>
+                  <td id="rGrossAnnual">—</td>
+                  <td class="col-takehome" id="rTakeAnnual">—</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Breakdown lines -->
+          <div class="xtax-breakdown-section">
+            <div class="xtax-breakdown-title">How it's calculated</div>
+
+            <div class="xtax-line">
+              <span class="xtax-line-label">Gross income</span>
+              <span class="xtax-line-value" id="rGrossIncome">—</span>
+            </div>
+
+            <div class="xtax-line">
+              <span class="xtax-line-label">Income tax</span>
+              <span class="xtax-line-value" id="rIncomeTax">—</span>
+            </div>
+
+            <div class="xtax-line" id="litoRow">
+              <span class="xtax-line-label">
+                Low Income Tax Offset (LITO)
+                <span class="xtax-line-note">Reduces your tax payable</span>
+              </span>
+              <span class="xtax-line-value is-reduction" id="rLito">—</span>
+            </div>
+
+            <div class="xtax-line">
+              <span class="xtax-line-label">Medicare levy (2%)</span>
+              <span class="xtax-line-value" id="rMedicare">—</span>
+            </div>
+
+            <div class="xtax-line" id="mlsRow" style="display:none;">
+              <span class="xtax-line-label">
+                Medicare Levy Surcharge
+                <span class="xtax-line-note">Applies — no private hospital cover</span>
+              </span>
+              <span class="xtax-line-value" id="rMls">—</span>
+            </div>
+
+            <div class="xtax-line" id="hecsRow" style="display:none;">
+              <span class="xtax-line-label">
+                HELP/HECS repayment
+                <span class="xtax-line-note">Compulsory loan repayment</span>
+              </span>
+              <span class="xtax-line-value" id="rHecs">—</span>
+            </div>
+
+            <div class="xtax-line" id="superRow">
+              <span class="xtax-line-label">
+                Superannuation (11.5%)
+                <span class="xtax-line-note" id="superNote">Paid by employer on top of your salary</span>
+              </span>
+              <span class="xtax-line-value" id="rSuper">—</span>
+            </div>
+
+            <div class="xtax-line is-total">
+              <span class="xtax-line-label">Net take-home (annual)</span>
+              <span class="xtax-line-value" id="rNetAnnual">—</span>
+            </div>
+
+          </div>
+          <!-- end breakdown -->
+
+          <!-- Panel CTA -->
+          <div class="xtax-panel-cta">
+            Get a real time view of your finances with Xero. Start a 30 day <a href="https://www.xero.com/au/signup/" target="_blank" rel="noopener">free trial</a>.
+          </div>
+
+        </div>
+        <!-- end results -->
+
+      </div>
+    </div>
+    <!-- end results col -->
+
+  </div>
+  <!-- end layout -->
+
+  <!-- Disclaimer -->
+  <p class="xtax-disclaimer">*Estimates only. Based on 2024–25 ATO rates for Australian residents. Does not account for all offsets, deductions or individual circumstances. Not financial or tax advice.</p>
+
+</div>
+<!-- end xtax-wrap -->
+
+<script>
+(function () {
+  'use strict';
+
+  // ── Constants ─────────────────────────────────────────
+  const SUPER_RATE = 0.115; // SGC from 1 July 2024 (rises to 12% from 1 July 2025)
+
+  // ── Tax functions ──────────────────────────────────────
+
+  function calcIncomeTax(gross) {
+    if (gross <= 18200)   return 0;
+    if (gross <= 45000)   return (gross - 18200) * 0.19;
+    if (gross <= 135000)  return 5092 + (gross - 45000) * 0.325;
+    if (gross <= 190000)  return 34242 + (gross - 135000) * 0.37;
+    return 54592 + (gross - 190000) * 0.45;
+  }
+
+  function calcLITO(gross) {
+    if (gross <= 37500) return 700;
+    if (gross <= 45000) return 700 - (gross - 37500) * 0.05;
+    if (gross <= 66667) return 325 - (gross - 45000) * 0.015;
+    return 0;
+  }
+
+  function calcMLS(gross, hasPrivateCover) {
+    if (hasPrivateCover) return 0;
+    if (gross <= 93000)  return 0;
+    if (gross <= 108000) return gross * 0.01;
+    if (gross <= 144000) return gross * 0.0125;
+    return gross * 0.015;
+  }
+
+  function calcHECS(gross) {
+    const brackets = [
+      [54435,  0.010], [62739,  0.020], [66530,  0.025], [70891,  0.030],
+      [75376,  0.035], [79650,  0.040], [84430,  0.045], [89495,  0.050],
+      [94866,  0.055], [100558, 0.060], [106591, 0.065], [112986, 0.070],
+      [119765, 0.075], [126951, 0.080], [134568, 0.085], [142642, 0.090],
+      [151201, 0.095], [160273, 0.100]
+    ];
+    let rate = 0;
+    for (const [threshold, r] of brackets) {
+      if (gross >= threshold) rate = r; else break;
+    }
+    return gross * rate;
+  }
+
+  // ── Formatting ────────────────────────────────────────
+
+  function fmt(amount) {
+    if (Math.abs(amount) < 0.005) return '$0';
+    const abs = Math.abs(amount);
+    const formatted = abs.toLocaleString('en-AU', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    });
+    return (amount < 0 ? '-' : '') + '$' + formatted;
+  }
+
+  function fmtLarge(amount) {
+    return '$' + Math.round(Math.abs(amount)).toLocaleString('en-AU');
+  }
+
+  // ── Main calculation ──────────────────────────────────
+
+  function calculate(income, incomeType, hasHECS, hasPrivateCover) {
+    // Step 1: Gross
+    let gross, superAmount;
+    if (incomeType === 'base') {
+      gross = income;
+      superAmount = gross * SUPER_RATE;
+    } else {
+      gross = income / (1 + SUPER_RATE);
+      superAmount = income - gross;
+    }
+
+    // Step 2: Income tax
+    const rawIncomeTax = calcIncomeTax(gross);
+
+    // Step 3: LITO
+    const lito = calcLITO(gross);
+    const taxAfterLITO = Math.max(0, rawIncomeTax - lito);
+
+    // Step 4: Medicare levy
+    const medicareLevy = gross * 0.02;
+
+    // Step 5: MLS
+    const mls = calcMLS(gross, hasPrivateCover);
+
+    // Step 6: HECS
+    const hecsRepayment = hasHECS ? calcHECS(gross) : 0;
+
+    // Step 7: Take-home
+    const totalDeductions = taxAfterLITO + medicareLevy + mls + hecsRepayment;
+    const annualTakeHome  = gross - totalDeductions;
+
+    return {
+      gross,
+      superAmount,
+      rawIncomeTax,
+      lito,
+      taxAfterLITO,
+      medicareLevy,
+      mls,
+      hecsRepayment,
+      totalDeductions,
+      annualTakeHome,
+      monthly:      annualTakeHome / 12,
+      fortnightly:  annualTakeHome / 26,
+      weekly:       annualTakeHome / 52,
+      grossMonthly:     gross / 12,
+      grossFortnightly: gross / 26,
+      grossWeekly:      gross / 52
+    };
+  }
+
+  // ── DOM helpers ───────────────────────────────────────
+
+  function setText(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+
+  function showRow(id, visible) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = visible ? '' : 'none';
+  }
+
+  // ── Render results ────────────────────────────────────
+
+  function renderResults(r, incomeType, isSoleTrader, hasHECS, hasMLS) {
+    // Primary
+    setText('rPrimaryValue', fmtLarge(r.annualTakeHome));
+
+    // Frequency table
+    setText('rGrossWeekly',      fmt(r.grossWeekly));
+    setText('rGrossFortnightly', fmt(r.grossFortnightly));
+    setText('rGrossMonthly',     fmt(r.grossMonthly));
+    setText('rGrossAnnual',      fmt(r.gross));
+
+    setText('rTakeWeekly',      fmt(r.weekly));
+    setText('rTakeFortnightly', fmt(r.fortnightly));
+    setText('rTakeMonthly',     fmt(r.monthly));
+    setText('rTakeAnnual',      fmt(r.annualTakeHome));
+
+    // Breakdown
+    setText('rGrossIncome', fmt(r.gross));
+    setText('rIncomeTax',   fmt(r.rawIncomeTax));
+
+    if (r.lito > 0) {
+      setText('rLito', '−' + fmt(r.lito).replace('$', '') );
+      showRow('litoRow', true);
+    } else {
+      showRow('litoRow', false);
+    }
+
+    setText('rMedicare', fmt(r.medicareLevy));
+
+    if (hasMLS) {
+      setText('rMls', fmt(r.mls));
+      showRow('mlsRow', true);
+    } else {
+      showRow('mlsRow', false);
+    }
+
+    if (hasHECS && r.hecsRepayment > 0) {
+      setText('rHecs', fmt(r.hecsRepayment));
+      showRow('hecsRow', true);
+    } else {
+      showRow('hecsRow', false);
+    }
+
+    // Super
+    if (isSoleTrader) {
+      showRow('superRow', false);
+    } else {
+      setText('rSuper', fmt(r.superAmount));
+      const noteEl = document.getElementById('superNote');
+      if (noteEl) {
+        noteEl.textContent = incomeType === 'base'
+          ? 'Paid by employer on top of your salary'
+          : 'Included in your total package';
+      }
+      showRow('superRow', true);
+    }
+
+    setText('rNetAnnual', fmt(r.annualTakeHome));
+  }
+
+  // ── Event handlers ────────────────────────────────────
+
+  function getFormValues() {
+    const income = parseFloat(document.getElementById('income').value) || 0;
+    const incomeType = document.querySelector('input[name="incomeType"]:checked')?.value || 'base';
+    const employmentType = document.querySelector('input[name="employmentType"]:checked')?.value || 'employee';
+    const hecs = document.querySelector('input[name="hecs"]:checked')?.value === 'yes';
+    const privateCover = document.querySelector('input[name="privateCover"]:checked')?.value === 'yes';
+    return { income, incomeType, employmentType, hecs, privateCover };
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    const { income, incomeType, employmentType, hecs, privateCover } = getFormValues();
+
+    if (!income || income <= 0) {
+      document.getElementById('income').focus();
+      return;
+    }
+
+    const isSoleTrader = employmentType === 'sole-trader';
+    const r = calculate(income, incomeType, hecs, privateCover);
+    const hasMLS = r.mls > 0;
+
+    // Show/hide sole trader notice
+    const notice = document.getElementById('soleTraderNotice');
+    if (isSoleTrader) notice.classList.add('is-visible');
+    else notice.classList.remove('is-visible');
+
+    renderResults(r, incomeType, isSoleTrader, hecs, hasMLS);
+
+    // Show results panel
+    document.getElementById('xtaxPlaceholder').style.display = 'none';
+    document.getElementById('xtaxResults').classList.add('is-visible');
+  }
+
+  function handleReset() {
+    document.getElementById('xtaxForm').reset();
+
+    // Reset radio row highlight states
+    document.querySelectorAll('.xtax-radio-row').forEach(row => {
+      row.classList.remove('is-checked');
+    });
+    document.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
+      radio.closest('.xtax-radio-row')?.classList.add('is-checked');
+    });
+
+    // Hide results, show placeholder
+    document.getElementById('xtaxResults').classList.remove('is-visible');
+    document.getElementById('xtaxPlaceholder').style.display = '';
+    document.getElementById('soleTraderNotice').classList.remove('is-visible');
+  }
+
+  // ── Radio row highlight sync ──────────────────────────
+
+  function syncRadioHighlight(groupEl) {
+    if (!groupEl) return;
+    groupEl.querySelectorAll('.xtax-radio-row').forEach(row => {
+      const radio = row.querySelector('input[type="radio"]');
+      row.classList.toggle('is-checked', radio && radio.checked);
+    });
+  }
+
+  function initRadioGroups() {
+    const groups = [
+      document.getElementById('incomeTypeGroup'),
+      document.getElementById('employmentTypeGroup'),
+      document.getElementById('hecsGroup'),
+      document.getElementById('privateCoverGroup')
+    ];
+    groups.forEach(group => {
+      if (!group) return;
+      group.addEventListener('change', () => syncRadioHighlight(group));
+    });
+  }
+
+  // ── Init ──────────────────────────────────────────────
+
+  document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('xtaxForm').addEventListener('submit', handleSubmit);
+    document.getElementById('xtaxReset').addEventListener('click', handleReset);
+    initRadioGroups();
+  });
+
+  // Fallback if DOM already loaded
+  if (document.readyState !== 'loading') {
+    document.getElementById('xtaxForm')?.addEventListener('submit', handleSubmit);
+    document.getElementById('xtaxReset')?.addEventListener('click', handleReset);
+    initRadioGroups();
+  }
+
+})();
+</script>

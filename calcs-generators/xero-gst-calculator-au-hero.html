@@ -1,26 +1,27 @@
 <!DOCTYPE html>
-<html lang="en-NZ">
+<html lang="en-AU">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Xero NZ GST Calculator — Hero (Pattern B)</title>
+  <title>Xero AU GST Calculator — Hero (Pattern B)</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!--
     XERO PROTOTYPE
-    Tool: GST Calculator (NZ)
-    Locale: NZ
-    Pattern: B — Hero, full-width, above the fold
-    Built: 2026-04-16
-    Inputs: Amount (NZD), Mode (add GST / remove GST)
+    Tool: GST Calculator (AU)
+    Locale: AU
+    Pattern: B — Hero, full-width
+    Built: 2026-04-17
+    Inputs: Amount (AUD), Mode (add GST / remove GST)
     Output/formula:
-      Add GST:    GST = amount × 0.15 | Total = amount × 1.15
-      Remove GST: Net = amount / 1.15 | GST = amount − net
+      Add GST:    GST = amount × 0.10 | Total = amount × 1.10
+      Remove GST: Net = amount / 1.10 | GST = amount − net
     Notes for devs:
-      - Live calculation (no submit button) — results update on input
-      - GT Walsheim → DM Sans substitution (flag for prod)
-      - NZ GST rate is 15% (hardcoded — update via CMS variable if needed)
+      - Live calculation — no submit button
+      - AU GST rate is 10%
+      - GT Walsheim → Plus Jakarta Sans substitution (flag for prod)
       - Full-width band; inner content max-width 1200px
+      - Mobile stacks at 900px breakpoint
   -->
 
   <style>
@@ -118,6 +119,43 @@
       flex-shrink: 0;
     }
 
+    /* ─── CTA buttons in copy column ─── */
+    .xero-hero__actions {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-top: 32px;
+      flex-wrap: wrap;
+    }
+
+    .xero-hero__btn {
+      display: inline-block;
+      background: var(--xero-navy);
+      color: #fff;
+      font-family: var(--font);
+      font-size: 0.9375rem;
+      font-weight: 700;
+      padding: 12px 24px;
+      border-radius: 6px;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+
+    .xero-hero__btn:hover { background: #244d64; }
+
+    .xero-hero__link {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      text-decoration: underline;
+      text-decoration-color: var(--xero-blue);
+      text-underline-offset: 3px;
+      white-space: nowrap;
+    }
+
+    .xero-hero__link:hover { text-decoration-color: var(--xero-blue-dark); }
+
     /* ─── Right: calculator card ─── */
     .xero-hero__card {
       background: var(--xero-bg);
@@ -197,7 +235,7 @@
       border-radius: var(--radius);
       padding: 12px 16px;
       cursor: pointer;
-      transition: border-color 0.15s;
+      transition: border-color 0.15s, background 0.15s;
     }
 
     .xero-radio:has(input:checked) { border-color: var(--xero-navy); background: #f5f8fa; }
@@ -271,11 +309,6 @@
       color: var(--xero-green);
     }
 
-    .xero-result__value--muted {
-      color: var(--xero-text-muted);
-      font-weight: 400;
-    }
-
     /* ─── CTA inside card ─── */
     .xero-hero__card-cta {
       font-size: 0.8125rem;
@@ -291,43 +324,6 @@
     }
 
     .xero-hero__card-cta a:hover { color: var(--xero-blue-dark); }
-
-    /* ─── CTA buttons in copy column ─── */
-    .xero-hero__actions {
-      display: flex;
-      align-items: center;
-      gap: 24px;
-      margin-top: 32px;
-      flex-wrap: wrap;
-    }
-
-    .xero-hero__btn {
-      display: inline-block;
-      background: var(--xero-navy);
-      color: #fff;
-      font-family: var(--font);
-      font-size: 0.9375rem;
-      font-weight: 700;
-      padding: 12px 24px;
-      border-radius: 6px;
-      text-decoration: none;
-      white-space: nowrap;
-      transition: background 0.15s;
-    }
-
-    .xero-hero__btn:hover { background: #244d64; }
-
-    .xero-hero__link {
-      font-size: 0.9375rem;
-      font-weight: 700;
-      color: var(--xero-navy);
-      text-decoration: underline;
-      text-decoration-color: var(--xero-blue);
-      text-underline-offset: 3px;
-      white-space: nowrap;
-    }
-
-    .xero-hero__link:hover { text-decoration-color: var(--xero-blue-dark); }
 
     /* ─── Disclaimer below hero ─── */
     .xero-hero__disclaimer {
@@ -362,8 +358,8 @@
       </ul>
 
       <div class="xero-hero__actions">
-        <a href="https://www.xero.com/nz/signup/" class="xero-hero__btn" target="_blank" rel="noopener">Try Xero for free</a>
-        <a href="https://www.xero.com/nz/pricing/" class="xero-hero__link" target="_blank" rel="noopener">Compare plans and pricing</a>
+        <a href="https://www.xero.com/au/signup/" class="xero-hero__btn" target="_blank" rel="noopener">Try Xero for free</a>
+        <a href="https://www.xero.com/au/pricing/" class="xero-hero__link" target="_blank" rel="noopener">Compare plans and pricing</a>
       </div>
     </div>
 
@@ -373,7 +369,7 @@
       <h2 class="xero-hero__card-title">Calculate GST</h2>
 
       <!-- Amount input -->
-      <label class="xero-field__label" for="amount">Amount (NZD)</label>
+      <label class="xero-field__label" for="amount">Amount (AUD)</label>
       <div class="xero-input-wrap">
         <span class="xero-input-prefix">$</span>
         <input
@@ -383,13 +379,13 @@
           min="0"
           step="0.01"
           placeholder="0.00"
-          aria-label="Amount in NZD"
+          aria-label="Amount in AUD"
           oninput="calculate()"
         >
       </div>
 
       <!-- Mode radio buttons -->
-      <div class="xero-radio-group" role="radiogroup" aria-label="GST mode">
+      <div class="xero-radio-group" role="radiogroup" aria-label="GST calculation mode">
         <label class="xero-radio">
           <input type="radio" name="gst-mode" value="add" checked onchange="calculate()">
           <span class="xero-radio__box"><span class="xero-radio__dot"></span></span>
@@ -403,13 +399,13 @@
       </div>
 
       <!-- Result band -->
-      <div class="xero-hero__result-band" aria-live="polite">
+      <div class="xero-hero__result-band" aria-live="polite" aria-atomic="true">
         <div class="xero-result__row">
           <span class="xero-result__label" id="label-base">Price (ex GST)</span>
           <span class="xero-result__value" id="result-base">—</span>
         </div>
         <div class="xero-result__row">
-          <span class="xero-result__label">GST (15%)</span>
+          <span class="xero-result__label">GST (10%)</span>
           <span class="xero-result__value" id="result-gst">—</span>
         </div>
         <div class="xero-result__row">
@@ -419,7 +415,7 @@
       </div>
 
       <p class="xero-hero__card-cta">
-        Get a real time view of your GST obligations with Xero. Start a 30 day <a href="https://www.xero.com/nz/signup/" target="_blank" rel="noopener">free trial</a>.
+        Get a real time view of your GST with Xero. Start a 30 day <a href="https://www.xero.com/au/signup/" target="_blank" rel="noopener">free trial</a>.
       </p>
 
     </div><!-- /.xero-hero__card -->
@@ -427,21 +423,21 @@
   </div><!-- /.xero-hero__inner -->
 </div><!-- /.xero-hero -->
 
-<p class="xero-hero__disclaimer">*This calculator provides estimates only and is not financial or accounting advice. We recommend consulting a qualified accountant or tax adviser.</p>
+<p class="xero-hero__disclaimer">*This calculator provides estimates only and is not financial or accounting advice.</p>
 
 
 <script>
-  const GST_RATE = 0.15;
+  const GST_RATE = 0.10;
 
   function fmt(n) {
-    return '$' + n.toLocaleString('en-NZ', {
+    return '$' + n.toLocaleString('en-AU', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
   }
 
   function calculate() {
-    const raw = parseFloat(document.getElementById('amount').value);
+    const raw  = parseFloat(document.getElementById('amount').value);
     const mode = document.querySelector('input[name="gst-mode"]:checked').value;
 
     const labelBase  = document.getElementById('label-base');
@@ -450,12 +446,10 @@
     const resGst     = document.getElementById('result-gst');
     const resTotal   = document.getElementById('result-total');
 
-    if (isNaN(raw) || raw === 0) {
+    if (isNaN(raw) || raw <= 0) {
       resBase.textContent  = '—';
       resGst.textContent   = '—';
       resTotal.textContent = '—';
-      resBase.className    = 'xero-result__value';
-      resTotal.className   = 'xero-result__value xero-result__value--primary';
       return;
     }
 
@@ -464,14 +458,14 @@
     if (mode === 'add') {
       // Input is GST-exclusive; calculate what to add
       base  = raw;
-      gst   = raw * GST_RATE;
-      total = raw + gst;
+      gst   = raw * GST_RATE;         // raw × 0.10
+      total = raw * (1 + GST_RATE);   // raw × 1.10
       labelBase.textContent  = 'Price (ex GST)';
       labelTotal.textContent = 'Total (incl. GST)';
     } else {
       // Input is GST-inclusive; extract the GST component
-      base  = raw / (1 + GST_RATE);
-      gst   = raw - base;
+      base  = raw / (1 + GST_RATE);   // raw / 1.10
+      gst   = raw - base;             // raw − net
       total = raw;
       labelBase.textContent  = 'Price (ex GST)';
       labelTotal.textContent = 'GST-inclusive amount';
