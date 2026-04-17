@@ -1,0 +1,356 @@
+<!--
+  XERO PROTOTYPE
+  Tool: Gross Margin Calculator (UK)
+  Locale: UK
+  Pattern: B — Hero, full-width
+  Built: 2026-04-16
+  Inputs: Revenue (GBP), Cost of goods sold / COGS (GBP)
+  Formula: Gross profit = revenue - COGS; Gross margin = (gross profit / revenue) × 100; COGS % = (COGS / revenue) × 100
+  Notes for devs: Live calculation — no submit button. GT Walsheim → Plus Jakarta Sans substitution (flag for prod). UK currency symbol: £ GBP.
+-->
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xero's free gross margin calculator – UK</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --xero-navy:       #1B3A4B;
+      --xero-blue:       #13B5EA;
+      --xero-blue-dark:  #0D8FBD;
+      --xero-panel-bg:   #EBF0F4;
+      --xero-border:     #C2CDD6;
+      --xero-bg:         #FFFFFF;
+      --xero-text:       #1B3A4B;
+      --xero-text-muted: #4A6070;
+      --xero-green:      #1AB394;
+      --xero-red:        #E05A5A;
+      --radius:          4px;
+      --font:            'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    .xero-hero {
+      background: var(--xero-bg);
+      padding: 72px 5%;
+      font-family: var(--font);
+      color: var(--xero-text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .xero-hero__inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 480px;
+      gap: 64px;
+      align-items: center;
+    }
+
+    .xero-hero__title {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800;
+      color: var(--xero-navy);
+      line-height: 1.15;
+      margin-bottom: 20px;
+    }
+
+    .xero-hero__body {
+      font-size: 1rem;
+      line-height: 1.65;
+      color: var(--xero-text-muted);
+      max-width: 480px;
+      margin-bottom: 24px;
+    }
+
+    .xero-hero__bullets {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+
+    .xero-hero__bullets li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--xero-navy);
+    }
+
+    .xero-hero__bullets li::before {
+      content: "✓";
+      color: var(--xero-green);
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .xero-hero__ctas {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .xero-btn-primary {
+      background: var(--xero-navy);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 12px 24px;
+      font-family: var(--font);
+      font-size: 0.9375rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: background 0.15s;
+    }
+
+    .xero-btn-primary:hover { background: #244d64; }
+
+    .xero-btn-secondary {
+      color: var(--xero-navy);
+      font-family: var(--font);
+      font-size: 0.9375rem;
+      font-weight: 700;
+      text-decoration: underline;
+      text-decoration-color: var(--xero-blue);
+      text-underline-offset: 3px;
+      display: inline-block;
+    }
+
+    .xero-btn-secondary:hover { text-decoration-color: var(--xero-blue-dark); }
+
+    .xero-hero__card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 32px;
+    }
+
+    .xero-card__title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 24px;
+    }
+
+    .xero-field { margin-bottom: 20px; }
+
+    .xero-field__label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 6px;
+      letter-spacing: 0.01em;
+    }
+
+    .xero-input-wrap {
+      display: flex;
+      align-items: stretch;
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      background: #fff;
+      transition: border-color 0.15s;
+    }
+
+    .xero-input-wrap:focus-within { border-color: var(--xero-blue); }
+
+    .xero-input-prefix {
+      display: flex;
+      align-items: center;
+      padding: 0 8px 0 14px;
+      color: var(--xero-text-muted);
+      font-size: 0.9375rem;
+      font-weight: 500;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .xero-input {
+      border: none;
+      outline: none;
+      padding: 10px 14px 10px 4px;
+      font-family: var(--font);
+      font-size: 0.9375rem;
+      color: var(--xero-text);
+      background: transparent;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .xero-input::placeholder { color: #9EB0BB; }
+
+    .xero-result-band {
+      background: var(--xero-panel-bg);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-top: 24px;
+    }
+
+    .xero-result-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--xero-border);
+    }
+
+    .xero-result-row:last-of-type { border-bottom: none; }
+
+    .xero-result-row__label {
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--xero-text-muted);
+    }
+
+    .xero-result-row__value {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+    }
+
+    .xero-result-row__value--primary {
+      font-size: 1.25rem;
+      color: var(--xero-green);
+    }
+
+    .xero-result-row__value--positive { color: var(--xero-green); }
+    .xero-result-row__value--negative { color: var(--xero-red); }
+
+    .xero-card__cta {
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      line-height: 1.55;
+      margin-top: 16px;
+    }
+
+    .xero-card__cta a {
+      color: var(--xero-blue);
+      font-weight: 700;
+      text-decoration: underline;
+    }
+
+    .xero-card__cta a:hover { color: var(--xero-blue-dark); }
+
+    .xero-card__disclaimer {
+      font-size: 0.75rem;
+      color: var(--xero-text-muted);
+      margin-top: 12px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 900px) {
+      .xero-hero__inner { grid-template-columns: 1fr; }
+      .xero-hero__body { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<section class="xero-hero">
+  <div class="xero-hero__inner">
+
+    <div class="xero-hero__copy">
+      <h1 class="xero-hero__title">Xero's free gross margin calculator</h1>
+      <p class="xero-hero__body">Work out how efficiently your business turns revenue into profit after direct costs. Enter your revenue and cost of goods sold to see your gross margin instantly – no downloads required.</p>
+      <ul class="xero-hero__bullets">
+        <li>Calculate your gross margin percentage instantly</li>
+        <li>Understand your cost of goods sold impact</li>
+        <li>Set better pricing for your products and services</li>
+      </ul>
+      <div class="xero-hero__ctas">
+        <a href="https://www.xero.com/uk/signup/" class="xero-btn-primary">Try Xero for free</a>
+        <a href="https://www.xero.com/uk/pricing/" class="xero-btn-secondary">Compare plans and pricing</a>
+      </div>
+    </div>
+
+    <div class="xero-hero__card">
+      <h2 class="xero-card__title">Calculate gross margin</h2>
+
+      <div class="xero-field">
+        <label class="xero-field__label" for="revenue">Revenue (GBP)</label>
+        <div class="xero-input-wrap">
+          <span class="xero-input-prefix">£</span>
+          <input class="xero-input" type="number" id="revenue" min="0" step="0.01" placeholder="0.00" oninput="calculate()" aria-label="Revenue in GBP">
+        </div>
+      </div>
+
+      <div class="xero-field">
+        <label class="xero-field__label" for="cogs">Cost of goods sold (COGS) (GBP)</label>
+        <div class="xero-input-wrap">
+          <span class="xero-input-prefix">£</span>
+          <input class="xero-input" type="number" id="cogs" min="0" step="0.01" placeholder="0.00" oninput="calculate()" aria-label="Cost of goods sold in GBP">
+        </div>
+      </div>
+
+      <div class="xero-result-band" aria-live="polite" aria-atomic="true">
+        <div class="xero-result-row">
+          <span class="xero-result-row__label">Gross profit</span>
+          <span class="xero-result-row__value" id="result-gross-profit">—</span>
+        </div>
+        <div class="xero-result-row">
+          <span class="xero-result-row__label">Gross margin</span>
+          <span class="xero-result-row__value xero-result-row__value--primary" id="result-gross-margin">—</span>
+        </div>
+        <div class="xero-result-row">
+          <span class="xero-result-row__label">COGS as % of revenue</span>
+          <span class="xero-result-row__value" id="result-cogs-pct">—</span>
+        </div>
+      </div>
+
+      <p class="xero-card__cta">Monitor your gross margin in real time with Xero. Start a 30 day <a href="https://www.xero.com/uk/signup/" target="_blank">free trial</a>.</p>
+      <p class="xero-card__disclaimer">*This calculator provides estimates only and is not financial or accounting advice.</p>
+    </div>
+
+  </div>
+</section>
+
+<script>
+  function fmtCurrency(n) {
+    return '£' + Math.abs(n).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function fmtPct(n) {
+    return n.toFixed(1) + '%';
+  }
+
+  function setVal(id, text, modifier) {
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.className = 'xero-result-row__value';
+    if (modifier) el.classList.add('xero-result-row__value--' + modifier);
+    if (id === 'result-gross-margin') el.classList.add('xero-result-row__value--primary');
+  }
+
+  function calculate() {
+    const revenue = parseFloat(document.getElementById('revenue').value) || 0;
+    const cogs    = parseFloat(document.getElementById('cogs').value)    || 0;
+
+    if (revenue === 0) {
+      setVal('result-gross-profit', '—', null);
+      setVal('result-gross-margin', '—', null);
+      setVal('result-cogs-pct',     '—', null);
+      return;
+    }
+
+    const grossProfit = revenue - cogs;
+    const grossMargin = (grossProfit / revenue) * 100;
+    const cogsPct     = (cogs / revenue) * 100;
+
+    setVal('result-gross-profit', (grossProfit < 0 ? '-' : '') + fmtCurrency(grossProfit), grossProfit < 0 ? 'negative' : 'positive');
+    setVal('result-gross-margin', fmtPct(grossMargin), grossMargin < 0 ? 'negative' : 'positive');
+    setVal('result-cogs-pct',     fmtPct(cogsPct),     null);
+  }
+</script>
+
+</body>
+</html>

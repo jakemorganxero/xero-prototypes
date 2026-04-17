@@ -1,0 +1,674 @@
+<!--
+  XERO PROTOTYPE
+  Tool: Timesheet Calculator (NZ)
+  Locale: NZ
+  Pattern: Modified B — hero heading, two-column (inputs left, live timesheet table right)
+  Built: 2026-04-16
+  Inputs: Hourly rate, OT threshold, OT rate, week starting, period (weekly/fortnightly)
+  Output: Live timesheet table with hours and pay per day — visible on page, no download required
+  Notes:
+    - Time inputs are inline in the table (not a form then a separate output)
+    - OT rate auto-fills to 1.5× regular rate, editable
+    - CSV download is optional/secondary
+    - GT Walsheim → Plus Jakarta Sans (flag for prod)
+    - Currency: NZD ($), Locale string: en-NZ
+    - Period options: Weekly / Fortnightly
+    - Finish column labelled "Finish"
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --xero-navy: #1B3A4B;
+    --xero-blue: #13B5EA;
+    --xero-blue-dark: #0D8FBD;
+    --xero-panel-bg: #EBF0F4;
+    --xero-border: #C2CDD6;
+    --xero-bg: #FFFFFF;
+    --xero-text: #1B3A4B;
+    --xero-text-muted: #4A6070;
+    --xero-green: #1AB394;
+    --xero-red: #E05A5A;
+    --radius: 4px;
+    --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  .xero-timesheet-widget {
+    font-family: var(--font);
+    color: var(--xero-text);
+    background: #fff;
+    padding: 72px 5%;
+    width: 100%;
+  }
+
+  .xts-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .xts-heading {
+    margin-bottom: 40px;
+  }
+  .xts-heading h1 {
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    font-weight: 800;
+    color: var(--xero-navy);
+    line-height: 1.15;
+    margin-bottom: 10px;
+  }
+  .xts-heading p {
+    font-size: 1.0625rem;
+    color: var(--xero-text-muted);
+    font-weight: 400;
+  }
+
+  .xts-grid {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 48px;
+    align-items: start;
+  }
+
+  .xts-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    padding: 28px;
+  }
+
+  .xts-section-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--xero-text-muted);
+    margin-bottom: 14px;
+  }
+
+  .xts-field-group { margin-bottom: 22px; }
+  .xts-field { margin-bottom: 14px; }
+  .xts-field:last-child { margin-bottom: 0; }
+
+  .xts-field label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--xero-text);
+    margin-bottom: 6px;
+  }
+
+  .xts-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .xts-prefix, .xts-suffix {
+    position: absolute;
+    font-size: 0.8125rem;
+    color: var(--xero-text-muted);
+    font-weight: 500;
+    pointer-events: none;
+    user-select: none;
+  }
+  .xts-prefix { left: 10px; }
+  .xts-suffix { right: 10px; }
+
+  .xts-input {
+    width: 100%;
+    height: 40px;
+    border: 1.5px solid var(--xero-border);
+    border-radius: var(--radius);
+    font-family: var(--font);
+    font-size: 0.875rem;
+    color: var(--xero-text);
+    background: #fff;
+    padding: 0 12px;
+    transition: border-color 0.15s;
+    -moz-appearance: textfield;
+  }
+  .xts-input::-webkit-outer-spin-button,
+  .xts-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .xts-input:focus {
+    outline: none;
+    border-color: var(--xero-blue);
+    box-shadow: 0 0 0 3px rgba(19,181,234,0.15);
+  }
+  .has-prefix .xts-input { padding-left: 26px; }
+  .has-suffix .xts-input { padding-right: 52px; }
+
+  select.xts-input {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234A6070' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+    cursor: pointer;
+  }
+
+  input[type="date"].xts-input {
+    padding: 0 10px;
+    cursor: pointer;
+  }
+
+  .xts-summary {
+    background: var(--xero-panel-bg);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-top: 20px;
+  }
+  .xts-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 5px 0;
+    font-size: 0.875rem;
+  }
+  .xts-summary-row + .xts-summary-row {
+    border-top: 1px solid var(--xero-border);
+  }
+  .xts-summary-label { color: var(--xero-text-muted); font-weight: 500; }
+  .xts-summary-value { font-weight: 700; color: var(--xero-text); }
+  .xts-summary-value.primary { color: var(--xero-green); font-size: 1.375rem; }
+  .xts-summary-value.pay-value { color: var(--xero-navy); font-size: 1.0625rem; }
+
+  .xts-download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 16px;
+    padding: 8px 16px;
+    border: 1.5px solid var(--xero-border);
+    border-radius: var(--radius);
+    font-family: var(--font);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--xero-text-muted);
+    background: transparent;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .xts-download-btn:hover { border-color: var(--xero-navy); color: var(--xero-navy); }
+
+  .xts-cta {
+    margin-top: 18px;
+    font-size: 0.8125rem;
+    color: var(--xero-text-muted);
+    line-height: 1.5;
+  }
+  .xts-cta a { color: var(--xero-blue-dark); font-weight: 600; text-decoration: none; }
+  .xts-cta a:hover { text-decoration: underline; }
+
+  .xts-table-wrap {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+
+  .xts-table-header {
+    background: var(--xero-navy);
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .xts-table-title { color: #fff; font-size: 0.9375rem; font-weight: 700; }
+  .xts-period-label { color: rgba(255,255,255,0.72); font-size: 0.8125rem; font-weight: 500; }
+
+  .xts-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  table.xts-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 640px;
+  }
+
+  .xts-table th {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--xero-text-muted);
+    padding: 10px 12px;
+    border-bottom: 2px solid var(--xero-border);
+    white-space: nowrap;
+    background: #fff;
+  }
+  .xts-table th.left { text-align: left; }
+  .xts-table th.right { text-align: right; }
+
+  .xts-table td {
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--xero-border);
+    font-size: 0.8125rem;
+    vertical-align: middle;
+  }
+  .xts-table td.left { text-align: left; }
+  .xts-table td.right { text-align: right; }
+  .xts-table td.muted { color: var(--xero-text-muted); }
+
+  .xts-table input[type="time"],
+  .xts-table input.t-break {
+    border: none;
+    outline: none;
+    font-family: var(--font);
+    font-size: 0.8125rem;
+    background: transparent;
+    color: var(--xero-text);
+    padding: 0;
+    cursor: pointer;
+  }
+  .xts-table input[type="time"] { width: 80px; }
+  .xts-table input.t-break {
+    width: 44px;
+    text-align: right;
+    -moz-appearance: textfield;
+  }
+  .xts-table input.t-break::-webkit-outer-spin-button,
+  .xts-table input.t-break::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .xts-table input[type="time"]:focus,
+  .xts-table input.t-break:focus {
+    background: rgba(19,181,234,0.07);
+    border-radius: 3px;
+  }
+
+  .xts-week-divider td { border-top: 2px solid var(--xero-navy); padding-top: 9px; }
+
+  .xts-totals-row td {
+    background: var(--xero-navy);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.8125rem;
+    border-bottom: none;
+    padding: 10px 12px;
+  }
+  .xts-totals-row td.label-cell { color: rgba(255,255,255,0.8); font-weight: 600; }
+
+  .xts-table-footer {
+    background: var(--xero-panel-bg);
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .xts-table-footer-label { font-size: 0.875rem; color: var(--xero-text-muted); font-weight: 500; }
+  .xts-table-footer-value { font-size: 1.125rem; font-weight: 700; color: var(--xero-green); }
+
+  .xts-disclaimer {
+    margin-top: 28px;
+    font-size: 0.75rem;
+    color: var(--xero-text-muted);
+    line-height: 1.5;
+  }
+
+  @media (max-width: 900px) {
+    .xts-grid { grid-template-columns: 1fr; gap: 28px; }
+    .xts-heading { margin-bottom: 28px; }
+    .xero-timesheet-widget { padding: 48px 5%; }
+  }
+  @media (max-width: 480px) {
+    .xero-timesheet-widget { padding: 36px 4%; }
+    .xts-card { padding: 20px; }
+  }
+</style>
+
+<div class="xero-timesheet-widget">
+  <div class="xts-inner">
+
+    <div class="xts-heading">
+      <h1>Xero's free timesheet calculator</h1>
+      <p>Calculate hours worked and pay for any period instantly.</p>
+    </div>
+
+    <div class="xts-grid">
+
+      <!-- Left column -->
+      <div class="xts-card">
+
+        <div class="xts-field-group">
+          <div class="xts-section-label">Pay settings</div>
+
+          <div class="xts-field">
+            <label for="hourly-rate">Hourly rate ($/hr)</label>
+            <div class="xts-input-wrap has-prefix">
+              <span class="xts-prefix">$</span>
+              <input type="number" class="xts-input" id="hourly-rate"
+                     placeholder="25.00" min="0" step="0.01">
+            </div>
+          </div>
+
+          <div class="xts-field">
+            <label for="ot-threshold">Overtime threshold</label>
+            <div class="xts-input-wrap has-suffix">
+              <input type="number" class="xts-input" id="ot-threshold"
+                     placeholder="8" value="8" min="0" step="0.5">
+              <span class="xts-suffix">hrs/day</span>
+            </div>
+          </div>
+
+          <div class="xts-field">
+            <label for="ot-rate">Overtime rate ($/hr)</label>
+            <div class="xts-input-wrap has-prefix">
+              <span class="xts-prefix">$</span>
+              <input type="number" class="xts-input" id="ot-rate"
+                     placeholder="37.50" min="0" step="0.01">
+            </div>
+          </div>
+        </div>
+
+        <div class="xts-field-group">
+          <div class="xts-section-label">Period</div>
+
+          <div class="xts-field">
+            <label for="week-start">Week starting</label>
+            <div class="xts-input-wrap">
+              <input type="date" class="xts-input" id="week-start">
+            </div>
+          </div>
+
+          <div class="xts-field">
+            <label for="period-type">Period</label>
+            <div class="xts-input-wrap">
+              <select class="xts-input" id="period-type">
+                <option value="7">Weekly (7 days)</option>
+                <option value="14">Fortnightly (14 days)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="xts-summary">
+          <div class="xts-summary-row">
+            <span class="xts-summary-label">Total hours</span>
+            <span class="xts-summary-value primary" id="summary-hours">0.00</span>
+          </div>
+          <div class="xts-summary-row">
+            <span class="xts-summary-label">Regular hours</span>
+            <span class="xts-summary-value" id="summary-regular">0.00</span>
+          </div>
+          <div class="xts-summary-row">
+            <span class="xts-summary-label">Overtime hours</span>
+            <span class="xts-summary-value" id="summary-ot">0.00</span>
+          </div>
+          <div class="xts-summary-row" id="pay-row" style="display:none">
+            <span class="xts-summary-label">Estimated pay</span>
+            <span class="xts-summary-value pay-value" id="summary-pay">$0.00</span>
+          </div>
+        </div>
+
+        <button class="xts-download-btn" onclick="downloadCSV()">
+          ↓ Download timesheet (CSV)
+        </button>
+
+        <p class="xts-cta">
+          Track employee time automatically with Xero.
+          Start a 30 day <a href="https://www.xero.com/nz/signup/" target="_blank" rel="noopener">free trial</a>.
+        </p>
+      </div>
+
+      <!-- Right column -->
+      <div class="xts-table-wrap">
+        <div class="xts-table-header">
+          <span class="xts-table-title">Timesheet</span>
+          <span class="xts-period-label" id="period-label">—</span>
+        </div>
+
+        <div class="xts-table-scroll">
+          <table class="xts-table">
+            <thead>
+              <tr>
+                <th class="left">Day</th>
+                <th class="left">Date</th>
+                <th class="right">Start</th>
+                <th class="right">Finish</th>
+                <th class="right">Break (min)</th>
+                <th class="right">Hours</th>
+                <th class="right">Regular</th>
+                <th class="right">OT</th>
+                <th class="right pay-col">Pay</th>
+              </tr>
+            </thead>
+            <tbody id="timesheet-body"></tbody>
+            <tfoot>
+              <tr class="xts-totals-row" id="totals-row">
+                <td class="label-cell" colspan="5">Totals</td>
+                <td class="right" id="total-hours">0.00</td>
+                <td class="right" id="total-regular">0.00</td>
+                <td class="right" id="total-ot">—</td>
+                <td class="right pay-col" id="total-pay"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div class="xts-table-footer" id="table-footer" style="display:none">
+          <span class="xts-table-footer-label">Total estimated pay</span>
+          <span class="xts-table-footer-value" id="footer-pay">$0.00</span>
+        </div>
+      </div>
+
+    </div>
+
+    <p class="xts-disclaimer">*This calculator provides estimates only. Actual pay may vary based on awards, agreements or other conditions. Not financial or legal advice.</p>
+
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  var CURRENCY_SYMBOL = '$';
+  var LOCALE_STR      = 'en-NZ';
+
+  function fmtCurrency(val) {
+    return CURRENCY_SYMBOL + val.toLocaleString(LOCALE_STR, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  function fmtDate(d) {
+    return d.toLocaleDateString(LOCALE_STR, { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function fmtDateShort(d) {
+    return d.toLocaleDateString(LOCALE_STR, { day: 'numeric', month: 'short' });
+  }
+
+  function recalcRow(row) {
+    var start    = row.querySelector('.t-start').value;
+    var end      = row.querySelector('.t-end').value;
+    var brk      = parseFloat(row.querySelector('.t-break').value) || 0;
+    var rate     = parseFloat(document.getElementById('hourly-rate').value) || 0;
+    var otThresh = parseFloat(document.getElementById('ot-threshold').value) || 8;
+    var otRate   = parseFloat(document.getElementById('ot-rate').value) || rate * 1.5;
+
+    if (!start || !end) {
+      row.querySelector('.t-hours').textContent   = '—';
+      row.querySelector('.t-regular').textContent = '—';
+      row.querySelector('.t-ot').textContent      = '—';
+      row.querySelector('.t-pay').textContent     = rate ? '—' : '';
+      return { hours: 0, regular: 0, ot: 0, pay: 0 };
+    }
+
+    var sh = parseInt(start.split(':')[0], 10);
+    var sm = parseInt(start.split(':')[1], 10);
+    var eh = parseInt(end.split(':')[0], 10);
+    var em = parseInt(end.split(':')[1], 10);
+
+    var worked  = Math.max(0, (eh * 60 + em - sh * 60 - sm) / 60 - brk / 60);
+    var regular = Math.min(otThresh, worked);
+    var ot      = Math.max(0, worked - otThresh);
+    var pay     = regular * rate + ot * otRate;
+
+    row.querySelector('.t-hours').textContent   = worked.toFixed(2);
+    row.querySelector('.t-regular').textContent = regular.toFixed(2);
+    row.querySelector('.t-ot').textContent      = ot > 0 ? ot.toFixed(2) : '—';
+    row.querySelector('.t-pay').textContent     = rate ? fmtCurrency(pay) : '';
+
+    return { hours: worked, regular: regular, ot: ot, pay: pay };
+  }
+
+  function calculate() {
+    var rows   = document.querySelectorAll('#timesheet-body tr[data-day]');
+    var totHrs = 0, totReg = 0, totOT = 0, totPay = 0;
+    var rate   = parseFloat(document.getElementById('hourly-rate').value) || 0;
+
+    rows.forEach(function(row) {
+      var r = recalcRow(row);
+      totHrs  += r.hours;
+      totReg  += r.regular;
+      totOT   += r.ot;
+      totPay  += r.pay;
+    });
+
+    document.getElementById('summary-hours').textContent   = totHrs.toFixed(2);
+    document.getElementById('summary-regular').textContent = totReg.toFixed(2);
+    document.getElementById('summary-ot').textContent      = totOT.toFixed(2);
+    document.getElementById('total-hours').textContent     = totHrs.toFixed(2);
+    document.getElementById('total-regular').textContent   = totReg.toFixed(2);
+    document.getElementById('total-ot').textContent        = totOT > 0 ? totOT.toFixed(2) : '—';
+
+    var payRow  = document.getElementById('pay-row');
+    var footer  = document.getElementById('table-footer');
+    var payCols = document.querySelectorAll('.pay-col');
+
+    if (rate > 0) {
+      document.getElementById('summary-pay').textContent = fmtCurrency(totPay);
+      document.getElementById('total-pay').textContent   = fmtCurrency(totPay);
+      document.getElementById('footer-pay').textContent  = fmtCurrency(totPay);
+      payRow.style.display = '';
+      footer.style.display = '';
+      payCols.forEach(function(el) { el.style.display = ''; });
+    } else {
+      payRow.style.display = 'none';
+      footer.style.display = 'none';
+      payCols.forEach(function(el) { el.style.display = 'none'; });
+    }
+  }
+
+  function buildDays() {
+    var weekStartVal = document.getElementById('week-start').value;
+    var periodDays   = parseInt(document.getElementById('period-type').value, 10);
+    var tbody        = document.getElementById('timesheet-body');
+    var periodLabel  = document.getElementById('period-label');
+
+    if (!weekStartVal) return;
+
+    var startDate = new Date(weekStartVal + 'T00:00:00');
+    var endDate   = new Date(startDate);
+    endDate.setDate(startDate.getDate() + periodDays - 1);
+
+    periodLabel.textContent = fmtDateShort(startDate) + ' – ' + fmtDate(endDate);
+
+    var dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    var html = '';
+
+    for (var i = 0; i < periodDays; i++) {
+      var d = new Date(startDate);
+      d.setDate(startDate.getDate() + i);
+
+      var dayName  = dayNames[d.getDay()];
+      var dateStr  = d.toLocaleDateString(LOCALE_STR, { day: 'numeric', month: 'short' });
+      var isWeekend = (d.getDay() === 0 || d.getDay() === 6);
+      var dividerClass = (i === 7 && periodDays === 14) ? ' class="xts-week-divider"' : '';
+
+      html += '<tr data-day="' + i + '"' + dividerClass + '>';
+      html += '<td class="left' + (isWeekend ? ' muted' : '') + '">' + dayName + '</td>';
+      html += '<td class="left' + (isWeekend ? ' muted' : '') + '">' + dateStr + '</td>';
+      html += '<td class="right"><input type="time" class="t-start" oninput="xtsCalc()"></td>';
+      html += '<td class="right"><input type="time" class="t-end" oninput="xtsCalc()"></td>';
+      html += '<td class="right"><input type="number" class="t-break" placeholder="0" min="0" step="5" oninput="xtsCalc()"></td>';
+      html += '<td class="right t-hours">—</td>';
+      html += '<td class="right t-regular">—</td>';
+      html += '<td class="right t-ot">—</td>';
+      html += '<td class="right t-pay pay-col"></td>';
+      html += '</tr>';
+    }
+
+    tbody.innerHTML = html;
+
+    var rate    = parseFloat(document.getElementById('hourly-rate').value) || 0;
+    var payCols = document.querySelectorAll('.pay-col');
+    payCols.forEach(function(el) { el.style.display = rate > 0 ? '' : 'none'; });
+
+    calculate();
+  }
+
+  function init() {
+    var today = new Date();
+    var day   = today.getDay();
+    var diff  = (day === 0 ? -6 : 1 - day);
+    var mon   = new Date(today);
+    mon.setDate(today.getDate() + diff);
+
+    var yyyy = mon.getFullYear();
+    var mm   = String(mon.getMonth() + 1).padStart(2, '0');
+    var dd   = String(mon.getDate()).padStart(2, '0');
+    document.getElementById('week-start').value = yyyy + '-' + mm + '-' + dd;
+
+    buildDays();
+  }
+
+  window.xtsCalc = calculate;
+
+  document.getElementById('hourly-rate').addEventListener('input', function() {
+    var rate = parseFloat(this.value);
+    if (rate && rate > 0) {
+      document.getElementById('ot-rate').value = (rate * 1.5).toFixed(2);
+    }
+    calculate();
+  });
+
+  document.getElementById('ot-threshold').addEventListener('input', calculate);
+  document.getElementById('ot-rate').addEventListener('input', calculate);
+  document.getElementById('week-start').addEventListener('change', buildDays);
+  document.getElementById('period-type').addEventListener('change', buildDays);
+
+  window.downloadCSV = function() {
+    var rows     = document.querySelectorAll('#timesheet-body tr[data-day]');
+    var rate     = parseFloat(document.getElementById('hourly-rate').value) || 0;
+    var startVal = document.getElementById('week-start').value;
+
+    var headers = ['Day','Date','Start','Finish','Break (min)','Hours Worked','Regular','Overtime'];
+    if (rate > 0) headers.push('Pay (' + CURRENCY_SYMBOL + ')');
+
+    var lines = [headers.join(',')];
+
+    rows.forEach(function(row) {
+      var cells = [
+        row.cells[0].textContent,
+        row.cells[1].textContent,
+        row.querySelector('.t-start').value || '',
+        row.querySelector('.t-end').value || '',
+        row.querySelector('.t-break').value || '0',
+        row.querySelector('.t-hours').textContent,
+        row.querySelector('.t-regular').textContent,
+        row.querySelector('.t-ot').textContent
+      ];
+      if (rate > 0) cells.push(row.querySelector('.t-pay').textContent.replace(CURRENCY_SYMBOL, ''));
+      lines.push(cells.map(function(c) {
+        return '"' + String(c).replace(/"/g, '""') + '"';
+      }).join(','));
+    });
+
+    var blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href   = url;
+    a.download = 'timesheet-' + (startVal || 'export') + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  init();
+})();
+</script>

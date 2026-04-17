@@ -1,0 +1,652 @@
+<!--
+  XERO PROTOTYPE
+  Tool: Depreciation Calculator (UK)
+  Locale: UK
+  Pattern: Modified B — hero heading, two-column (inputs left, live schedule table right)
+  Built: 2026-04-16
+  Inputs: Asset cost, salvage value, useful life, method (straight-line / declining balance), DB rate
+  Output: Live depreciation schedule table (no download required); optional CSV download
+  Formula:
+    Straight-line: annual dep = (cost - salvage) / life
+    Declining balance: annual dep = opening value × rate (capped at salvage)
+  Notes: GT Walsheim → Plus Jakarta Sans (flag for prod).
+         Currency: GBP (£). Locale: en-GB.
+         Signup URL: xero.com/uk/signup/
+         VAT = 20%; UK terminology throughout.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --xero-navy: #1B3A4B;
+    --xero-blue: #13B5EA;
+    --xero-blue-dark: #0D8FBD;
+    --xero-panel-bg: #EBF0F4;
+    --xero-border: #C2CDD6;
+    --xero-bg: #FFFFFF;
+    --xero-text: #1B3A4B;
+    --xero-text-muted: #4A6070;
+    --xero-green: #1AB394;
+    --xero-red: #E05A5A;
+    --radius: 4px;
+    --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  .xero-dep-wrap {
+    font-family: var(--font);
+    color: var(--xero-text);
+    background: #fff;
+    padding: 72px 5%;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .xero-dep-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .xero-dep-heading {
+    margin-bottom: 40px;
+  }
+
+  .xero-dep-heading h1 {
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    font-weight: 800;
+    color: var(--xero-navy);
+    line-height: 1.2;
+    margin-bottom: 10px;
+  }
+
+  .xero-dep-heading p {
+    font-size: 1rem;
+    color: var(--xero-text-muted);
+    font-weight: 400;
+  }
+
+  .xero-dep-grid {
+    display: grid;
+    grid-template-columns: 480px 1fr;
+    gap: 48px;
+    align-items: start;
+  }
+
+  .xero-dep-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    padding: 28px;
+  }
+
+  .xero-dep-section-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--xero-text-muted);
+    margin-bottom: 20px;
+  }
+
+  .xero-dep-field {
+    margin-bottom: 18px;
+  }
+
+  .xero-dep-field label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--xero-navy);
+    margin-bottom: 6px;
+  }
+
+  .xero-dep-field .helper {
+    font-size: 0.75rem;
+    color: var(--xero-text-muted);
+    margin-top: 4px;
+  }
+
+  .xero-dep-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .xero-dep-input-wrap .currency-prefix {
+    position: absolute;
+    left: 12px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--xero-text-muted);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .xero-dep-input {
+    width: 100%;
+    font-family: var(--font);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--xero-navy);
+    border: 1.5px solid var(--xero-border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+    background: #fff;
+  }
+
+  .xero-dep-input:focus {
+    border-color: var(--xero-blue);
+  }
+
+  .xero-dep-input.has-prefix {
+    padding-left: 28px;
+  }
+
+  .xero-dep-input[type="number"]::-webkit-inner-spin-button,
+  .xero-dep-input[type="number"]::-webkit-outer-spin-button {
+    opacity: 1;
+  }
+
+  .xero-dep-radios {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .xero-dep-radio-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1.5px solid var(--xero-border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    user-select: none;
+  }
+
+  .xero-dep-radio-row:has(input:checked) {
+    border-color: var(--xero-blue);
+    background: #f0faff;
+  }
+
+  .xero-dep-radio-row input[type="radio"] {
+    accent-color: var(--xero-blue);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .xero-dep-radio-row .radio-text {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--xero-navy);
+  }
+
+  .xero-dep-radio-row .radio-sub {
+    font-size: 0.75rem;
+    color: var(--xero-text-muted);
+    font-weight: 400;
+    margin-top: 1px;
+  }
+
+  .xero-dep-summary {
+    background: var(--xero-panel-bg);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-top: 20px;
+  }
+
+  .xero-dep-summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 5px 0;
+  }
+
+  .xero-dep-summary-item:not(:last-child) {
+    border-bottom: 1px solid var(--xero-border);
+    padding-bottom: 10px;
+    margin-bottom: 5px;
+  }
+
+  .xero-dep-summary-item .sum-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--xero-text-muted);
+  }
+
+  .xero-dep-summary-item .sum-value {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--xero-navy);
+  }
+
+  .xero-dep-summary-item .sum-value.primary {
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: var(--xero-green);
+  }
+
+  .xero-dep-actions {
+    margin-top: 16px;
+  }
+
+  .xero-dep-download-btn {
+    background: none;
+    border: 1px solid var(--xero-border);
+    border-radius: var(--radius);
+    padding: 7px 14px;
+    font-family: var(--font);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--xero-navy);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .xero-dep-download-btn:hover {
+    border-color: var(--xero-blue-dark);
+    background: var(--xero-panel-bg);
+  }
+
+  .xero-dep-cta {
+    margin-top: 14px;
+    font-size: 0.8125rem;
+    color: var(--xero-text-muted);
+  }
+
+  .xero-dep-cta a {
+    color: var(--xero-blue-dark);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .xero-dep-cta a:hover {
+    text-decoration: underline;
+  }
+
+  .xero-dep-table-wrap {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    overflow: hidden;
+    min-height: 200px;
+  }
+
+  .xero-dep-table-header {
+    background: var(--xero-navy);
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .xero-dep-table-header .tbl-title {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .xero-dep-table-header .tbl-asset {
+    font-size: 0.8125rem;
+    color: rgba(255,255,255,0.65);
+    margin-top: 2px;
+  }
+
+  .xero-dep-table-header .tbl-method {
+    font-size: 0.8125rem;
+    color: rgba(255,255,255,0.65);
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .xero-dep-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 32px;
+    text-align: center;
+    color: var(--xero-text-muted);
+  }
+
+  .xero-dep-placeholder svg {
+    margin-bottom: 16px;
+    opacity: 0.35;
+  }
+
+  .xero-dep-placeholder p {
+    font-size: 0.9375rem;
+    font-weight: 500;
+  }
+
+  .xero-dep-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .xero-dep-table th {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--xero-text-muted);
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--xero-border);
+    text-align: right;
+    background: #fff;
+    white-space: nowrap;
+  }
+
+  .xero-dep-table th:first-child {
+    text-align: left;
+  }
+
+  .xero-dep-table td {
+    padding: 9px 16px;
+    border-bottom: 1px solid var(--xero-border);
+    font-size: 0.875rem;
+    text-align: right;
+    color: var(--xero-text);
+  }
+
+  .xero-dep-table td:first-child {
+    text-align: left;
+    font-weight: 600;
+  }
+
+  .xero-dep-table tbody tr:nth-child(even) td {
+    background: #f8fafb;
+  }
+
+  .xero-dep-table tbody tr:last-child td {
+    border-bottom: none;
+    font-weight: 700;
+  }
+
+  .xero-dep-disclaimer {
+    margin-top: 28px;
+    font-size: 0.75rem;
+    color: var(--xero-text-muted);
+    line-height: 1.5;
+  }
+
+  @media (max-width: 900px) {
+    .xero-dep-grid {
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+    .xero-dep-wrap {
+      padding: 48px 5%;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .xero-dep-table th,
+    .xero-dep-table td {
+      padding: 8px 10px;
+      font-size: 0.8125rem;
+    }
+  }
+</style>
+
+<div class="xero-dep-wrap">
+  <div class="xero-dep-inner">
+
+    <div class="xero-dep-heading">
+      <h1>Xero's free depreciation calculator</h1>
+      <p>Calculate asset depreciation and generate a full schedule instantly.</p>
+    </div>
+
+    <div class="xero-dep-grid">
+
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="xero-dep-card">
+          <div class="xero-dep-section-label">Asset details</div>
+
+          <div class="xero-dep-field">
+            <label for="asset-name">Asset name</label>
+            <input class="xero-dep-input" type="text" id="asset-name" placeholder="Company vehicle" oninput="calculate()">
+          </div>
+
+          <div class="xero-dep-field">
+            <label for="asset-cost">Asset cost (GBP)</label>
+            <div class="xero-dep-input-wrap">
+              <span class="currency-prefix">£</span>
+              <input class="xero-dep-input has-prefix" type="number" id="asset-cost" placeholder="50,000" min="0" step="any" oninput="calculate()">
+            </div>
+          </div>
+
+          <div class="xero-dep-field">
+            <label for="salvage-value">Residual value (GBP)</label>
+            <div class="xero-dep-input-wrap">
+              <span class="currency-prefix">£</span>
+              <input class="xero-dep-input has-prefix" type="number" id="salvage-value" placeholder="0" min="0" step="any" oninput="calculate()">
+            </div>
+            <div class="helper">Estimated value at end of useful life</div>
+          </div>
+
+          <div class="xero-dep-field">
+            <label for="useful-life">Useful life (years)</label>
+            <input class="xero-dep-input" type="number" id="useful-life" placeholder="5" min="1" max="100" step="1" oninput="calculate()">
+          </div>
+
+          <div class="xero-dep-field">
+            <label>Depreciation method</label>
+            <div class="xero-dep-radios">
+              <label class="xero-dep-radio-row">
+                <input type="radio" name="dep-method" value="straight-line" checked onchange="toggleDbRate(); calculate();">
+                <div>
+                  <div class="radio-text">Straight-line</div>
+                  <div class="radio-sub">Equal depreciation each year</div>
+                </div>
+              </label>
+              <label class="xero-dep-radio-row">
+                <input type="radio" name="dep-method" value="declining-balance" onchange="toggleDbRate(); calculate();">
+                <div>
+                  <div class="radio-text">Reducing balance</div>
+                  <div class="radio-sub">Higher depreciation in early years</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="xero-dep-field" id="db-rate-field" style="display:none;">
+            <label for="db-rate">Reducing balance rate (%)</label>
+            <input class="xero-dep-input" type="number" id="db-rate" placeholder="40" value="40" min="1" max="100" step="any" oninput="calculate()">
+            <div class="helper">Common rates: 25–50% depending on asset type.</div>
+          </div>
+
+        </div>
+
+        <div class="xero-dep-summary">
+          <div class="xero-dep-summary-item">
+            <span class="sum-label" id="annual-label">Annual depreciation</span>
+            <span class="sum-value primary" id="result-annual">—</span>
+          </div>
+          <div class="xero-dep-summary-item">
+            <span class="sum-label">Total depreciable value</span>
+            <span class="sum-value" id="result-depreciable">—</span>
+          </div>
+          <div class="xero-dep-summary-item">
+            <span class="sum-label">Method</span>
+            <span class="sum-value" id="result-method">—</span>
+          </div>
+        </div>
+
+        <div class="xero-dep-actions">
+          <button class="xero-dep-download-btn" onclick="downloadCSV()">&#8595; Download schedule (CSV)</button>
+          <p class="xero-dep-cta">Track your assets with Xero. Start a 30 day <a href="https://www.xero.com/uk/signup/">free trial</a>.</p>
+        </div>
+      </div>
+
+      <!-- RIGHT: Schedule table -->
+      <div class="xero-dep-table-wrap" id="schedule-table-wrap">
+        <div class="xero-dep-table-header">
+          <div>
+            <div class="tbl-title">Depreciation schedule</div>
+            <div class="tbl-asset" id="schedule-asset-name"></div>
+          </div>
+          <div class="tbl-method" id="schedule-method-label"></div>
+        </div>
+
+        <div id="schedule-placeholder" class="xero-dep-placeholder">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="6" y="6" width="36" height="36" rx="4" stroke="#1B3A4B" stroke-width="2.5" fill="none"/>
+            <line x1="14" y1="16" x2="34" y2="16" stroke="#1B3A4B" stroke-width="2" stroke-linecap="round"/>
+            <line x1="14" y1="23" x2="34" y2="23" stroke="#1B3A4B" stroke-width="2" stroke-linecap="round"/>
+            <line x1="14" y1="30" x2="26" y2="30" stroke="#1B3A4B" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <p>Enter asset details to see the depreciation schedule.</p>
+        </div>
+
+        <table class="xero-dep-table" id="schedule-table" style="display:none;">
+          <thead>
+            <tr>
+              <th>Year</th>
+              <th>Opening value</th>
+              <th>Depreciation</th>
+              <th>Accumulated dep.</th>
+              <th>Closing value</th>
+            </tr>
+          </thead>
+          <tbody id="schedule-tbody"></tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <p class="xero-dep-disclaimer">*This calculator provides estimates only. Depreciation rates and methods may vary based on jurisdiction and asset type. Not financial or tax advice.</p>
+
+  </div>
+</div>
+
+<script>
+  var scheduleData = [];
+
+  function fmt(n) {
+    return '£' + n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function toggleDbRate() {
+    var method = document.querySelector('input[name="dep-method"]:checked').value;
+    document.getElementById('db-rate-field').style.display = (method === 'declining-balance') ? 'block' : 'none';
+    document.getElementById('annual-label').textContent = (method === 'declining-balance') ? 'Year 1 depreciation' : 'Annual depreciation';
+  }
+
+  function showPlaceholder() {
+    document.getElementById('schedule-placeholder').style.display = 'flex';
+    document.getElementById('schedule-table').style.display = 'none';
+    document.getElementById('schedule-asset-name').textContent = '';
+    document.getElementById('schedule-method-label').textContent = '';
+    document.getElementById('result-annual').textContent = '—';
+    document.getElementById('result-depreciable').textContent = '—';
+    document.getElementById('result-method').textContent = '—';
+    scheduleData = [];
+  }
+
+  function calculate() {
+    var cost    = parseFloat(document.getElementById('asset-cost').value) || 0;
+    var salvage = parseFloat(document.getElementById('salvage-value').value) || 0;
+    var life    = parseInt(document.getElementById('useful-life').value) || 0;
+    var method  = document.querySelector('input[name="dep-method"]:checked').value;
+    var dbRate  = parseFloat(document.getElementById('db-rate').value) / 100 || 0.40;
+    var name    = document.getElementById('asset-name').value.trim() || 'Asset';
+
+    if (!cost || !life || cost <= salvage) { showPlaceholder(); return; }
+
+    var depreciable = cost - salvage;
+    var rows = [];
+
+    if (method === 'straight-line') {
+      var annualDep = depreciable / life;
+      var accumulated = 0;
+      var opening = cost;
+      for (var y = 1; y <= life; y++) {
+        var dep = (y === life) ? Math.max(0, opening - salvage) : annualDep;
+        accumulated += dep;
+        var closing = opening - dep;
+        rows.push({ year: y, opening: opening, dep: dep, accumulated: accumulated, closing: closing });
+        opening = closing;
+      }
+      document.getElementById('result-annual').textContent = fmt(annualDep);
+      document.getElementById('result-method').textContent = 'Straight-line';
+      document.getElementById('schedule-method-label').textContent = 'Straight-line';
+    } else {
+      var accumulated = 0;
+      var opening = cost;
+      for (var y = 1; y <= life; y++) {
+        var dep = opening * dbRate;
+        if (opening - dep < salvage) dep = Math.max(0, opening - salvage);
+        accumulated += dep;
+        var closing = opening - dep;
+        rows.push({ year: y, opening: opening, dep: dep, accumulated: accumulated, closing: closing });
+        opening = closing;
+        if (closing <= salvage) break;
+      }
+      document.getElementById('result-annual').textContent = fmt(rows[0] ? rows[0].dep : 0);
+      var rateLabel = 'Reducing balance (' + (dbRate * 100).toFixed(0) + '%)';
+      document.getElementById('result-method').textContent = rateLabel;
+      document.getElementById('schedule-method-label').textContent = rateLabel;
+    }
+
+    document.getElementById('result-depreciable').textContent = fmt(depreciable);
+    document.getElementById('schedule-asset-name').textContent = name;
+    scheduleData = rows;
+    renderTable(rows);
+  }
+
+  function renderTable(rows) {
+    var tbody = document.getElementById('schedule-tbody');
+    tbody.innerHTML = rows.map(function(r) {
+      return '<tr>' +
+        '<td>Year ' + r.year + '</td>' +
+        '<td>' + fmt(r.opening) + '</td>' +
+        '<td>' + fmt(r.dep) + '</td>' +
+        '<td>' + fmt(r.accumulated) + '</td>' +
+        '<td>' + fmt(r.closing) + '</td>' +
+        '</tr>';
+    }).join('');
+    document.getElementById('schedule-table').style.display = 'table';
+    document.getElementById('schedule-placeholder').style.display = 'none';
+  }
+
+  function downloadCSV() {
+    if (!scheduleData || !scheduleData.length) { alert('Please enter asset details first.'); return; }
+    var name = document.getElementById('asset-name').value.trim() || 'Asset';
+    var method = document.getElementById('result-method').textContent;
+    var lines = [
+      '"Xero Depreciation Schedule"',
+      '"Asset: ' + name + '"',
+      '"Method: ' + method + '"',
+      '"Generated: ' + new Date().toLocaleDateString('en-GB') + '"',
+      '',
+      '"Year","Opening Value (GBP)","Depreciation (GBP)","Accumulated Depreciation (GBP)","Closing Value (GBP)"'
+    ];
+    scheduleData.forEach(function(r) {
+      lines.push(
+        '"Year ' + r.year + '",' +
+        r.opening.toFixed(2) + ',' +
+        r.dep.toFixed(2) + ',' +
+        r.accumulated.toFixed(2) + ',' +
+        r.closing.toFixed(2)
+      );
+    });
+    var csv = lines.join('\n');
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'depreciation-schedule-' + name.replace(/\s+/g, '-').toLowerCase() + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+</script>

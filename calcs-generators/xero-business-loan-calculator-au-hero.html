@@ -1,0 +1,502 @@
+<!--
+  XERO PROTOTYPE
+  Tool: Business Loan Calculator (AU)
+  Locale: AU
+  Pattern: B — Hero, full-width
+  Built: 2026-04-16
+  Inputs: Loan amount, annual interest rate (%), loan term (years/months), repayment frequency
+  Formula: Standard PMT — P × r(1+r)^n / ((1+r)^n − 1)
+  Notes: Live calculation. Frequency affects period rate and number of payments.
+         "Fortnightly" used (AU standard). Currency: AUD ($), locale: en-AU.
+         GT Walsheim → Plus Jakarta Sans (flag for prod — GT Walsheim is licensed).
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --xero-navy: #1B3A4B;
+    --xero-blue: #13B5EA;
+    --xero-blue-dark: #0D8FBD;
+    --xero-panel-bg: #EBF0F4;
+    --xero-border: #C2CDD6;
+    --xero-bg: #FFFFFF;
+    --xero-text: #1B3A4B;
+    --xero-text-muted: #4A6070;
+    --xero-green: #1AB394;
+    --xero-red: #E05A5A;
+    --radius: 4px;
+    --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  .xero-hero {
+    font-family: var(--font);
+    background: var(--xero-bg);
+    color: var(--xero-text);
+    width: 100%;
+  }
+
+  .xero-hero__inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 72px 5%;
+    display: grid;
+    grid-template-columns: 1fr 480px;
+    gap: 64px;
+    align-items: center;
+  }
+
+  /* LEFT COLUMN */
+  .xero-hero__left {}
+
+  .xero-hero__eyebrow {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--xero-blue-dark);
+    margin-bottom: 16px;
+  }
+
+  .xero-hero__h1 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    line-height: 1.15;
+    color: var(--xero-navy);
+    margin-bottom: 20px;
+  }
+
+  .xero-hero__body {
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    color: var(--xero-text-muted);
+    margin-bottom: 28px;
+    max-width: 520px;
+  }
+
+  .xero-hero__bullets {
+    list-style: none;
+    margin-bottom: 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .xero-hero__bullets li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--xero-text);
+    line-height: 1.5;
+  }
+
+  .xero-hero__bullets li::before {
+    content: '';
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+    background-color: var(--xero-green);
+    border-radius: 50%;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10' fill='none'%3E%3Cpath d='M1 5l3.5 3.5L11 1' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 12px 10px;
+  }
+
+  .xero-hero__ctas {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .btn-primary {
+    display: inline-block;
+    background: var(--xero-navy);
+    color: #fff;
+    border-radius: 6px;
+    padding: 12px 24px;
+    font-family: var(--font);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.18s ease;
+    white-space: nowrap;
+  }
+  .btn-primary:hover { background: #142d3c; }
+
+  .btn-secondary {
+    display: inline-block;
+    color: var(--xero-navy);
+    font-family: var(--font);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    text-decoration: underline;
+    text-decoration-color: var(--xero-blue);
+    text-underline-offset: 3px;
+    white-space: nowrap;
+    transition: color 0.18s ease;
+  }
+  .btn-secondary:hover { color: var(--xero-blue-dark); }
+
+  /* RIGHT COLUMN — CARD */
+  .xero-calc-card {
+    background: var(--xero-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    padding: 32px;
+  }
+
+  .xero-calc-card__title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--xero-navy);
+    margin-bottom: 24px;
+  }
+
+  .field-group {
+    margin-bottom: 16px;
+  }
+
+  .field-group label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--xero-navy);
+    margin-bottom: 6px;
+    letter-spacing: 0.01em;
+  }
+
+  .input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .input-wrap .prefix,
+  .input-wrap .suffix {
+    position: absolute;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--xero-text-muted);
+    pointer-events: none;
+    line-height: 1;
+  }
+  .input-wrap .prefix { left: 12px; }
+  .input-wrap .suffix { right: 12px; }
+
+  .input-wrap input,
+  .input-wrap select,
+  .field-group select {
+    width: 100%;
+    height: 42px;
+    border: 1.5px solid var(--xero-border);
+    border-radius: var(--radius);
+    font-family: var(--font);
+    font-size: 0.9375rem;
+    color: var(--xero-text);
+    background: #fff;
+    outline: none;
+    transition: border-color 0.15s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .input-wrap input:focus,
+  .input-wrap select:focus,
+  .field-group select:focus {
+    border-color: var(--xero-blue);
+    box-shadow: 0 0 0 3px rgba(19,181,234,0.12);
+  }
+
+  .input-wrap input { padding: 0 12px; }
+  .input-wrap input.has-prefix { padding-left: 28px; }
+  .input-wrap input.has-suffix { padding-right: 32px; }
+
+  .input-wrap select,
+  .field-group select {
+    padding: 0 32px 0 12px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 10' fill='none'%3E%3Cpath d='M1 1l7 7 7-7' stroke='%234A6070' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 12px;
+    cursor: pointer;
+  }
+
+  /* Term row — two inputs side by side */
+  .term-row {
+    display: grid;
+    grid-template-columns: 1fr 110px;
+    gap: 8px;
+  }
+
+  /* Results band */
+  .results-band {
+    background: var(--xero-panel-bg);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-top: 20px;
+  }
+
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--xero-border);
+    gap: 12px;
+  }
+
+  .result-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .result-row:first-child { padding-top: 0; }
+
+  .result-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--xero-text-muted);
+    flex-shrink: 0;
+  }
+
+  .result-value {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--xero-navy);
+    text-align: right;
+  }
+
+  .result-value--primary {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--xero-green);
+  }
+
+  .card-cta {
+    margin-top: 20px;
+    font-size: 0.8125rem;
+    color: var(--xero-text-muted);
+    line-height: 1.5;
+  }
+
+  .card-cta a {
+    color: var(--xero-navy);
+    font-weight: 700;
+    text-decoration: underline;
+    text-decoration-color: var(--xero-blue);
+    text-underline-offset: 2px;
+  }
+  .card-cta a:hover { color: var(--xero-blue-dark); }
+
+  /* Disclaimer */
+  .xero-hero__disclaimer {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 5% 48px;
+    font-family: var(--font);
+    font-size: 0.75rem;
+    color: var(--xero-text-muted);
+    line-height: 1.6;
+    border-top: 1px solid var(--xero-border);
+    padding-top: 20px;
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .xero-hero__inner {
+      grid-template-columns: 1fr;
+      gap: 40px;
+      padding: 48px 5%;
+    }
+    .xero-hero__body { max-width: 100%; }
+    .xero-calc-card { max-width: 100%; }
+  }
+
+  @media (max-width: 480px) {
+    .xero-hero__h1 { font-size: 1.75rem; }
+    .xero-calc-card { padding: 24px 20px; }
+  }
+</style>
+
+<div class="xero-hero">
+  <div class="xero-hero__inner">
+
+    <!-- LEFT: Copy -->
+    <div class="xero-hero__left">
+      <span class="xero-hero__eyebrow">Free business tool</span>
+      <h1 class="xero-hero__h1">Xero's free business loan calculator</h1>
+      <p class="xero-hero__body">Estimate your loan repayments before you borrow. Enter the loan amount, interest rate and term to see your monthly repayments and total cost of borrowing – no downloads required.</p>
+      <ul class="xero-hero__bullets">
+        <li>Estimate monthly repayments instantly</li>
+        <li>See the total interest you'll pay over the loan term</li>
+        <li>Compare different loan amounts and terms</li>
+      </ul>
+      <div class="xero-hero__ctas">
+        <a href="https://www.xero.com/au/signup/" class="btn-primary">Try Xero for free</a>
+        <a href="https://www.xero.com/au/pricing/" class="btn-secondary">Compare plans and pricing</a>
+      </div>
+    </div>
+
+    <!-- RIGHT: Calculator card -->
+    <div class="xero-calc-card" role="region" aria-label="Loan repayment calculator">
+      <div class="xero-calc-card__title">Calculate loan repayments</div>
+
+      <div class="field-group">
+        <label for="loan-amount">Loan amount (AUD)</label>
+        <div class="input-wrap">
+          <span class="prefix">$</span>
+          <input type="number" id="loan-amount" class="has-prefix" placeholder="50,000" min="0" step="1000" inputmode="numeric" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label for="interest-rate">Annual interest rate (%)</label>
+        <div class="input-wrap">
+          <input type="number" id="interest-rate" class="has-suffix" placeholder="6.5" min="0" max="100" step="0.1" inputmode="decimal" autocomplete="off">
+          <span class="suffix">%</span>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>Loan term</label>
+        <div class="term-row">
+          <div class="input-wrap">
+            <input type="number" id="loan-term" placeholder="5" min="1" step="1" inputmode="numeric" autocomplete="off">
+          </div>
+          <div class="input-wrap">
+            <select id="term-unit" aria-label="Term unit">
+              <option value="years" selected>Years</option>
+              <option value="months">Months</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label for="repayment-freq">Repayment frequency</label>
+        <div class="input-wrap">
+          <select id="repayment-freq">
+            <option value="monthly" selected>Monthly</option>
+            <option value="fortnightly">Fortnightly</option>
+            <option value="weekly">Weekly</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="results-band" aria-live="polite" aria-atomic="true">
+        <div class="result-row">
+          <span class="result-label" id="label-repayment">Monthly repayment</span>
+          <span class="result-value result-value--primary" id="result-repayment">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Number of repayments</span>
+          <span class="result-value" id="result-num-payments">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Total repaid</span>
+          <span class="result-value" id="result-total-repaid">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Total interest</span>
+          <span class="result-value" id="result-total-interest">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Interest as % of loan</span>
+          <span class="result-value" id="result-interest-pct">—</span>
+        </div>
+      </div>
+
+      <p class="card-cta">Manage your business finances with Xero. Start a 30 day <a href="https://www.xero.com/au/signup/">free trial</a>.</p>
+    </div>
+
+  </div>
+
+  <div class="xero-hero__disclaimer">
+    *This calculator provides estimates only based on the figures entered. Actual loan repayments may vary. Not financial advice — speak to a lender or financial adviser.
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var LOCALE = 'en-AU';
+  var CURRENCY = 'AUD';
+  var SYMBOL = '$';
+
+  function fmt(value) {
+    return SYMBOL + value.toLocaleString(LOCALE, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  function resetResults() {
+    document.getElementById('label-repayment').textContent = 'Monthly repayment';
+    document.getElementById('result-repayment').textContent = '—';
+    document.getElementById('result-num-payments').textContent = '—';
+    document.getElementById('result-total-repaid').textContent = '—';
+    document.getElementById('result-total-interest').textContent = '—';
+    document.getElementById('result-interest-pct').textContent = '—';
+  }
+
+  function calculate() {
+    var principal = parseFloat(document.getElementById('loan-amount').value);
+    var annualRate = parseFloat(document.getElementById('interest-rate').value);
+    var termVal = parseFloat(document.getElementById('loan-term').value);
+    var termUnit = document.getElementById('term-unit').value;
+    var freq = document.getElementById('repayment-freq').value;
+
+    if (!principal || isNaN(principal) || principal <= 0 ||
+        !annualRate || isNaN(annualRate) || annualRate < 0 ||
+        !termVal || isNaN(termVal) || termVal <= 0) {
+      resetResults();
+      return;
+    }
+
+    var periodsPerYear = freq === 'monthly' ? 12 : freq === 'fortnightly' ? 26 : 52;
+    var freqLabel = freq === 'monthly' ? 'Monthly' : freq === 'fortnightly' ? 'Fortnightly' : 'Weekly';
+
+    var totalMonths = termUnit === 'years' ? termVal * 12 : termVal;
+    var n = Math.round(totalMonths / 12 * periodsPerYear);
+
+    if (n <= 0) { resetResults(); return; }
+
+    var r = (annualRate / 100) / periodsPerYear;
+
+    var payment;
+    if (r === 0) {
+      payment = principal / n;
+    } else {
+      var pow = Math.pow(1 + r, n);
+      payment = principal * r * pow / (pow - 1);
+    }
+
+    var totalRepaid = payment * n;
+    var totalInterest = totalRepaid - principal;
+    var interestPct = (totalInterest / principal) * 100;
+
+    document.getElementById('label-repayment').textContent = freqLabel + ' repayment';
+    document.getElementById('result-repayment').textContent = fmt(payment);
+    document.getElementById('result-num-payments').textContent = n.toLocaleString(LOCALE);
+    document.getElementById('result-total-repaid').textContent = fmt(totalRepaid);
+    document.getElementById('result-total-interest').textContent = fmt(totalInterest);
+    document.getElementById('result-interest-pct').textContent = interestPct.toFixed(1) + '%';
+  }
+
+  var inputs = ['loan-amount', 'interest-rate', 'loan-term', 'term-unit', 'repayment-freq'];
+  inputs.forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', calculate);
+      el.addEventListener('change', calculate);
+    }
+  });
+})();
+</script>
