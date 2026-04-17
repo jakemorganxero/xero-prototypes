@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en-NZ">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xero Payslip Generator — NZ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!--
+    XERO PROTOTYPE
+    Tool: Payslip Generator (NZ)
+    Locale: NZ
+    Pattern: Two-column generator with live preview
+    Built: 2026-04-16
+    Inputs: Employer info (logo, name, address, IRD number), employee info (name, ID, IRD number,
+            tax code), pay period (type, start, end, pay date), earnings (ordinary hours/rate,
+            overtime, holiday pay), deductions (PAYE, ACC earners' levy, KiwiSaver employee,
+            student loan, other deductions)
+    Output: Styled NZ payslip — download PDF/Word/Excel
+    Notes for devs:
+      - Tax amounts: PAYE entered manually; ACC auto-calc at gross × 1.6%; KiwiSaver auto-calc from % dropdown
+      - NZ-specific deductions: PAYE, ACC earners' levy, KiwiSaver employee contribution, student loan
+      - Employer KiwiSaver (3%) shown as note — not deducted
+      - Employee IRD number shown as last 3 digits only: "xxx-xxx-X23"
+      - Net Pay = Gross − PAYE − ACC − KiwiSaver − student loan − other deductions
+      - GT Walsheim → Plus Jakarta Sans (flag for prod)
+      - Date display: DD/MM/YYYY format
+      - Currency: $NZD
+  -->
+  <style>
+    :root {
+      --xero-navy:       #1B3A4B;
+      --xero-blue:       #13B5EA;
+      --xero-blue-dark:  #0D8FBD;
+      --xero-panel-bg:   #EBF0F4;
+      --xero-border:     #C2CDD6;
+      --xero-bg:         #FFFFFF;
+      --xero-text:       #1B3A4B;
+      --xero-text-muted: #4A6070;
+      --xero-input-bg:   #FFFFFF;
+      --xero-green:      #1AB394;
+      --xero-red:        #E05A5A;
+      --radius: 4px;
+      --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      color: var(--xero-text);
+      background: var(--xero-bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .xero-tool { padding: 40px 5% 56px; }
+
+    .xero-tool__layout {
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 48px;
+      align-items: start;
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 1000px) {
+      .xero-tool__layout { grid-template-columns: 1fr; }
+    }
+
+    .xero-form__title {
+      font-size: 1.375rem;
+      font-weight: 800;
+      color: var(--xero-navy);
+      letter-spacing: -0.02em;
+      margin-bottom: 28px;
+    }
+
+    .xero-section {
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--xero-border);
+      margin-bottom: 24px;
+    }
+    .xero-section:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+    .xero-section__title {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--xero-text-muted);
+      margin-bottom: 14px;
+    }
+
+    .xero-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .xero-fields--single { grid-template-columns: 1fr; }
+    .xero-field--full    { grid-column: 1 / -1; }
+    @media (max-width: 540px) { .xero-fields { grid-template-columns: 1fr; } }
+
+    .xero-field__label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 4px;
+    }
+    .xero-field__helper {
+      font-size: 0.6875rem;
+      color: var(--xero-text-muted);
+      margin-top: 3px;
+    }
+    .xero-field__helper a { color: var(--xero-blue); text-decoration: none; }
+    .xero-field__helper a:hover { color: var(--xero-blue-dark); text-decoration: underline; }
+
+    .xero-input--plain {
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      font-family: var(--font);
+      font-size: 0.875rem;
+      color: var(--xero-text);
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s;
+      background: var(--xero-input-bg);
+    }
+    .xero-input--plain:focus { border-color: var(--xero-blue); }
+    .xero-input--plain::placeholder { color: #9EB0BB; }
+
+    .xero-select {
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 8px 32px 8px 12px;
+      font-family: var(--font);
+      font-size: 0.875rem;
+      color: var(--xero-text);
+      width: 100%;
+      outline: none;
+      background: var(--xero-input-bg);
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234A6070' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      cursor: pointer;
+    }
+    .xero-select:focus { border-color: var(--xero-blue); }
+
+    .xero-input-wrap {
+      display: flex;
+      align-items: stretch;
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      background: var(--xero-input-bg);
+      transition: border-color 0.15s;
+    }
+    .xero-input-wrap:focus-within { border-color: var(--xero-blue); }
+    .xero-input-prefix {
+      display: flex; align-items: center;
+      padding: 0 6px 0 12px;
+      color: var(--xero-text-muted);
+      font-size: 0.875rem; font-weight: 500;
+      user-select: none; flex-shrink: 0;
+    }
+    .xero-input-suffix {
+      display: flex; align-items: center;
+      padding: 0 12px 0 4px;
+      color: var(--xero-text-muted);
+      font-size: 0.875rem; font-weight: 500;
+      user-select: none; flex-shrink: 0;
+    }
+    .xero-input {
+      border: none; outline: none;
+      padding: 8px 8px 8px 4px;
+      font-family: var(--font); font-size: 0.875rem;
+      color: var(--xero-text); background: transparent;
+      width: 100%; min-width: 0;
+    }
+    .xero-input::placeholder { color: #9EB0BB; }
+
+    .xero-logo-upload { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+    .xero-logo-preview {
+      width: 80px; height: 52px;
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      display: flex; align-items: center; justify-content: center;
+      background: var(--xero-panel-bg);
+      overflow: hidden; flex-shrink: 0;
+    }
+    .xero-logo-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .xero-logo-upload-btn {
+      background: none; border: 1px solid var(--xero-border);
+      border-radius: var(--radius); padding: 7px 14px;
+      font-family: var(--font); font-size: 0.8125rem; font-weight: 600;
+      color: var(--xero-navy); cursor: pointer; transition: border-color 0.15s;
+    }
+    .xero-logo-upload-btn:hover { border-color: var(--xero-navy); }
+
+    .xero-repeat-row {
+      display: grid;
+      grid-template-columns: 1fr 120px 28px;
+      gap: 6px;
+      align-items: end;
+      margin-bottom: 6px;
+    }
+    .row-remove {
+      background: none; border: none;
+      color: var(--xero-text-muted); cursor: pointer;
+      font-size: 1.1rem; padding: 8px 4px;
+      transition: color 0.15s;
+    }
+    .row-remove:hover { color: var(--xero-red); }
+    .xero-add-row {
+      background: none; border: none;
+      color: var(--xero-blue); font-family: var(--font);
+      font-size: 0.8125rem; font-weight: 600;
+      cursor: pointer; padding: 6px 0 2px; display: block;
+    }
+    .xero-add-row:hover { color: var(--xero-blue-dark); }
+
+    .xero-form-total {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0; border-top: 1px solid var(--xero-border); margin-top: 8px;
+    }
+    .xero-form-total__label { font-size: 0.875rem; font-weight: 700; color: var(--xero-navy); }
+    .xero-form-total__value { font-size: 0.9375rem; font-weight: 700; color: var(--xero-navy); }
+
+    /* ─── Preview ─── */
+    .xero-preview { position: sticky; top: 24px; }
+    .xero-preview__label {
+      font-size: 0.6875rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--xero-text-muted); margin-bottom: 10px;
+    }
+
+    .inv-doc {
+      background: #fff; border: 1px solid var(--xero-border);
+      border-radius: 4px 4px 0 0; padding: 28px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      font-size: 0.8125rem; line-height: 1.5;
+    }
+
+    .ps-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .ps-logo-placeholder {
+      width: 80px; height: 36px; border: 1px dashed var(--xero-border);
+      border-radius: 3px; display: flex; align-items: center; justify-content: center;
+      font-size: 0.5625rem; color: var(--xero-text-muted);
+    }
+    .ps-title { font-size: 1.375rem; font-weight: 800; color: var(--xero-navy); letter-spacing: -0.02em; }
+    .ps-rule { border: none; border-top: 2px solid var(--xero-navy); margin-bottom: 14px; }
+    .ps-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px; }
+    .ps-block__label { font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--xero-text-muted); margin-bottom: 2px; }
+    .ps-block__name { font-size: 0.8125rem; font-weight: 700; color: var(--xero-navy); }
+    .ps-block__line { font-size: 0.6875rem; color: var(--xero-text-muted); line-height: 1.4; }
+
+    .ps-period-row {
+      display: flex; justify-content: space-between;
+      font-size: 0.75rem; padding: 7px 10px;
+      background: var(--xero-panel-bg); border-radius: var(--radius); margin-bottom: 12px;
+    }
+    .ps-period-row span { font-weight: 600; color: var(--xero-navy); }
+    .ps-period-row em { font-weight: 400; color: var(--xero-text-muted); font-style: normal; margin-right: 4px; }
+
+    .ps-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-bottom: 0; }
+    .ps-table thead tr { background: var(--xero-navy); }
+    .ps-table th { padding: 6px 8px; color: #fff; font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; text-align: left; }
+    .ps-table th.r, .ps-table td.r { text-align: right; }
+    .ps-table td { padding: 6px 8px; border-bottom: 1px solid var(--xero-border); }
+    .ps-table tbody tr:last-child td { border-bottom: none; }
+    .ps-subtotal-row td { font-weight: 700; color: var(--xero-navy); border-top: 1px solid var(--xero-border); background: #fafbfc; }
+    .ps-net-row td { font-size: 0.9375rem; font-weight: 800; color: var(--xero-navy); border-top: 2px solid var(--xero-navy); background: var(--xero-panel-bg); }
+
+    .ps-kiwi-note {
+      font-size: 0.6875rem; color: var(--xero-text-muted);
+      background: #f8fafb; border: 1px solid var(--xero-border);
+      border-top: none; padding: 8px 10px; line-height: 1.4;
+    }
+
+    .inv-cta {
+      font-size: 0.75rem; color: var(--xero-text-muted);
+      margin-top: 12px; padding-top: 12px;
+      border-top: 1px solid var(--xero-border); line-height: 1.5;
+    }
+    .inv-cta a { color: var(--xero-blue); text-decoration: none; font-weight: 600; }
+    .inv-cta a:hover { color: var(--xero-blue-dark); }
+
+    .xero-preview__dl {
+      background: var(--xero-panel-bg); border: 1px solid var(--xero-border);
+      border-top: none; border-radius: 0 0 4px 4px;
+      padding: 12px 16px; display: flex; align-items: center;
+      justify-content: center; gap: 10px; flex-wrap: wrap;
+    }
+    .xero-preview__dl-label { font-size: 0.75rem; font-weight: 600; color: var(--xero-text-muted); white-space: nowrap; flex-shrink: 0; }
+    .xero-dl-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--xero-bg); border: 1px solid var(--xero-border);
+      color: var(--xero-navy); font-family: var(--font);
+      font-size: 0.75rem; font-weight: 600; padding: 6px 11px;
+      border-radius: var(--radius); cursor: pointer;
+      transition: border-color 0.15s; white-space: nowrap; text-decoration: none;
+    }
+    .xero-dl-btn:hover { border-color: var(--xero-navy); }
+
+    .xero-tool__disclaimer {
+      font-size: 0.75rem; color: var(--xero-text-muted);
+      margin-top: 28px; max-width: 1300px;
+      margin-left: auto; margin-right: auto; line-height: 1.5;
+    }
+
+    @media print { body > * { display: none !important; } #payslip-print-area { display: block !important; } }
+    #payslip-print-area { display: none; }
+  </style>
+</head>
+<body>
+
+<div class="xero-tool">
+  <div class="xero-tool__layout">
+
+    <!-- ══ LEFT: Form ══ -->
+    <div>
+      <h2 class="xero-form__title">Create payslip</h2>
+
+      <!-- Employer -->
+      <div class="xero-section">
+        <p class="xero-section__title">Your Business (Employer)</p>
+        <div class="xero-logo-upload">
+          <div class="xero-logo-preview" id="logo-preview-box">
+            <span style="font-size:0.5625rem;color:var(--xero-text-muted);text-align:center;padding:4px;">Your logo</span>
+          </div>
+          <div>
+            <button class="xero-logo-upload-btn" type="button" onclick="document.getElementById('logo-file').click()">Upload logo</button>
+            <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="handleLogo(this)">
+            <p style="font-size:0.6875rem;color:var(--xero-text-muted);margin-top:4px;">PNG or JPG recommended</p>
+          </div>
+        </div>
+        <div class="xero-fields">
+          <div class="xero-field--full">
+            <label class="xero-field__label" for="biz-name">Business name</label>
+            <input class="xero-input--plain" type="text" id="biz-name" placeholder="Acme Limited" oninput="updatePreview()">
+          </div>
+          <div class="xero-field--full">
+            <label class="xero-field__label" for="biz-address">Address</label>
+            <input class="xero-input--plain" type="text" id="biz-address" placeholder="123 Queen Street, Auckland 1010" oninput="updatePreview()">
+          </div>
+          <div class="xero-field--full">
+            <label class="xero-field__label" for="biz-ird">IRD number (employer)</label>
+            <input class="xero-input--plain" type="text" id="biz-ird" placeholder="123-456-789" oninput="updatePreview()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Employee -->
+      <div class="xero-section">
+        <p class="xero-section__title">Employee</p>
+        <div class="xero-fields">
+          <div class="xero-field--full">
+            <label class="xero-field__label" for="emp-name">Employee name</label>
+            <input class="xero-input--plain" type="text" id="emp-name" placeholder="Jane Smith" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="emp-id">Employee ID</label>
+            <input class="xero-input--plain" type="text" id="emp-id" placeholder="EMP-001" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="emp-position">Position</label>
+            <input class="xero-input--plain" type="text" id="emp-position" placeholder="Senior Designer" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="emp-ird">IRD number (employee)</label>
+            <input class="xero-input--plain" type="text" id="emp-ird" placeholder="987-654-321" maxlength="11" oninput="updatePreview()">
+            <p class="xero-field__helper">Last 3 digits shown on payslip</p>
+          </div>
+          <div>
+            <label class="xero-field__label" for="emp-taxcode">Tax code</label>
+            <select class="xero-select" id="emp-taxcode" onchange="updatePreview()">
+              <option value="M">M</option>
+              <option value="ME">ME</option>
+              <option value="S">S</option>
+              <option value="SH">SH</option>
+              <option value="ST">ST</option>
+              <option value="SB">SB</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pay Period -->
+      <div class="xero-section">
+        <p class="xero-section__title">Pay Period</p>
+        <div class="xero-fields">
+          <div>
+            <label class="xero-field__label" for="pay-freq">Pay period type</label>
+            <select class="xero-select" id="pay-freq" onchange="autoEndDate(); updatePreview()">
+              <option value="7">Weekly</option>
+              <option value="14" selected>Fortnightly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+          <div>
+            <label class="xero-field__label" for="pay-date">Pay date</label>
+            <input class="xero-input--plain" type="date" id="pay-date" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="period-start">Period start</label>
+            <input class="xero-input--plain" type="date" id="period-start" oninput="autoEndDate(); updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="period-end">Period end</label>
+            <input class="xero-input--plain" type="date" id="period-end" oninput="updatePreview()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Earnings -->
+      <div class="xero-section">
+        <p class="xero-section__title">Earnings</p>
+        <div class="xero-fields" style="margin-bottom:10px;">
+          <div>
+            <label class="xero-field__label" for="ord-hours">Ordinary hours</label>
+            <input class="xero-input--plain" type="number" id="ord-hours" min="0" step="0.5" placeholder="40" value="40" oninput="autoOvertimeRate(); calcGross(); updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="ord-rate">Ordinary rate ($/hr)</label>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="ord-rate" min="0" step="0.01" placeholder="25.00" oninput="autoOvertimeRate(); calcGross(); updatePreview()">
+            </div>
+          </div>
+          <div>
+            <label class="xero-field__label" for="ot-hours">Overtime hours</label>
+            <input class="xero-input--plain" type="number" id="ot-hours" min="0" step="0.5" placeholder="0" value="0" oninput="calcGross(); updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="ot-rate">Overtime rate ($/hr)</label>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="ot-rate" min="0" step="0.01" placeholder="37.50" oninput="calcGross(); updatePreview()">
+            </div>
+            <p class="xero-field__helper">Auto-set to 1.5× ordinary rate</p>
+          </div>
+          <div class="xero-field--full">
+            <label class="xero-field__label" for="holiday-pay">Holiday pay (optional)</label>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="holiday-pay" min="0" step="0.01" placeholder="0.00" oninput="calcGross(); updatePreview()">
+            </div>
+          </div>
+        </div>
+
+        <div class="xero-form-total">
+          <span class="xero-form-total__label">Gross Pay</span>
+          <span class="xero-form-total__value" id="gross-display">$0.00</span>
+        </div>
+      </div>
+
+      <!-- Deductions -->
+      <div class="xero-section">
+        <p class="xero-section__title">Deductions</p>
+        <div class="xero-fields" style="margin-bottom:10px;">
+          <div>
+            <label class="xero-field__label" for="paye-tax">PAYE tax</label>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="paye-tax" min="0" step="0.01" placeholder="0.00" oninput="calcNet(); updatePreview()">
+            </div>
+            <p class="xero-field__helper"><a href="https://www.ird.govt.nz/income-tax/withholding-taxes/paye" target="_blank">See IRD PAYE tables</a></p>
+          </div>
+          <div>
+            <label class="xero-field__label" for="acc-levy">ACC earners' levy</label>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="acc-levy" min="0" step="0.01" placeholder="0.00" oninput="calcNet(); updatePreview()">
+            </div>
+            <p class="xero-field__helper">Auto-calc: gross × 1.6% (editable)</p>
+          </div>
+          <div>
+            <label class="xero-field__label" for="kiwisaver-pct">KiwiSaver employee rate</label>
+            <select class="xero-select" id="kiwisaver-pct" onchange="calcNet(); updatePreview()">
+              <option value="0">0% (not enrolled)</option>
+              <option value="3" selected>3%</option>
+              <option value="3.5">3.5%</option>
+              <option value="4">4%</option>
+              <option value="6">6%</option>
+              <option value="8">8%</option>
+              <option value="10">10%</option>
+            </select>
+          </div>
+          <div>
+            <label class="xero-field__label" for="student-loan">Student loan repayment</label>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="student-loan" min="0" step="0.01" placeholder="0.00" oninput="calcNet(); updatePreview()">
+            </div>
+          </div>
+        </div>
+
+        <!-- Other deductions -->
+        <p style="font-size:0.75rem;font-weight:700;color:var(--xero-text-muted);text-transform:uppercase;letter-spacing:0.04em;margin:12px 0 8px;">Other deductions</p>
+        <div id="other-deductions-container"></div>
+        <button class="xero-add-row" type="button" onclick="addOtherDeduction()">+ Add deduction</button>
+
+        <div class="xero-form-total" style="border-top:2px solid var(--xero-navy);margin-top:12px;">
+          <span class="xero-form-total__label" style="font-size:1rem;">Net Pay</span>
+          <span class="xero-form-total__value" style="font-size:1.0625rem;" id="net-display">$0.00</span>
+        </div>
+      </div>
+
+    </div><!-- /form col -->
+
+    <!-- ══ RIGHT: Preview ══ -->
+    <div class="xero-preview">
+      <p class="xero-preview__label">Live preview</p>
+
+      <div class="inv-doc" id="payslip-preview">
+
+        <div class="ps-header">
+          <div id="prev-logo"><div class="ps-logo-placeholder">YOUR LOGO</div></div>
+          <div class="ps-title">PAYSLIP</div>
+        </div>
+        <hr class="ps-rule">
+
+        <div class="ps-meta">
+          <div>
+            <div class="ps-block__label">Employer</div>
+            <div class="ps-block__name" id="prev-biz-name">Business Name</div>
+            <div class="ps-block__line" id="prev-biz-address"></div>
+            <div class="ps-block__line" id="prev-biz-ird" style="margin-top:2px;"></div>
+          </div>
+          <div>
+            <div class="ps-block__label">Employee</div>
+            <div class="ps-block__name" id="prev-emp-name">Employee Name</div>
+            <div class="ps-block__line" id="prev-emp-id"></div>
+            <div class="ps-block__line" id="prev-emp-position"></div>
+            <div class="ps-block__line" id="prev-emp-ird" style="margin-top:2px;"></div>
+            <div class="ps-block__line" id="prev-emp-taxcode"></div>
+          </div>
+        </div>
+
+        <div class="ps-period-row">
+          <div><em>Pay Period:</em><span id="prev-period">—</span></div>
+          <div><em>Pay Date:</em><span id="prev-pay-date">—</span></div>
+        </div>
+
+        <table class="ps-table">
+          <thead>
+            <tr>
+              <th>Earnings</th>
+              <th class="r" style="width:50px">Hours</th>
+              <th class="r" style="width:54px">Rate</th>
+              <th class="r" style="width:64px">Amount</th>
+            </tr>
+          </thead>
+          <tbody id="prev-earnings-body"></tbody>
+        </table>
+
+        <table class="ps-table" style="margin-top:0;">
+          <thead>
+            <tr>
+              <th>Deductions</th>
+              <th class="r" colspan="3">Amount</th>
+            </tr>
+          </thead>
+          <tbody id="prev-deductions-body"></tbody>
+        </table>
+
+        <table class="ps-table" style="margin-top:0;">
+          <tbody>
+            <tr class="ps-net-row">
+              <td colspan="3"><strong>NET PAY</strong></td>
+              <td class="r"><strong id="prev-net">$0.00</strong></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="ps-kiwi-note" id="prev-kiwi-note">
+          Your employer also contributes 3% to your KiwiSaver: <strong>$0.00</strong>
+        </div>
+
+        <div class="inv-cta">
+          Manage payroll with ease using Xero. Start a 30 day <a href="https://www.xero.com/nz/signup/" target="_blank">free trial</a>.
+        </div>
+
+      </div><!-- /inv-doc -->
+
+      <!-- Download strip -->
+      <div class="xero-preview__dl">
+        <span class="xero-preview__dl-label">Download as:</span>
+        <button class="xero-dl-btn" onclick="downloadPDF()">
+          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><path d="M1 10v2a1 1 0 001 1h9a1 1 0 001-1v-2M6.5 1v7m0 0L4 5.5M6.5 8l2.5-2.5" stroke="#1B3A4B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          PDF
+        </button>
+        <button class="xero-dl-btn" onclick="downloadWord()">
+          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#1B3A4B" stroke-width="1.5"/><path d="M4 5h5M4 7.5h5M4 10h3" stroke="#1B3A4B" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Word
+        </button>
+        <button class="xero-dl-btn" onclick="downloadExcel()">
+          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#1B3A4B" stroke-width="1.5"/><path d="M4 5l5 4M9 5l-5 4" stroke="#1AB394" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Excel
+        </button>
+        <button class="xero-dl-btn" onclick="openGSheets()">
+          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#1B3A4B" stroke-width="1.5"/><path d="M4 5h5M4 7.5h5M4 10h5" stroke="#0D8FBD" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Google Sheets
+        </button>
+        <button class="xero-dl-btn" onclick="openGDoc()">
+          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#1B3A4B" stroke-width="1.5"/><path d="M4 5h5M4 7.5h5M4 10h3" stroke="#13B5EA" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Google Doc
+        </button>
+      </div>
+    </div><!-- /preview -->
+
+  </div><!-- /layout -->
+  <p class="xero-tool__disclaimer">*This tool generates payslip documents only. Tax figures must be verified against official IRD tax tables. Not financial or tax advice.</p>
+</div>
+
+<div id="payslip-print-area"></div>
+
+<script>
+  let logoDataUrl = null;
+  let otherDeductions = [];
+
+  (function init() {
+    const today = new Date();
+    const pad = n => String(n).padStart(2,'0');
+    const todayStr = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+    document.getElementById('pay-date').value = todayStr;
+    document.getElementById('period-start').value = todayStr;
+    autoEndDate();
+    calcGross();
+    updatePreview();
+  })();
+
+  function fmtNZD(n) {
+    if (isNaN(n)) n = 0;
+    return '$' + Math.abs(n).toLocaleString('en-NZ', {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+
+  function fmtDate(isoStr) {
+    if (!isoStr) return '—';
+    const [y,m,d] = isoStr.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  function gv(id) { return parseFloat(document.getElementById(id).value) || 0; }
+  function gs(id) { return document.getElementById(id).value.trim(); }
+
+  function handleLogo(input) {
+    if (!input.files || !input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      logoDataUrl = e.target.result;
+      document.getElementById('logo-preview-box').innerHTML = `<img src="${logoDataUrl}" alt="Logo">`;
+      updatePreview();
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+
+  function autoEndDate() {
+    const start = document.getElementById('period-start').value;
+    const freq  = document.getElementById('pay-freq').value;
+    if (!start) return;
+    const d = new Date(start);
+    if (freq === 'monthly') { d.setMonth(d.getMonth()+1); d.setDate(d.getDate()-1); }
+    else { d.setDate(d.getDate() + parseInt(freq) - 1); }
+    const pad = n => String(n).padStart(2,'0');
+    document.getElementById('period-end').value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  }
+
+  function autoOvertimeRate() {
+    const ordRate = gv('ord-rate');
+    if (ordRate > 0) document.getElementById('ot-rate').value = (ordRate * 1.5).toFixed(2);
+  }
+
+  function calcGrossValue() {
+    return gv('ord-hours') * gv('ord-rate') + gv('ot-hours') * gv('ot-rate') + gv('holiday-pay');
+  }
+
+  function calcGross() {
+    const gross = calcGrossValue();
+    document.getElementById('gross-display').textContent = fmtNZD(gross);
+    // Auto-set ACC levy
+    document.getElementById('acc-levy').value = (gross * 0.016).toFixed(2);
+    calcNet();
+    return gross;
+  }
+
+  function calcNet() {
+    const gross = calcGrossValue();
+    const paye  = gv('paye-tax');
+    const acc   = gv('acc-levy');
+    const ks    = gross * (gv('kiwisaver-pct') / 100);
+    const sl    = gv('student-loan');
+    const others = otherDeductions.reduce((s,d) => s + (d.amount||0), 0);
+    const net   = Math.max(0, gross - paye - acc - ks - sl - others);
+    document.getElementById('net-display').textContent = fmtNZD(net);
+  }
+
+  function maskIRD(ird) {
+    const clean = ird.replace(/\D/g,'');
+    if (!clean) return '';
+    const visible = clean.slice(-3);
+    return `xxx-xxx-${visible}`;
+  }
+
+  function addOtherDeduction() {
+    const id = Date.now();
+    otherDeductions.push({ id, desc:'', amount:0 });
+    renderOtherDeductions();
+  }
+
+  function removeOtherDeduction(id) {
+    otherDeductions = otherDeductions.filter(d => d.id !== id);
+    renderOtherDeductions(); calcNet(); updatePreview();
+  }
+
+  function renderOtherDeductions() {
+    const c = document.getElementById('other-deductions-container');
+    c.innerHTML = otherDeductions.map(d => `
+      <div class="xero-repeat-row">
+        <div><input class="xero-input--plain" type="text" placeholder="Deduction description"
+          value="${d.desc}" oninput="otherDeductions.find(x=>x.id===${d.id}).desc=this.value; updatePreview()"></div>
+        <div><div class="xero-input-wrap"><span class="xero-input-prefix">$</span>
+          <input class="xero-input" type="number" min="0" step="0.01" placeholder="0.00"
+            value="${d.amount||''}" oninput="otherDeductions.find(x=>x.id===${d.id}).amount=parseFloat(this.value)||0; calcNet(); updatePreview()">
+        </div></div>
+        <button class="row-remove" type="button" onclick="removeOtherDeduction(${d.id})" title="Remove">×</button>
+      </div>`).join('');
+  }
+
+  function updatePreview() {
+    // Logo
+    document.getElementById('prev-logo').innerHTML = logoDataUrl
+      ? `<img src="${logoDataUrl}" style="max-height:36px;max-width:90px;object-fit:contain;">`
+      : `<div class="ps-logo-placeholder">YOUR LOGO</div>`;
+
+    // Employer
+    document.getElementById('prev-biz-name').textContent    = gs('biz-name')    || 'Business Name';
+    document.getElementById('prev-biz-address').textContent = gs('biz-address') || '';
+    const ird = gs('biz-ird');
+    document.getElementById('prev-biz-ird').textContent = ird ? `IRD: ${ird}` : '';
+
+    // Employee
+    document.getElementById('prev-emp-name').textContent = gs('emp-name') || 'Employee Name';
+    document.getElementById('prev-emp-id').textContent   = gs('emp-id') ? `ID: ${gs('emp-id')}` : '';
+    document.getElementById('prev-emp-position').textContent = gs('emp-position') || '';
+    const empIrdMasked = maskIRD(gs('emp-ird'));
+    document.getElementById('prev-emp-ird').textContent = empIrdMasked ? `IRD: ${empIrdMasked}` : '';
+    document.getElementById('prev-emp-taxcode').textContent = `Tax code: ${gs('emp-taxcode') || 'M'}`;
+
+    // Period
+    const ps = gs('period-start'), pe = gs('period-end');
+    document.getElementById('prev-period').textContent = (ps || pe) ? `${fmtDate(ps)} – ${fmtDate(pe)}` : '—';
+    document.getElementById('prev-pay-date').textContent = fmtDate(gs('pay-date'));
+
+    // Earnings
+    const ordHours = gv('ord-hours'), ordRate = gv('ord-rate');
+    const otHours  = gv('ot-hours'),  otRate  = gv('ot-rate');
+    const holPay   = gv('holiday-pay');
+    const gross    = ordHours * ordRate + otHours * otRate + holPay;
+
+    let eRows = `
+      <tr><td>Ordinary time</td><td class="r">${ordHours.toFixed(2)}</td><td class="r">${fmtNZD(ordRate)}</td><td class="r">${fmtNZD(ordHours*ordRate)}</td></tr>
+      <tr><td>Overtime</td><td class="r">${otHours.toFixed(2)}</td><td class="r">${fmtNZD(otRate)}</td><td class="r">${fmtNZD(otHours*otRate)}</td></tr>`;
+    if (holPay > 0) eRows += `<tr><td>Holiday pay</td><td class="r">—</td><td class="r">—</td><td class="r">${fmtNZD(holPay)}</td></tr>`;
+    eRows += `<tr class="ps-subtotal-row"><td colspan="3" class="r">GROSS PAY</td><td class="r">${fmtNZD(gross)}</td></tr>`;
+    document.getElementById('prev-earnings-body').innerHTML = eRows;
+
+    // Deductions
+    const paye   = gv('paye-tax');
+    const acc    = gv('acc-levy');
+    const ksPct  = gv('kiwisaver-pct');
+    const ksAmt  = gross * (ksPct / 100);
+    const sl     = gv('student-loan');
+    const others = otherDeductions.reduce((s,d) => s+(d.amount||0), 0);
+    const totalDed = paye + acc + ksAmt + sl + others;
+    const net    = Math.max(0, gross - totalDed);
+
+    let dRows = '';
+    if (paye > 0) dRows += `<tr><td>PAYE tax</td><td class="r" colspan="3">${fmtNZD(paye)}</td></tr>`;
+    if (acc  > 0) dRows += `<tr><td>ACC earners' levy (1.6%)</td><td class="r" colspan="3">${fmtNZD(acc)}</td></tr>`;
+    if (ksPct > 0) dRows += `<tr><td>KiwiSaver employee (${ksPct}%)</td><td class="r" colspan="3">${fmtNZD(ksAmt)}</td></tr>`;
+    if (sl > 0) dRows += `<tr><td>Student loan repayment</td><td class="r" colspan="3">${fmtNZD(sl)}</td></tr>`;
+    otherDeductions.forEach(d => {
+      if (d.amount > 0 || d.desc) dRows += `<tr><td>${d.desc||'Other deduction'}</td><td class="r" colspan="3">${fmtNZD(d.amount)}</td></tr>`;
+    });
+    if (!dRows) dRows = `<tr><td colspan="4" style="color:var(--xero-text-muted);font-style:italic;">No deductions entered</td></tr>`;
+    dRows += `<tr class="ps-subtotal-row"><td colspan="3" class="r">TOTAL DEDUCTIONS</td><td class="r">${fmtNZD(totalDed)}</td></tr>`;
+    document.getElementById('prev-deductions-body').innerHTML = dRows;
+
+    document.getElementById('prev-net').textContent = fmtNZD(net);
+
+    // KiwiSaver employer note (3%)
+    const employerKS = gross * 0.03;
+    document.getElementById('prev-kiwi-note').innerHTML =
+      ksPct > 0
+        ? `Your employer also contributes 3% to your KiwiSaver: <strong>${fmtNZD(employerKS)}</strong>`
+        : `<span style="color:var(--xero-text-muted)">Employee is not enrolled in KiwiSaver.</span>`;
+  }
+
+  function downloadPDF() {
+    const area = document.getElementById('payslip-print-area');
+    area.innerHTML = document.getElementById('payslip-preview').outerHTML;
+    area.style.display = 'block';
+    window.print();
+    setTimeout(() => { area.style.display='none'; area.innerHTML=''; }, 500);
+  }
+
+  function buildCSV() {
+    const gross = calcGrossValue();
+    const ksPct = gv('kiwisaver-pct');
+    const ksAmt = gross * (ksPct/100);
+    const rows = [
+      ['PAYSLIP — NZ'],
+      ['Employer', gs('biz-name'), '', 'IRD', gs('biz-ird')],
+      ['Employee', gs('emp-name'), '', 'ID', gs('emp-id')],
+      ['Tax code', gs('emp-taxcode'), '', 'IRD (employee)', maskIRD(gs('emp-ird'))],
+      ['Pay Period', `${fmtDate(gs('period-start'))} - ${fmtDate(gs('period-end'))}`, '', 'Pay Date', fmtDate(gs('pay-date'))],
+      [],
+      ['EARNINGS','Hours','Rate','Amount'],
+      ['Ordinary time', gv('ord-hours'), gv('ord-rate'), (gv('ord-hours')*gv('ord-rate')).toFixed(2)],
+      ['Overtime',      gv('ot-hours'),  gv('ot-rate'),  (gv('ot-hours')*gv('ot-rate')).toFixed(2)],
+      ['Holiday pay', '', '', gv('holiday-pay').toFixed(2)],
+      ['GROSS PAY', '', '', gross.toFixed(2)],
+      [],
+      ['DEDUCTIONS','','','Amount'],
+      ['PAYE tax', '', '', gv('paye-tax').toFixed(2)],
+      ["ACC earners' levy (1.6%)", '', '', gv('acc-levy').toFixed(2)],
+      [`KiwiSaver employee (${ksPct}%)`, '', '', ksAmt.toFixed(2)],
+      ['Student loan', '', '', gv('student-loan').toFixed(2)],
+      ...otherDeductions.map(d => [d.desc||'Other', '', '', (d.amount||0).toFixed(2)]),
+      [],
+      ['NET PAY', '', '', Math.max(0,gross-gv('paye-tax')-gv('acc-levy')-ksAmt-gv('student-loan')-otherDeductions.reduce((s,d)=>s+(d.amount||0),0)).toFixed(2)],
+      [],
+      ['KiwiSaver employer (3%)', '', '', (gross*0.03).toFixed(2)],
+    ];
+    return rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  }
+
+  function downloadExcel() {
+    const blob = new Blob([buildCSV()], { type:'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url;
+    a.download=`payslip-${gs('emp-name').replace(/\s+/g,'-')||'nz'}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  }
+
+  function downloadWord() {
+    const gross = calcGrossValue();
+    const ksPct = gv('kiwisaver-pct');
+    const ksAmt = gross * (ksPct/100);
+    const net   = Math.max(0, gross - gv('paye-tax') - gv('acc-levy') - ksAmt - gv('student-loan') - otherDeductions.reduce((s,d)=>s+(d.amount||0),0));
+    const html = `<!DOCTYPE html><html lang="en-NZ"><head><meta charset="UTF-8"><title>Payslip — ${gs('emp-name')||'Employee'}</title>
+<style>body{font-family:Arial,sans-serif;font-size:12px;color:#1B3A4B;max-width:640px;margin:40px auto;padding:0 20px}
+h1{font-size:22px;font-weight:900}hr{border:none;border-top:2px solid #1B3A4B;margin:12px 0}
+table{width:100%;border-collapse:collapse;margin-bottom:8px}th{background:#1B3A4B;color:#fff;padding:5px 8px;font-size:10px;text-align:left}
+th.r,td.r{text-align:right}td{padding:5px 8px;border-bottom:1px solid #C2CDD6}
+.sub td{font-weight:700;background:#f0f5f8}.net td{font-size:14px;font-weight:900;background:#EBF0F4;border-top:2px solid #1B3A4B}
+.note{font-size:11px;color:#4A6070;margin-top:4px}</style></head><body>
+<div style="display:flex;justify-content:space-between"><div>${gs('biz-name')}<br>${gs('biz-address')}${gs('biz-ird')?'<br>IRD: '+gs('biz-ird'):''}</div><h1>PAYSLIP</h1></div>
+<hr>
+<table><tr><td><b>Employee:</b> ${gs('emp-name')}</td><td><b>ID:</b> ${gs('emp-id')}</td></tr>
+<tr><td><b>Tax code:</b> ${gs('emp-taxcode')}</td><td><b>IRD:</b> ${maskIRD(gs('emp-ird'))}</td></tr>
+<tr><td><b>Period:</b> ${fmtDate(gs('period-start'))} – ${fmtDate(gs('period-end'))}</td><td><b>Pay date:</b> ${fmtDate(gs('pay-date'))}</td></tr></table>
+<table><thead><tr><th>Earnings</th><th class="r">Hours</th><th class="r">Rate</th><th class="r">Amount</th></tr></thead><tbody>
+<tr><td>Ordinary time</td><td class="r">${gv('ord-hours').toFixed(2)}</td><td class="r">${fmtNZD(gv('ord-rate'))}</td><td class="r">${fmtNZD(gv('ord-hours')*gv('ord-rate'))}</td></tr>
+<tr><td>Overtime</td><td class="r">${gv('ot-hours').toFixed(2)}</td><td class="r">${fmtNZD(gv('ot-rate'))}</td><td class="r">${fmtNZD(gv('ot-hours')*gv('ot-rate'))}</td></tr>
+${gv('holiday-pay')>0?`<tr><td>Holiday pay</td><td class="r">—</td><td class="r">—</td><td class="r">${fmtNZD(gv('holiday-pay'))}</td></tr>`:''}
+<tr class="sub"><td colspan="3">GROSS PAY</td><td class="r">${fmtNZD(gross)}</td></tr></tbody></table>
+<table><thead><tr><th>Deductions</th><th class="r" colspan="3">Amount</th></tr></thead><tbody>
+${gv('paye-tax')>0?`<tr><td>PAYE tax</td><td class="r" colspan="3">${fmtNZD(gv('paye-tax'))}</td></tr>`:''}
+${gv('acc-levy')>0?`<tr><td>ACC earners' levy (1.6%)</td><td class="r" colspan="3">${fmtNZD(gv('acc-levy'))}</td></tr>`:''}
+${ksPct>0?`<tr><td>KiwiSaver employee (${ksPct}%)</td><td class="r" colspan="3">${fmtNZD(ksAmt)}</td></tr>`:''}
+${gv('student-loan')>0?`<tr><td>Student loan</td><td class="r" colspan="3">${fmtNZD(gv('student-loan'))}</td></tr>`:''}
+${otherDeductions.map(d=>`<tr><td>${d.desc||'Other'}</td><td class="r" colspan="3">${fmtNZD(d.amount)}</td></tr>`).join('')}
+<tr class="net"><td colspan="3">NET PAY</td><td class="r">${fmtNZD(net)}</td></tr></tbody></table>
+${ksPct>0?`<p class="note">KiwiSaver employer contribution (3%): ${fmtNZD(gross*0.03)}</p>`:''}
+</body></html>`;
+    const blob = new Blob(['\ufeff'+html], { type:'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url;
+    a.download=`payslip-${gs('emp-name').replace(/\s+/g,'-')||'nz'}.doc`;
+    a.click(); URL.revokeObjectURL(url);
+  }
+
+  function openGSheets() { alert('Google Sheets: In production, data would be sent to the Sheets API.\nFor now, use the Excel download and import into Google Sheets.'); }
+  function openGDoc()    { alert('Google Doc: In production, data would be sent to the Docs API.\nFor now, use the Word download and import into Google Docs.'); }
+</script>
+</body>
+</html>

@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xero Pay Stub Generator — US</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!--
+    XERO PROTOTYPE
+    Tool: Pay Stub Generator (US)
+    Locale: US
+    Pattern: Two-column generator with live preview
+    Built: 2026-04-16
+    Inputs: Employer info (logo, company name, address, EIN), employee info (name, ID,
+            SSN last 4, position, department), pay period (frequency, start, end, pay date),
+            earnings (hourly or salary toggle; regular/OT hours or fixed amount; other earnings),
+            deductions (federal income tax, state income tax, Social Security 6.2%, Medicare 1.45%,
+            health insurance, 401k, other deductions)
+    Output: Styled US pay stub with YTD column — download PDF/Word/Excel
+    Notes for devs:
+      - Federal income tax entered manually; Social Security auto-calc at gross × 6.2% (editable);
+        Medicare auto-calc at gross × 1.45% (editable)
+      - YTD column: user enters YTD gross + YTD federal tax; other YTD values auto-multiply by
+        period number derived from pay frequency and pay date
+      - Net Pay = Gross − all deductions
+      - SSN: only last 4 digits collected (input labelled "Last 4 digits of SSN")
+      - Overtime rate defaults to 1.5× regular rate
+      - Currency: $USD
+      - GT Walsheim → Plus Jakarta Sans (flag for prod)
+      - Date display: MM/DD/YYYY format (US convention)
+  -->
+  <style>
+    :root {
+      --xero-navy:       #1B3A4B;
+      --xero-blue:       #13B5EA;
+      --xero-blue-dark:  #0D8FBD;
+      --xero-panel-bg:   #EBF0F4;
+      --xero-border:     #C2CDD6;
+      --xero-bg:         #FFFFFF;
+      --xero-text:       #1B3A4B;
+      --xero-text-muted: #4A6070;
+      --xero-input-bg:   #FFFFFF;
+      --xero-green:      #1AB394;
+      --xero-red:        #E05A5A;
+      --radius: 4px;
+      --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      color: var(--xero-text);
+      background: var(--xero-bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .xero-tool { padding: 40px 5% 56px; }
+
+    .xero-tool__layout {
+      display: grid;
+      grid-template-columns: 1fr 460px;
+      gap: 48px;
+      align-items: start;
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 1000px) { .xero-tool__layout { grid-template-columns: 1fr; } }
+
+    .xero-form__title { font-size: 1.375rem; font-weight: 800; color: var(--xero-navy); letter-spacing: -0.02em; margin-bottom: 28px; }
+
+    .xero-section { padding-bottom: 24px; border-bottom: 1px solid var(--xero-border); margin-bottom: 24px; }
+    .xero-section:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+    .xero-section__title { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--xero-text-muted); margin-bottom: 14px; }
+
+    .xero-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .xero-fields--single { grid-template-columns: 1fr; }
+    .xero-field--full { grid-column: 1 / -1; }
+    @media (max-width: 540px) { .xero-fields { grid-template-columns: 1fr; } }
+
+    .xero-field__label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--xero-navy); margin-bottom: 4px; }
+    .xero-field__helper { font-size: 0.6875rem; color: var(--xero-text-muted); margin-top: 3px; }
+    .xero-field__helper a { color: var(--xero-blue); text-decoration: none; }
+    .xero-field__helper a:hover { color: var(--xero-blue-dark); text-decoration: underline; }
+
+    .xero-input--plain { border: 1px solid var(--xero-border); border-radius: var(--radius); padding: 8px 12px; font-family: var(--font); font-size: 0.875rem; color: var(--xero-text); width: 100%; outline: none; transition: border-color 0.15s; background: var(--xero-input-bg); }
+    .xero-input--plain:focus { border-color: var(--xero-blue); }
+    .xero-input--plain::placeholder { color: #9EB0BB; }
+
+    .xero-select { border: 1px solid var(--xero-border); border-radius: var(--radius); padding: 8px 32px 8px 12px; font-family: var(--font); font-size: 0.875rem; color: var(--xero-text); width: 100%; outline: none; background: var(--xero-input-bg); appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234A6070' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; }
+    .xero-select:focus { border-color: var(--xero-blue); }
+
+    .xero-input-wrap { display: flex; align-items: stretch; border: 1px solid var(--xero-border); border-radius: var(--radius); background: var(--xero-input-bg); transition: border-color 0.15s; }
+    .xero-input-wrap:focus-within { border-color: var(--xero-blue); }
+    .xero-input-prefix { display: flex; align-items: center; padding: 0 6px 0 12px; color: var(--xero-text-muted); font-size: 0.875rem; font-weight: 500; user-select: none; flex-shrink: 0; }
+    .xero-input-suffix { display: flex; align-items: center; padding: 0 12px 0 4px; color: var(--xero-text-muted); font-size: 0.875rem; font-weight: 500; user-select: none; flex-shrink: 0; }
+    .xero-input { border: none; outline: none; padding: 8px 8px 8px 4px; font-family: var(--font); font-size: 0.875rem; color: var(--xero-text); background: transparent; width: 100%; min-width: 0; }
+    .xero-input::placeholder { color: #9EB0BB; }
+
+    .xero-logo-upload { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+    .xero-logo-preview { width: 80px; height: 52px; border: 1px solid var(--xero-border); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; background: var(--xero-panel-bg); overflow: hidden; flex-shrink: 0; }
+    .xero-logo-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .xero-logo-upload-btn { background: none; border: 1px solid var(--xero-border); border-radius: var(--radius); padding: 7px 14px; font-family: var(--font); font-size: 0.8125rem; font-weight: 600; color: var(--xero-navy); cursor: pointer; transition: border-color 0.15s; }
+    .xero-logo-upload-btn:hover { border-color: var(--xero-navy); }
+
+    .pay-type-toggle { display: flex; gap: 0; margin-bottom: 14px; border: 1px solid var(--xero-border); border-radius: var(--radius); overflow: hidden; width: fit-content; }
+    .pay-type-btn { background: none; border: none; padding: 7px 18px; font-family: var(--font); font-size: 0.8125rem; font-weight: 600; color: var(--xero-text-muted); cursor: pointer; transition: all 0.15s; }
+    .pay-type-btn.active { background: var(--xero-navy); color: #fff; }
+    .pay-type-btn:not(.active):hover { background: var(--xero-panel-bg); }
+
+    .xero-repeat-row { display: grid; grid-template-columns: 1fr 120px 28px; gap: 6px; align-items: end; margin-bottom: 6px; }
+    .row-remove { background: none; border: none; color: var(--xero-text-muted); cursor: pointer; font-size: 1.1rem; padding: 8px 4px; transition: color 0.15s; }
+    .row-remove:hover { color: var(--xero-red); }
+    .xero-add-row { background: none; border: none; color: var(--xero-blue); font-family: var(--font); font-size: 0.8125rem; font-weight: 600; cursor: pointer; padding: 6px 0 2px; display: block; }
+    .xero-add-row:hover { color: var(--xero-blue-dark); }
+
+    .xero-form-total { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid var(--xero-border); margin-top: 8px; }
+    .xero-form-total__label { font-size: 0.875rem; font-weight: 700; color: var(--xero-navy); }
+    .xero-form-total__value { font-size: 0.9375rem; font-weight: 700; color: var(--xero-navy); }
+
+    /* YTD inputs — compact inline */
+    .ytd-hint { font-size: 0.6875rem; color: var(--xero-text-muted); margin-bottom: 8px; font-style: italic; }
+
+    /* Preview */
+    .xero-preview { position: sticky; top: 24px; }
+    .xero-preview__label { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--xero-text-muted); margin-bottom: 10px; }
+
+    .inv-doc { background: #fff; border: 1px solid var(--xero-border); border-radius: 4px 4px 0 0; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); font-size: 0.8125rem; line-height: 1.5; }
+
+    .ps-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+    .ps-logo-placeholder { width: 80px; height: 36px; border: 1px dashed var(--xero-border); border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 0.5625rem; color: var(--xero-text-muted); }
+    .ps-title { font-size: 1.25rem; font-weight: 800; color: var(--xero-navy); letter-spacing: -0.02em; }
+    .ps-rule { border: none; border-top: 2px solid var(--xero-navy); margin-bottom: 12px; }
+    .ps-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px; }
+    .ps-block__label { font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--xero-text-muted); margin-bottom: 2px; }
+    .ps-block__name { font-size: 0.8125rem; font-weight: 700; color: var(--xero-navy); }
+    .ps-block__line { font-size: 0.6875rem; color: var(--xero-text-muted); line-height: 1.4; }
+
+    .ps-period-row { display: flex; justify-content: space-between; font-size: 0.6875rem; padding: 6px 10px; background: var(--xero-panel-bg); border-radius: var(--radius); margin-bottom: 10px; flex-wrap: wrap; gap: 6px; }
+    .ps-period-row span { font-weight: 600; color: var(--xero-navy); }
+    .ps-period-row em { font-weight: 400; color: var(--xero-text-muted); font-style: normal; margin-right: 3px; }
+
+    .ps-table { width: 100%; border-collapse: collapse; font-size: 0.6875rem; margin-bottom: 0; }
+    .ps-table thead tr { background: var(--xero-navy); }
+    .ps-table th { padding: 5px 6px; color: #fff; font-size: 0.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; text-align: left; }
+    .ps-table th.r, .ps-table td.r { text-align: right; }
+    .ps-table td { padding: 5px 6px; border-bottom: 1px solid var(--xero-border); }
+    .ps-table tbody tr:last-child td { border-bottom: none; }
+    .ps-subtotal-row td { font-weight: 700; color: var(--xero-navy); border-top: 1px solid var(--xero-border); background: #fafbfc; }
+    .ps-net-row td { font-size: 0.875rem; font-weight: 800; color: var(--xero-navy); border-top: 2px solid var(--xero-navy); background: var(--xero-panel-bg); }
+
+    .inv-cta { font-size: 0.6875rem; color: var(--xero-text-muted); margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--xero-border); line-height: 1.5; }
+    .inv-cta a { color: var(--xero-blue); text-decoration: none; font-weight: 600; }
+    .inv-cta a:hover { color: var(--xero-blue-dark); }
+
+    .xero-preview__dl { background: var(--xero-panel-bg); border: 1px solid var(--xero-border); border-top: none; border-radius: 0 0 4px 4px; padding: 12px 16px; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+    .xero-preview__dl-label { font-size: 0.75rem; font-weight: 600; color: var(--xero-text-muted); white-space: nowrap; flex-shrink: 0; }
+    .xero-dl-btn { display: inline-flex; align-items: center; gap: 5px; background: var(--xero-bg); border: 1px solid var(--xero-border); color: var(--xero-navy); font-family: var(--font); font-size: 0.75rem; font-weight: 600; padding: 6px 11px; border-radius: var(--radius); cursor: pointer; transition: border-color 0.15s; white-space: nowrap; text-decoration: none; }
+    .xero-dl-btn:hover { border-color: var(--xero-navy); }
+
+    .xero-tool__disclaimer { font-size: 0.75rem; color: var(--xero-text-muted); margin-top: 28px; max-width: 1300px; margin-left: auto; margin-right: auto; line-height: 1.5; }
+
+    @media print { body > * { display: none !important; } #payslip-print-area { display: block !important; } }
+    #payslip-print-area { display: none; }
+  </style>
+</head>
+<body>
+
+<div class="xero-tool">
+  <div class="xero-tool__layout">
+
+    <!-- ══ LEFT: Form ══ -->
+    <div>
+      <h2 class="xero-form__title">Create pay stub</h2>
+
+      <!-- Employer -->
+      <div class="xero-section">
+        <p class="xero-section__title">Your Company (Employer)</p>
+        <div class="xero-logo-upload">
+          <div class="xero-logo-preview" id="logo-preview-box">
+            <span style="font-size:0.5625rem;color:var(--xero-text-muted);text-align:center;padding:4px;">Your logo</span>
+          </div>
+          <div>
+            <button class="xero-logo-upload-btn" type="button" onclick="document.getElementById('logo-file').click()">Upload logo</button>
+            <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="handleLogo(this)">
+            <p style="font-size:0.6875rem;color:var(--xero-text-muted);margin-top:4px;">PNG or JPG recommended</p>
+          </div>
+        </div>
+        <div class="xero-fields">
+          <div class="xero-field--full">
+            <label class="xero-field__label" for="biz-name">Company name</label>
+            <input class="xero-input--plain" type="text" id="biz-name" placeholder="Acme Corp" oninput="updatePreview()">
+          </div>
+          <div class="xero-field--full">
+            <label class="xero-field__label" for="biz-address">Address</label>
+            <input class="xero-input--plain" type="text" id="biz-address" placeholder="123 Main St, San Francisco, CA 94105" oninput="updatePreview()">
+          </div>
+          <div class="xero-field--full">
+            <label class="xero-field__label" for="biz-ein">EIN</label>
+            <input class="xero-input--plain" type="text" id="biz-ein" placeholder="12-3456789" oninput="updatePreview()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Employee -->
+      <div class="xero-section">
+        <p class="xero-section__title">Employee</p>
+        <div class="xero-fields">
+          <div class="xero-field--full">
+            <label class="xero-field__label" for="emp-name">Employee name</label>
+            <input class="xero-input--plain" type="text" id="emp-name" placeholder="Jane Smith" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="emp-id">Employee ID</label>
+            <input class="xero-input--plain" type="text" id="emp-id" placeholder="EMP-001" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="emp-ssn">Last 4 digits of SSN</label>
+            <input class="xero-input--plain" type="text" id="emp-ssn" placeholder="6789" maxlength="4" pattern="[0-9]{4}" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="emp-position">Job title</label>
+            <input class="xero-input--plain" type="text" id="emp-position" placeholder="Senior Designer" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="emp-dept">Department</label>
+            <input class="xero-input--plain" type="text" id="emp-dept" placeholder="Marketing" oninput="updatePreview()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Pay Period -->
+      <div class="xero-section">
+        <p class="xero-section__title">Pay Period</p>
+        <div class="xero-fields">
+          <div>
+            <label class="xero-field__label" for="pay-freq">Pay frequency</label>
+            <select class="xero-select" id="pay-freq" onchange="autoEndDate(); updateYTD(); updatePreview()">
+              <option value="7">Weekly (52/yr)</option>
+              <option value="14" selected>Biweekly (26/yr)</option>
+              <option value="semi">Semi-monthly (24/yr)</option>
+              <option value="monthly">Monthly (12/yr)</option>
+            </select>
+          </div>
+          <div>
+            <label class="xero-field__label" for="pay-date">Pay date</label>
+            <input class="xero-input--plain" type="date" id="pay-date" oninput="updateYTD(); updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="period-start">Period start</label>
+            <input class="xero-input--plain" type="date" id="period-start" oninput="autoEndDate(); updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="period-end">Period end</label>
+            <input class="xero-input--plain" type="date" id="period-end" oninput="updatePreview()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Earnings -->
+      <div class="xero-section">
+        <p class="xero-section__title">Earnings</p>
+
+        <div style="margin-bottom:14px;">
+          <label class="xero-field__label" style="margin-bottom:8px;">Pay type</label>
+          <div class="pay-type-toggle">
+            <button class="pay-type-btn active" id="btn-hourly" type="button" onclick="setPayType('hourly')">Hourly</button>
+            <button class="pay-type-btn" id="btn-salary" type="button" onclick="setPayType('salary')">Salary</button>
+          </div>
+        </div>
+
+        <!-- Hourly mode -->
+        <div id="hourly-fields" class="xero-fields" style="margin-bottom:10px;">
+          <div>
+            <label class="xero-field__label" for="reg-hours">Regular hours</label>
+            <input class="xero-input--plain" type="number" id="reg-hours" min="0" step="0.5" value="40" oninput="autoOTRate(); calcGross(); updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="reg-rate">Regular rate ($/hr)</label>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="reg-rate" min="0" step="0.01" placeholder="20.00" oninput="autoOTRate(); calcGross(); updatePreview()">
+            </div>
+          </div>
+          <div>
+            <label class="xero-field__label" for="ot-hours">Overtime hours</label>
+            <input class="xero-input--plain" type="number" id="ot-hours" min="0" step="0.5" value="0" oninput="calcGross(); updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="ot-rate">Overtime rate ($/hr)</label>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="ot-rate" min="0" step="0.01" placeholder="30.00" oninput="calcGross(); updatePreview()">
+            </div>
+            <p class="xero-field__helper">Auto-set to 1.5× regular rate</p>
+          </div>
+        </div>
+
+        <!-- Salary mode -->
+        <div id="salary-fields" class="xero-fields" style="margin-bottom:10px;display:none;">
+          <div class="xero-field--full">
+            <label class="xero-field__label" for="salary-amount">Salary this period</label>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="salary-amount" min="0" step="0.01" placeholder="3,846.15" oninput="calcGross(); updatePreview()">
+            </div>
+          </div>
+        </div>
+
+        <!-- Other earnings -->
+        <p style="font-size:0.75rem;font-weight:700;color:var(--xero-text-muted);text-transform:uppercase;letter-spacing:0.04em;margin:12px 0 8px;">Other earnings (bonus, commission, etc.)</p>
+        <div id="other-earnings-container"></div>
+        <button class="xero-add-row" type="button" onclick="addOtherEarning()">+ Add earnings</button>
+
+        <div class="xero-form-total">
+          <span class="xero-form-total__label">Gross Pay</span>
+          <span class="xero-form-total__value" id="gross-display">$0.00</span>
+        </div>
+      </div>
+
+      <!-- Deductions -->
+      <div class="xero-section">
+        <p class="xero-section__title">Deductions</p>
+        <div class="xero-fields" style="margin-bottom:10px;">
+          <div>
+            <label class="xero-field__label" for="fed-tax">Federal income tax withheld</label>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="fed-tax" min="0" step="0.01" placeholder="0.00" oninput="calcNet(); updatePreview()">
+            </div>
+            <p class="xero-field__helper"><a href="https://www.irs.gov/pub/irs-pdf/p15t.pdf" target="_blank">See IRS withholding tables</a></p>
+          </div>
+          <div>
+            <label class="xero-field__label" for="state-select">State income tax</label>
+            <select class="xero-select" id="state-select" onchange="updatePreview()" style="margin-bottom:4px;">
+              <option value="">No state tax</option>
+              <option value="CA">CA Income Tax</option>
+              <option value="NY">NY Income Tax</option>
+              <option value="TX">TX (no income tax)</option>
+              <option value="FL">FL (no income tax)</option>
+              <option value="IL">IL Income Tax</option>
+              <option value="WA">WA (no income tax)</option>
+              <option value="Other">Other state tax</option>
+            </select>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="state-tax" min="0" step="0.01" placeholder="0.00" oninput="calcNet(); updatePreview()">
+            </div>
+          </div>
+          <div>
+            <label class="xero-field__label" for="ss-tax">Social Security (6.2%)</label>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="ss-tax" min="0" step="0.01" placeholder="0.00" oninput="calcNet(); updatePreview()">
+            </div>
+            <p class="xero-field__helper">Auto-calc: gross × 6.2%</p>
+          </div>
+          <div>
+            <label class="xero-field__label" for="medicare-tax">Medicare (1.45%)</label>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="medicare-tax" min="0" step="0.01" placeholder="0.00" oninput="calcNet(); updatePreview()">
+            </div>
+            <p class="xero-field__helper">Auto-calc: gross × 1.45%</p>
+          </div>
+          <div>
+            <label class="xero-field__label" for="health-ins">Health insurance</label>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="health-ins" min="0" step="0.01" placeholder="0.00" oninput="calcNet(); updatePreview()">
+            </div>
+          </div>
+          <div>
+            <label class="xero-field__label" for="k401">401(k) contribution</label>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="k401" min="0" step="0.01" placeholder="0.00" oninput="calcNet(); updatePreview()">
+            </div>
+          </div>
+        </div>
+
+        <!-- Other deductions -->
+        <p style="font-size:0.75rem;font-weight:700;color:var(--xero-text-muted);text-transform:uppercase;letter-spacing:0.04em;margin:12px 0 8px;">Other deductions</p>
+        <div id="other-deductions-container"></div>
+        <button class="xero-add-row" type="button" onclick="addOtherDeduction()">+ Add deduction</button>
+
+        <div class="xero-form-total" style="border-top:2px solid var(--xero-navy);margin-top:12px;">
+          <span class="xero-form-total__label" style="font-size:1rem;">Net Pay</span>
+          <span class="xero-form-total__value" style="font-size:1.0625rem;" id="net-display">$0.00</span>
+        </div>
+      </div>
+
+      <!-- YTD Overrides -->
+      <div class="xero-section">
+        <p class="xero-section__title">Year-to-Date (YTD)</p>
+        <p class="ytd-hint">Enter YTD gross and federal tax if known. Other YTD values are estimated by multiplying this period by the period number.</p>
+        <div class="xero-fields">
+          <div>
+            <label class="xero-field__label" for="ytd-gross">YTD gross earnings</label>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="ytd-gross" min="0" step="0.01" placeholder="0.00" oninput="updatePreview()">
+            </div>
+          </div>
+          <div>
+            <label class="xero-field__label" for="ytd-fed-tax">YTD federal income tax</label>
+            <div class="xero-input-wrap">
+              <span class="xero-input-prefix">$</span>
+              <input class="xero-input" type="number" id="ytd-fed-tax" min="0" step="0.01" placeholder="0.00" oninput="updatePreview()">
+            </div>
+          </div>
+        </div>
+        <p style="font-size:0.6875rem;color:var(--xero-text-muted);margin-top:8px;" id="period-number-info">Period number: calculating…</p>
+      </div>
+
+    </div><!-- /form col -->
+
+    <!-- ══ RIGHT: Preview ══ -->
+    <div class="xero-preview">
+      <p class="xero-preview__label">Live preview</p>
+
+      <div class="inv-doc" id="payslip-preview">
+
+        <div class="ps-header">
+          <div id="prev-logo"><div class="ps-logo-placeholder">YOUR LOGO</div></div>
+          <div>
+            <div class="ps-title">PAY STUB</div>
+          </div>
+        </div>
+        <hr class="ps-rule">
+
+        <div class="ps-meta">
+          <div>
+            <div class="ps-block__label">Employer</div>
+            <div class="ps-block__name" id="prev-biz-name">Company Name</div>
+            <div class="ps-block__line" id="prev-biz-address"></div>
+            <div class="ps-block__line" id="prev-biz-ein"></div>
+          </div>
+          <div>
+            <div class="ps-block__label">Employee</div>
+            <div class="ps-block__name" id="prev-emp-name">Employee Name</div>
+            <div class="ps-block__line" id="prev-emp-id"></div>
+            <div class="ps-block__line" id="prev-emp-ssn"></div>
+            <div class="ps-block__line" id="prev-emp-position"></div>
+          </div>
+        </div>
+
+        <div class="ps-period-row">
+          <div><em>Pay Period:</em><span id="prev-period">—</span></div>
+          <div><em>Pay Date:</em><span id="prev-pay-date">—</span></div>
+          <div><em>Frequency:</em><span id="prev-freq">—</span></div>
+        </div>
+
+        <!-- Earnings table with YTD -->
+        <table class="ps-table">
+          <thead>
+            <tr>
+              <th>Earnings</th>
+              <th class="r" style="width:44px">Hrs</th>
+              <th class="r" style="width:50px">Rate</th>
+              <th class="r" style="width:60px">Current</th>
+              <th class="r" style="width:60px">YTD</th>
+            </tr>
+          </thead>
+          <tbody id="prev-earnings-body"></tbody>
+        </table>
+
+        <!-- Deductions table with YTD -->
+        <table class="ps-table" style="margin-top:0;">
+          <thead>
+            <tr>
+              <th>Deductions</th>
+              <th class="r" colspan="2">Current</th>
+              <th class="r" colspan="2">YTD</th>
+            </tr>
+          </thead>
+          <tbody id="prev-deductions-body"></tbody>
+        </table>
+
+        <!-- Net Pay -->
+        <table class="ps-table" style="margin-top:0;">
+          <tbody>
+            <tr class="ps-net-row">
+              <td colspan="3"><strong>NET PAY</strong></td>
+              <td class="r"><strong id="prev-net">$0.00</strong></td>
+              <td class="r"><strong id="prev-net-ytd">—</strong></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="inv-cta">
+          Manage payroll with ease using Xero. Start a 30 day <a href="https://www.xero.com/us/signup/" target="_blank">free trial</a>.
+        </div>
+
+      </div><!-- /inv-doc -->
+
+      <!-- Download strip -->
+      <div class="xero-preview__dl">
+        <span class="xero-preview__dl-label">Download as:</span>
+        <button class="xero-dl-btn" onclick="downloadPDF()">
+          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><path d="M1 10v2a1 1 0 001 1h9a1 1 0 001-1v-2M6.5 1v7m0 0L4 5.5M6.5 8l2.5-2.5" stroke="#1B3A4B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          PDF
+        </button>
+        <button class="xero-dl-btn" onclick="downloadWord()">
+          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#1B3A4B" stroke-width="1.5"/><path d="M4 5h5M4 7.5h5M4 10h3" stroke="#1B3A4B" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Word
+        </button>
+        <button class="xero-dl-btn" onclick="downloadExcel()">
+          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#1B3A4B" stroke-width="1.5"/><path d="M4 5l5 4M9 5l-5 4" stroke="#1AB394" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Excel
+        </button>
+        <button class="xero-dl-btn" onclick="openGSheets()">
+          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#1B3A4B" stroke-width="1.5"/><path d="M4 5h5M4 7.5h5M4 10h5" stroke="#0D8FBD" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Google Sheets
+        </button>
+        <button class="xero-dl-btn" onclick="openGDoc()">
+          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#1B3A4B" stroke-width="1.5"/><path d="M4 5h5M4 7.5h5M4 10h3" stroke="#13B5EA" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Google Doc
+        </button>
+      </div>
+    </div><!-- /preview -->
+
+  </div><!-- /layout -->
+  <p class="xero-tool__disclaimer">*This tool generates pay stub documents only. Tax figures must be verified against official IRS withholding tables. Not financial or tax advice.</p>
+</div>
+
+<div id="payslip-print-area"></div>
+
+<script>
+  let logoDataUrl = null;
+  let payType = 'hourly';
+  let otherEarnings = [];
+  let otherDeductions = [];
+  let periodNumber = 1;
+
+  // ─── Init ───────────────────────────────────────────────
+  (function init() {
+    const today = new Date();
+    const pad = n => String(n).padStart(2,'0');
+    const todayStr = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+    document.getElementById('pay-date').value = todayStr;
+    document.getElementById('period-start').value = todayStr;
+    autoEndDate();
+    updateYTD();
+    calcGross();
+    updatePreview();
+  })();
+
+  // ─── Helpers ────────────────────────────────────────────
+  function fmtUSD(n) {
+    if (isNaN(n)) n = 0;
+    return '$' + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+
+  function fmtDateUS(isoStr) {
+    if (!isoStr) return '—';
+    const [y,m,d] = isoStr.split('-');
+    return `${m}/${d}/${y}`;
+  }
+
+  function gv(id) { return parseFloat(document.getElementById(id).value) || 0; }
+  function gs(id) { return document.getElementById(id).value.trim(); }
+
+  // ─── Logo ───────────────────────────────────────────────
+  function handleLogo(input) {
+    if (!input.files || !input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      logoDataUrl = e.target.result;
+      document.getElementById('logo-preview-box').innerHTML = `<img src="${logoDataUrl}" alt="Logo">`;
+      updatePreview();
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+
+  // ─── Pay type toggle ─────────────────────────────────────
+  function setPayType(type) {
+    payType = type;
+    document.getElementById('btn-hourly').classList.toggle('active', type==='hourly');
+    document.getElementById('btn-salary').classList.toggle('active', type==='salary');
+    document.getElementById('hourly-fields').style.display = type==='hourly' ? 'grid' : 'none';
+    document.getElementById('salary-fields').style.display = type==='salary' ? 'grid' : 'none';
+    calcGross(); updatePreview();
+  }
+
+  // ─── Auto end date ───────────────────────────────────────
+  function autoEndDate() {
+    const start = document.getElementById('period-start').value;
+    const freq  = document.getElementById('pay-freq').value;
+    if (!start) return;
+    const d = new Date(start);
+    if      (freq === 'monthly') { d.setMonth(d.getMonth()+1); d.setDate(d.getDate()-1); }
+    else if (freq === 'semi')    { d.setDate(d.getDate()+14); }
+    else                         { d.setDate(d.getDate()+parseInt(freq)-1); }
+    const pad = n => String(n).padStart(2,'0');
+    document.getElementById('period-end').value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  }
+
+  // ─── Auto OT rate ────────────────────────────────────────
+  function autoOTRate() {
+    const r = gv('reg-rate');
+    if (r > 0) document.getElementById('ot-rate').value = (r * 1.5).toFixed(2);
+  }
+
+  // ─── Period number (for YTD auto-calc) ──────────────────
+  function updateYTD() {
+    const payDate = document.getElementById('pay-date').value;
+    const freq    = document.getElementById('pay-freq').value;
+    if (!payDate) { periodNumber = 1; return; }
+
+    const pd = new Date(payDate);
+    const yearStart = new Date(pd.getFullYear(), 0, 1);
+    const dayOfYear = Math.floor((pd - yearStart) / 86400000) + 1;
+
+    const periodsPerYear = freq==='7' ? 52 : freq==='14' ? 26 : freq==='semi' ? 24 : 12;
+    const daysPerPeriod  = 365 / periodsPerYear;
+    periodNumber = Math.max(1, Math.round(dayOfYear / daysPerPeriod));
+
+    document.getElementById('period-number-info').textContent =
+      `Period number: ${periodNumber} of ${periodsPerYear} (based on pay date)`;
+  }
+
+  // ─── Gross calc ─────────────────────────────────────────
+  function calcGrossValue() {
+    if (payType === 'salary') {
+      return gv('salary-amount') + otherEarnings.reduce((s,e)=>s+(e.amount||0),0);
+    }
+    return gv('reg-hours')*gv('reg-rate') + gv('ot-hours')*gv('ot-rate') + otherEarnings.reduce((s,e)=>s+(e.amount||0),0);
+  }
+
+  function calcGross() {
+    const gross = calcGrossValue();
+    document.getElementById('gross-display').textContent = fmtUSD(gross);
+    // Auto-set SS and Medicare
+    document.getElementById('ss-tax').value       = (gross * 0.062).toFixed(2);
+    document.getElementById('medicare-tax').value  = (gross * 0.0145).toFixed(2);
+    calcNet();
+    return gross;
+  }
+
+  function calcNet() {
+    const gross   = calcGrossValue();
+    const fedTax  = gv('fed-tax');
+    const stateTax= gv('state-tax');
+    const ss      = gv('ss-tax');
+    const med     = gv('medicare-tax');
+    const health  = gv('health-ins');
+    const k401    = gv('k401');
+    const others  = otherDeductions.reduce((s,d)=>s+(d.amount||0),0);
+    const net     = Math.max(0, gross - fedTax - stateTax - ss - med - health - k401 - others);
+    document.getElementById('net-display').textContent = fmtUSD(net);
+  }
+
+  function getTotalDeductions() {
+    return gv('fed-tax') + gv('state-tax') + gv('ss-tax') + gv('medicare-tax') + gv('health-ins') + gv('k401') + otherDeductions.reduce((s,d)=>s+(d.amount||0),0);
+  }
+
+  // ─── YTD calculations ────────────────────────────────────
+  function getYTD(currentVal, isGross, isFedTax) {
+    if (isGross) {
+      const manual = gv('ytd-gross');
+      return manual > 0 ? manual : currentVal * periodNumber;
+    }
+    if (isFedTax) {
+      const manual = gv('ytd-fed-tax');
+      return manual > 0 ? manual : currentVal * periodNumber;
+    }
+    return currentVal * periodNumber;
+  }
+
+  // ─── Repeatable rows ─────────────────────────────────────
+  function addOtherEarning() {
+    const id = Date.now();
+    otherEarnings.push({ id, desc:'', amount:0 });
+    renderOtherEarnings();
+  }
+
+  function removeOtherEarning(id) {
+    otherEarnings = otherEarnings.filter(e => e.id !== id);
+    renderOtherEarnings(); calcGross(); updatePreview();
+  }
+
+  function renderOtherEarnings() {
+    const c = document.getElementById('other-earnings-container');
+    c.innerHTML = otherEarnings.map(e => `
+      <div class="xero-repeat-row">
+        <div><input class="xero-input--plain" type="text" placeholder="Earnings description"
+          value="${e.desc}" oninput="otherEarnings.find(x=>x.id===${e.id}).desc=this.value; updatePreview()"></div>
+        <div><div class="xero-input-wrap"><span class="xero-input-prefix">$</span>
+          <input class="xero-input" type="number" min="0" step="0.01" placeholder="0.00"
+            value="${e.amount||''}" oninput="otherEarnings.find(x=>x.id===${e.id}).amount=parseFloat(this.value)||0; calcGross(); updatePreview()">
+        </div></div>
+        <button class="row-remove" type="button" onclick="removeOtherEarning(${e.id})" title="Remove">×</button>
+      </div>`).join('');
+  }
+
+  function addOtherDeduction() {
+    const id = Date.now();
+    otherDeductions.push({ id, desc:'', amount:0 });
+    renderOtherDeductions();
+  }
+
+  function removeOtherDeduction(id) {
+    otherDeductions = otherDeductions.filter(d => d.id !== id);
+    renderOtherDeductions(); calcNet(); updatePreview();
+  }
+
+  function renderOtherDeductions() {
+    const c = document.getElementById('other-deductions-container');
+    c.innerHTML = otherDeductions.map(d => `
+      <div class="xero-repeat-row">
+        <div><input class="xero-input--plain" type="text" placeholder="Deduction description"
+          value="${d.desc}" oninput="otherDeductions.find(x=>x.id===${d.id}).desc=this.value; updatePreview()"></div>
+        <div><div class="xero-input-wrap"><span class="xero-input-prefix">$</span>
+          <input class="xero-input" type="number" min="0" step="0.01" placeholder="0.00"
+            value="${d.amount||''}" oninput="otherDeductions.find(x=>x.id===${d.id}).amount=parseFloat(this.value)||0; calcNet(); updatePreview()">
+        </div></div>
+        <button class="row-remove" type="button" onclick="removeOtherDeduction(${d.id})" title="Remove">×</button>
+      </div>`).join('');
+  }
+
+  // ─── Update preview ──────────────────────────────────────
+  function updatePreview() {
+    // Logo
+    document.getElementById('prev-logo').innerHTML = logoDataUrl
+      ? `<img src="${logoDataUrl}" style="max-height:36px;max-width:90px;object-fit:contain;">`
+      : `<div class="ps-logo-placeholder">YOUR LOGO</div>`;
+
+    // Employer
+    document.getElementById('prev-biz-name').textContent    = gs('biz-name')    || 'Company Name';
+    document.getElementById('prev-biz-address').textContent = gs('biz-address') || '';
+    const ein = gs('biz-ein');
+    document.getElementById('prev-biz-ein').textContent = ein ? `EIN: ${ein}` : '';
+
+    // Employee
+    document.getElementById('prev-emp-name').textContent = gs('emp-name') || 'Employee Name';
+    document.getElementById('prev-emp-id').textContent   = gs('emp-id') ? `ID: ${gs('emp-id')}` : '';
+    const ssn = gs('emp-ssn');
+    document.getElementById('prev-emp-ssn').textContent = ssn ? `SSN: ***-**-${ssn}` : '';
+    const pos  = gs('emp-position');
+    const dept = gs('emp-dept');
+    document.getElementById('prev-emp-position').textContent = [pos, dept].filter(Boolean).join(' — ');
+
+    // Period
+    const ps = gs('period-start'), pe = gs('period-end');
+    document.getElementById('prev-period').textContent = (ps||pe) ? `${fmtDateUS(ps)} – ${fmtDateUS(pe)}` : '—';
+    document.getElementById('prev-pay-date').textContent = fmtDateUS(gs('pay-date'));
+
+    const freqLabels = { '7':'Weekly', '14':'Biweekly', 'semi':'Semi-monthly', 'monthly':'Monthly' };
+    document.getElementById('prev-freq').textContent = freqLabels[gs('pay-freq')] || '—';
+
+    // Earnings
+    const gross = calcGrossValue();
+    const ytdGross = getYTD(gross, true, false);
+    let eRows = '';
+
+    if (payType === 'hourly') {
+      const rh = gv('reg-hours'), rr = gv('reg-rate'), regAmt = rh * rr;
+      const oh = gv('ot-hours'),  or_ = gv('ot-rate'), otAmt  = oh * or_;
+      eRows += `<tr><td>Regular</td><td class="r">${rh.toFixed(2)}</td><td class="r">${fmtUSD(rr)}</td><td class="r">${fmtUSD(regAmt)}</td><td class="r">${fmtUSD(regAmt*periodNumber)}</td></tr>`;
+      if (oh > 0 || otAmt > 0) eRows += `<tr><td>Overtime</td><td class="r">${oh.toFixed(2)}</td><td class="r">${fmtUSD(or_)}</td><td class="r">${fmtUSD(otAmt)}</td><td class="r">${fmtUSD(otAmt*periodNumber)}</td></tr>`;
+    } else {
+      const sa = gv('salary-amount');
+      eRows += `<tr><td>Salary</td><td class="r">—</td><td class="r">—</td><td class="r">${fmtUSD(sa)}</td><td class="r">${fmtUSD(sa*periodNumber)}</td></tr>`;
+    }
+
+    otherEarnings.forEach(e => {
+      if (e.amount > 0 || e.desc)
+        eRows += `<tr><td>${e.desc||'Other'}</td><td class="r">—</td><td class="r">—</td><td class="r">${fmtUSD(e.amount)}</td><td class="r">${fmtUSD(e.amount*periodNumber)}</td></tr>`;
+    });
+
+    eRows += `<tr class="ps-subtotal-row"><td colspan="3" class="r">GROSS PAY</td><td class="r">${fmtUSD(gross)}</td><td class="r">${fmtUSD(ytdGross)}</td></tr>`;
+    document.getElementById('prev-earnings-body').innerHTML = eRows;
+
+    // Deductions
+    const fedTax   = gv('fed-tax');
+    const stateTax = gv('state-tax');
+    const stateLabel = gs('state-select') || '';
+    const ss       = gv('ss-tax');
+    const med      = gv('medicare-tax');
+    const health   = gv('health-ins');
+    const k401     = gv('k401');
+    const others   = otherDeductions.reduce((s,d)=>s+(d.amount||0),0);
+    const totalDed = fedTax + stateTax + ss + med + health + k401 + others;
+    const net      = Math.max(0, gross - totalDed);
+
+    const ytdFedTax  = getYTD(fedTax, false, true);
+    const ytdNet     = ytdGross - ytdFedTax - (stateTax+ss+med+health+k401+others)*periodNumber;
+
+    let dRows = '';
+    if (fedTax > 0) dRows += `<tr><td>Federal income tax</td><td class="r" colspan="2">${fmtUSD(fedTax)}</td><td class="r" colspan="2">${fmtUSD(ytdFedTax)}</td></tr>`;
+    if (stateTax > 0) dRows += `<tr><td>${stateLabel ? stateLabel+' income tax' : 'State income tax'}</td><td class="r" colspan="2">${fmtUSD(stateTax)}</td><td class="r" colspan="2">${fmtUSD(stateTax*periodNumber)}</td></tr>`;
+    if (ss > 0)       dRows += `<tr><td>Social Security (6.2%)</td><td class="r" colspan="2">${fmtUSD(ss)}</td><td class="r" colspan="2">${fmtUSD(ss*periodNumber)}</td></tr>`;
+    if (med > 0)      dRows += `<tr><td>Medicare (1.45%)</td><td class="r" colspan="2">${fmtUSD(med)}</td><td class="r" colspan="2">${fmtUSD(med*periodNumber)}</td></tr>`;
+    if (health > 0)   dRows += `<tr><td>Health insurance</td><td class="r" colspan="2">${fmtUSD(health)}</td><td class="r" colspan="2">${fmtUSD(health*periodNumber)}</td></tr>`;
+    if (k401 > 0)     dRows += `<tr><td>401(k)</td><td class="r" colspan="2">${fmtUSD(k401)}</td><td class="r" colspan="2">${fmtUSD(k401*periodNumber)}</td></tr>`;
+    otherDeductions.forEach(d => {
+      if (d.amount > 0 || d.desc) dRows += `<tr><td>${d.desc||'Other'}</td><td class="r" colspan="2">${fmtUSD(d.amount)}</td><td class="r" colspan="2">${fmtUSD(d.amount*periodNumber)}</td></tr>`;
+    });
+    if (!dRows) dRows = `<tr><td colspan="5" style="color:var(--xero-text-muted);font-style:italic;">No deductions entered</td></tr>`;
+    dRows += `<tr class="ps-subtotal-row"><td colspan="2" class="r">TOTAL DEDUCTIONS</td><td class="r">${fmtUSD(totalDed)}</td><td class="r"></td><td class="r">${fmtUSD(totalDed*periodNumber)}</td></tr>`;
+
+    document.getElementById('prev-deductions-body').innerHTML = dRows;
+    document.getElementById('prev-net').textContent     = fmtUSD(net);
+    document.getElementById('prev-net-ytd').textContent = fmtUSD(Math.max(0, ytdNet));
+  }
+
+  // ─── Downloads ───────────────────────────────────────────
+  function downloadPDF() {
+    const area = document.getElementById('payslip-print-area');
+    area.innerHTML = document.getElementById('payslip-preview').outerHTML;
+    area.style.display = 'block';
+    window.print();
+    setTimeout(() => { area.style.display='none'; area.innerHTML=''; }, 500);
+  }
+
+  function buildCSV() {
+    const gross    = calcGrossValue();
+    const ytdGross = getYTD(gross, true, false);
+    const fedTax   = gv('fed-tax');
+    const ytdFed   = getYTD(fedTax, false, true);
+    const ss       = gv('ss-tax'), med = gv('medicare-tax');
+    const totalDed = fedTax + gv('state-tax') + ss + med + gv('health-ins') + gv('k401') + otherDeductions.reduce((s,d)=>s+(d.amount||0),0);
+    const net      = Math.max(0, gross - totalDed);
+    const stateLabel = gs('state-select') || 'State';
+
+    const rows = [
+      ['PAY STUB — US'],
+      ['Employer', gs('biz-name'), '', 'EIN', gs('biz-ein')],
+      ['Employee', gs('emp-name'), '', 'ID', gs('emp-id')],
+      ['SSN', `***-**-${gs('emp-ssn')}`, '', 'Title', gs('emp-position')],
+      ['Pay Period', `${fmtDateUS(gs('period-start'))} - ${fmtDateUS(gs('period-end'))}`, '', 'Pay Date', fmtDateUS(gs('pay-date'))],
+      [],
+      ['EARNINGS','Hours','Rate','Current','YTD'],
+      payType==='hourly'
+        ? ['Regular', gv('reg-hours'), gv('reg-rate'), (gv('reg-hours')*gv('reg-rate')).toFixed(2), (gv('reg-hours')*gv('reg-rate')*periodNumber).toFixed(2)]
+        : ['Salary','','',gv('salary-amount').toFixed(2),(gv('salary-amount')*periodNumber).toFixed(2)],
+      payType==='hourly' && gv('ot-hours')>0 ? ['Overtime', gv('ot-hours'), gv('ot-rate'), (gv('ot-hours')*gv('ot-rate')).toFixed(2), (gv('ot-hours')*gv('ot-rate')*periodNumber).toFixed(2)] : null,
+      ...otherEarnings.map(e => [e.desc||'Other','','', (e.amount||0).toFixed(2), ((e.amount||0)*periodNumber).toFixed(2)]),
+      ['GROSS PAY','','',gross.toFixed(2),ytdGross.toFixed(2)],
+      [],
+      ['DEDUCTIONS','','Current','','YTD'],
+      ['Federal income tax','',fedTax.toFixed(2),'',ytdFed.toFixed(2)],
+      gs('state-select') ? [`${stateLabel} income tax`,'',gv('state-tax').toFixed(2),'',(gv('state-tax')*periodNumber).toFixed(2)] : null,
+      ['Social Security (6.2%)','',ss.toFixed(2),'',(ss*periodNumber).toFixed(2)],
+      ['Medicare (1.45%)','',med.toFixed(2),'',(med*periodNumber).toFixed(2)],
+      gv('health-ins')>0 ? ['Health insurance','',gv('health-ins').toFixed(2),'',(gv('health-ins')*periodNumber).toFixed(2)] : null,
+      gv('k401')>0 ? ['401(k)','',gv('k401').toFixed(2),'',(gv('k401')*periodNumber).toFixed(2)] : null,
+      ...otherDeductions.map(d => [d.desc||'Other','', (d.amount||0).toFixed(2),'', ((d.amount||0)*periodNumber).toFixed(2)]),
+      [],
+      ['NET PAY','',net.toFixed(2),'',Math.max(0,ytdGross-ytdFed-(gv('state-tax')+ss+med+gv('health-ins')+gv('k401')+otherDeductions.reduce((s,d)=>s+(d.amount||0),0))*periodNumber).toFixed(2)],
+    ].filter(Boolean);
+    return rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  }
+
+  function downloadExcel() {
+    const blob = new Blob([buildCSV()], { type:'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url;
+    a.download=`pay-stub-${gs('emp-name').replace(/\s+/g,'-')||'us'}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  }
+
+  function downloadWord() {
+    const gross    = calcGrossValue();
+    const ytdGross = getYTD(gross, true, false);
+    const fedTax   = gv('fed-tax'), ytdFed = getYTD(fedTax, false, true);
+    const ss = gv('ss-tax'), med = gv('medicare-tax');
+    const totalDed = fedTax + gv('state-tax') + ss + med + gv('health-ins') + gv('k401') + otherDeductions.reduce((s,d)=>s+(d.amount||0),0);
+    const net = Math.max(0, gross - totalDed);
+    const stateLabel = gs('state-select') || 'State';
+
+    const html = `<!DOCTYPE html><html lang="en-US"><head><meta charset="UTF-8"><title>Pay Stub — ${gs('emp-name')||'Employee'}</title>
+<style>body{font-family:Arial,sans-serif;font-size:12px;color:#1B3A4B;max-width:680px;margin:40px auto;padding:0 20px}
+h1{font-size:20px;font-weight:900}hr{border:none;border-top:2px solid #1B3A4B;margin:12px 0}
+table{width:100%;border-collapse:collapse;margin-bottom:8px}th{background:#1B3A4B;color:#fff;padding:5px 8px;font-size:10px;text-align:left}
+th.r,td.r{text-align:right}td{padding:5px 8px;border-bottom:1px solid #C2CDD6}
+.sub td{font-weight:700;background:#f0f5f8}.net td{font-size:13px;font-weight:900;background:#EBF0F4;border-top:2px solid #1B3A4B}</style></head><body>
+<div style="display:flex;justify-content:space-between"><div>${gs('biz-name')}<br>${gs('biz-address')}${gs('biz-ein')?'<br>EIN: '+gs('biz-ein'):''}</div><h1>PAY STUB</h1></div>
+<hr>
+<table><tr><td><b>Employee:</b> ${gs('emp-name')}</td><td><b>ID:</b> ${gs('emp-id')}</td></tr>
+<tr><td><b>SSN:</b> ***-**-${gs('emp-ssn')}</td><td><b>Title:</b> ${gs('emp-position')}</td></tr>
+<tr><td><b>Period:</b> ${fmtDateUS(gs('period-start'))} – ${fmtDateUS(gs('period-end'))}</td><td><b>Pay date:</b> ${fmtDateUS(gs('pay-date'))}</td></tr></table>
+<table><thead><tr><th>Earnings</th><th class="r">Hours</th><th class="r">Rate</th><th class="r">Current</th><th class="r">YTD</th></tr></thead><tbody>
+${payType==='hourly'
+  ? `<tr><td>Regular</td><td class="r">${gv('reg-hours').toFixed(2)}</td><td class="r">${fmtUSD(gv('reg-rate'))}</td><td class="r">${fmtUSD(gv('reg-hours')*gv('reg-rate'))}</td><td class="r">${fmtUSD(gv('reg-hours')*gv('reg-rate')*periodNumber)}</td></tr>
+  ${gv('ot-hours')>0?`<tr><td>Overtime</td><td class="r">${gv('ot-hours').toFixed(2)}</td><td class="r">${fmtUSD(gv('ot-rate'))}</td><td class="r">${fmtUSD(gv('ot-hours')*gv('ot-rate'))}</td><td class="r">${fmtUSD(gv('ot-hours')*gv('ot-rate')*periodNumber)}</td></tr>`:''}`
+  : `<tr><td>Salary</td><td class="r">—</td><td class="r">—</td><td class="r">${fmtUSD(gv('salary-amount'))}</td><td class="r">${fmtUSD(gv('salary-amount')*periodNumber)}</td></tr>`}
+${otherEarnings.map(e=>`<tr><td>${e.desc||'Other'}</td><td class="r">—</td><td class="r">—</td><td class="r">${fmtUSD(e.amount)}</td><td class="r">${fmtUSD(e.amount*periodNumber)}</td></tr>`).join('')}
+<tr class="sub"><td colspan="3">GROSS PAY</td><td class="r">${fmtUSD(gross)}</td><td class="r">${fmtUSD(ytdGross)}</td></tr></tbody></table>
+<table><thead><tr><th>Deductions</th><th class="r" colspan="2">Current</th><th class="r" colspan="2">YTD</th></tr></thead><tbody>
+${fedTax>0?`<tr><td>Federal income tax</td><td class="r" colspan="2">${fmtUSD(fedTax)}</td><td class="r" colspan="2">${fmtUSD(ytdFed)}</td></tr>`:''}
+${gv('state-tax')>0?`<tr><td>${stateLabel} income tax</td><td class="r" colspan="2">${fmtUSD(gv('state-tax'))}</td><td class="r" colspan="2">${fmtUSD(gv('state-tax')*periodNumber)}</td></tr>`:''}
+${ss>0?`<tr><td>Social Security (6.2%)</td><td class="r" colspan="2">${fmtUSD(ss)}</td><td class="r" colspan="2">${fmtUSD(ss*periodNumber)}</td></tr>`:''}
+${med>0?`<tr><td>Medicare (1.45%)</td><td class="r" colspan="2">${fmtUSD(med)}</td><td class="r" colspan="2">${fmtUSD(med*periodNumber)}</td></tr>`:''}
+${gv('health-ins')>0?`<tr><td>Health insurance</td><td class="r" colspan="2">${fmtUSD(gv('health-ins'))}</td><td class="r" colspan="2">${fmtUSD(gv('health-ins')*periodNumber)}</td></tr>`:''}
+${gv('k401')>0?`<tr><td>401(k)</td><td class="r" colspan="2">${fmtUSD(gv('k401'))}</td><td class="r" colspan="2">${fmtUSD(gv('k401')*periodNumber)}</td></tr>`:''}
+${otherDeductions.map(d=>`<tr><td>${d.desc||'Other'}</td><td class="r" colspan="2">${fmtUSD(d.amount)}</td><td class="r" colspan="2">${fmtUSD(d.amount*periodNumber)}</td></tr>`).join('')}
+<tr class="net"><td colspan="2">NET PAY</td><td class="r">${fmtUSD(net)}</td><td class="r"></td><td class="r">${fmtUSD(Math.max(0,ytdGross-ytdFed-(gv('state-tax')+ss+med+gv('health-ins')+gv('k401')+otherDeductions.reduce((s,d)=>s+(d.amount||0),0))*periodNumber))}</td></tr></tbody></table>
+</body></html>`;
+    const blob = new Blob(['\ufeff'+html], { type:'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url;
+    a.download=`pay-stub-${gs('emp-name').replace(/\s+/g,'-')||'us'}.doc`;
+    a.click(); URL.revokeObjectURL(url);
+  }
+
+  function openGSheets() { alert('Google Sheets: In production, data would be sent to the Sheets API.\nFor now, use the Excel download and import into Google Sheets.'); }
+  function openGDoc()    { alert('Google Doc: In production, data would be sent to the Docs API.\nFor now, use the Word download and import into Google Docs.'); }
+</script>
+</body>
+</html>

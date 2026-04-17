@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xero Expense Report Generator — AU</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!--
+    XERO PROTOTYPE
+    Tool: Expense Report Generator (AU)
+    Locale: AU
+    Pattern: Two-column generator with live preview
+    Built: 2026-04-16
+    Inputs: Employee details, report period, expense rows (date/category/description/amount/receipt), notes
+    Output: Styled expense report — download PDF/Word/Excel/CSV/HTML
+    Notes for devs:
+      - expenses[] array is source of truth; renderExpenses() only on add/remove
+      - updateExpense() patches individual fields without re-render
+      - GT Walsheim → Plus Jakarta Sans (flag for prod)
+      - Currency: $AUD, locale string en-AU
+      - Date format: DD/MM/YYYY
+      - Signup URL: xero.com/au/signup/
+  -->
+  <style>
+    :root {
+      --xero-navy:       #1B3A4B;
+      --xero-blue:       #13B5EA;
+      --xero-blue-dark:  #0D8FBD;
+      --xero-panel-bg:   #EBF0F4;
+      --xero-border:     #C2CDD6;
+      --xero-bg:         #FFFFFF;
+      --xero-text:       #1B3A4B;
+      --xero-text-muted: #4A6070;
+      --xero-input-bg:   #FFFFFF;
+      --xero-green:      #1AB394;
+      --xero-red:        #E05A5A;
+      --radius: 4px;
+      --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      color: var(--xero-text);
+      background: var(--xero-bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── Tool wrapper ─── */
+    .xero-tool {
+      padding: 40px 5% 56px;
+    }
+
+    /* ─── Two-column layout ─── */
+    .xero-tool__layout {
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 48px;
+      align-items: start;
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 1000px) {
+      .xero-tool__layout { grid-template-columns: 1fr; }
+    }
+
+    /* ─── Form ─── */
+    .xero-form__title {
+      font-size: 1.375rem;
+      font-weight: 800;
+      color: var(--xero-navy);
+      letter-spacing: -0.02em;
+      margin-bottom: 28px;
+    }
+
+    .xero-section {
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--xero-border);
+      margin-bottom: 24px;
+    }
+
+    .xero-section:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+    .xero-section__title {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--xero-text-muted);
+      margin-bottom: 14px;
+    }
+
+    .xero-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .xero-fields--single { grid-template-columns: 1fr; }
+    .xero-field--full    { grid-column: 1 / -1; }
+
+    @media (max-width: 540px) { .xero-fields { grid-template-columns: 1fr; } }
+
+    .xero-field__label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 4px;
+    }
+
+    .xero-field__optional {
+      font-weight: 400;
+      color: var(--xero-text-muted);
+      font-size: 0.6875rem;
+    }
+
+    .xero-input--plain {
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      font-family: var(--font);
+      font-size: 0.875rem;
+      color: var(--xero-text);
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s;
+      background: var(--xero-input-bg);
+    }
+
+    .xero-input--plain:focus { border-color: var(--xero-blue); }
+    .xero-input--plain::placeholder { color: #9EB0BB; }
+
+    .xero-select {
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 8px 32px 8px 12px;
+      font-family: var(--font);
+      font-size: 0.875rem;
+      color: var(--xero-text);
+      width: 100%;
+      outline: none;
+      background: var(--xero-input-bg);
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234A6070' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      cursor: pointer;
+    }
+
+    .xero-select:focus { border-color: var(--xero-blue); }
+
+    .xero-textarea {
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      font-family: var(--font);
+      font-size: 0.875rem;
+      color: var(--xero-text);
+      width: 100%;
+      outline: none;
+      resize: vertical;
+      min-height: 68px;
+      transition: border-color 0.15s;
+      background: var(--xero-input-bg);
+    }
+
+    .xero-textarea:focus { border-color: var(--xero-blue); }
+    .xero-textarea::placeholder { color: #9EB0BB; }
+
+    /* ─── Expense rows table ─── */
+    .xero-exp-table-wrap { overflow-x: auto; }
+
+    .xero-exp-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 600px;
+    }
+
+    .xero-exp-table th {
+      font-size: 0.625rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--xero-text-muted);
+      padding: 0 4px 8px;
+      border-bottom: 1px solid var(--xero-border);
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .xero-exp-table th.center,
+    .xero-exp-table td.center { text-align: center; }
+
+    .xero-exp-table th.right,
+    .xero-exp-table td.right { text-align: right; }
+
+    .xero-exp-table td {
+      padding: 5px 4px;
+      vertical-align: middle;
+    }
+
+    .exp-remove {
+      background: none;
+      border: none;
+      color: var(--xero-text-muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      line-height: 1;
+      padding: 2px 4px;
+      transition: color 0.15s;
+    }
+    .exp-remove:hover { color: var(--xero-red); }
+
+    .xero-add-exp {
+      background: none;
+      border: none;
+      color: var(--xero-blue);
+      font-family: var(--font);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 10px 0 2px;
+      display: block;
+    }
+    .xero-add-exp:hover { color: var(--xero-blue-dark); }
+
+    /* receipt checkbox */
+    .exp-receipt-cb {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: var(--xero-navy);
+    }
+
+    /* running total */
+    .xero-exp-total {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--xero-border);
+    }
+
+    .xero-exp-total__lbl {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+    }
+
+    .xero-exp-total__val {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--xero-navy);
+      min-width: 80px;
+      text-align: right;
+    }
+
+    /* currency prefix input */
+    .xero-amt-wrap {
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      background: var(--xero-input-bg);
+      overflow: hidden;
+    }
+    .xero-amt-wrap:focus-within { border-color: var(--xero-blue); }
+    .xero-amt-prefix {
+      padding: 6px 4px 6px 8px;
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      user-select: none;
+      flex-shrink: 0;
+    }
+    .xero-amt-input {
+      border: none;
+      outline: none;
+      padding: 6px 8px 6px 2px;
+      font-family: var(--font);
+      font-size: 0.8125rem;
+      color: var(--xero-text);
+      width: 70px;
+      background: transparent;
+      text-align: right;
+    }
+
+    /* ─── Preview pane ─── */
+    .xero-preview { position: sticky; top: 24px; }
+
+    .xero-preview__label {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--xero-text-muted);
+      margin-bottom: 10px;
+    }
+
+    /* ─── Document styles ─── */
+    .inv-doc {
+      background: #fff;
+      border: 1px solid var(--xero-border);
+      border-radius: 4px 4px 0 0;
+      padding: 28px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      font-size: 0.8125rem;
+      line-height: 1.5;
+    }
+
+    .inv-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .inv-logo-placeholder {
+      width: 80px; height: 36px;
+      border: 1px dashed var(--xero-border);
+      border-radius: 3px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.5625rem; color: var(--xero-text-muted);
+    }
+
+    .inv-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--xero-navy);
+      letter-spacing: -0.01em;
+    }
+
+    .inv-rule { border: none; border-top: 2px solid var(--xero-navy); margin-bottom: 16px; }
+
+    .inv-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .inv-block__label {
+      font-size: 0.5625rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--xero-text-muted);
+      margin-bottom: 3px;
+    }
+
+    .inv-block__name { font-size: 0.8125rem; font-weight: 700; color: var(--xero-navy); }
+    .inv-block__line { font-size: 0.6875rem; color: var(--xero-text-muted); line-height: 1.4; }
+
+    .inv-detail-row {
+      display: flex;
+      gap: 6px;
+      font-size: 0.6875rem;
+      margin-bottom: 2px;
+    }
+    .inv-detail-row .k { font-weight: 700; color: var(--xero-navy); white-space: nowrap; }
+    .inv-detail-row .v { color: var(--xero-text-muted); }
+
+    /* ─── Expense table in preview ─── */
+    .inv-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 10px;
+      font-size: 0.6875rem;
+    }
+
+    .inv-table thead tr { background: var(--xero-navy); }
+    .inv-table th {
+      padding: 6px 8px;
+      color: #fff;
+      font-size: 0.5625rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      text-align: left;
+      white-space: nowrap;
+    }
+    .inv-table th.r, .inv-table td.r { text-align: right; }
+    .inv-table th.c, .inv-table td.c { text-align: center; }
+    .inv-table td {
+      padding: 5px 8px;
+      border-bottom: 1px solid var(--xero-border);
+    }
+    .inv-table tbody tr:nth-child(even) { background: #f8fafb; }
+    .inv-table tbody tr:last-child td { border-bottom: none; }
+
+    /* ─── Total in preview ─── */
+    .inv-grand-total {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 14px;
+      padding-top: 8px;
+      border-top: 1.5px solid var(--xero-navy);
+    }
+    .inv-grand-total .k {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+    }
+    .inv-grand-total .v {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--xero-navy);
+      min-width: 70px;
+      text-align: right;
+    }
+
+    .inv-notes {
+      border-top: 1px solid var(--xero-border);
+      padding-top: 12px;
+      font-size: 0.6875rem;
+      color: var(--xero-text-muted);
+    }
+    .inv-notes-heading {
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 2px;
+    }
+
+    .inv-cta {
+      font-size: 0.6875rem;
+      color: var(--xero-text-muted);
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--xero-border);
+      line-height: 1.5;
+    }
+    .inv-cta a { color: var(--xero-blue); text-decoration: none; font-weight: 600; }
+    .inv-cta a:hover { color: var(--xero-blue-dark); }
+
+    /* ─── Download strip ─── */
+    .xero-preview__dl {
+      background: var(--xero-panel-bg);
+      border: 1px solid var(--xero-border);
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .xero-preview__dl-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--xero-text-muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .xero-dl-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--xero-bg);
+      border: 1px solid var(--xero-border);
+      color: var(--xero-navy);
+      font-family: var(--font);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 6px 10px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: border-color 0.15s;
+      white-space: nowrap;
+    }
+    .xero-dl-btn:hover { border-color: var(--xero-navy); }
+
+    /* ─── Print ─── */
+    @media print {
+      body > * { display: none !important; }
+      #exp-print-area { display: block !important; }
+    }
+    #exp-print-area { display: none; }
+  </style>
+</head>
+<body>
+
+<div class="xero-tool">
+  <div class="xero-tool__layout">
+
+    <!-- ── LEFT: Form ── -->
+    <div>
+      <h2 class="xero-form__title">Create expense report</h2>
+
+      <!-- Employee Details -->
+      <div class="xero-section">
+        <p class="xero-section__title">Employee Details</p>
+        <div class="xero-fields">
+          <div>
+            <label class="xero-field__label" for="emp-name">Employee name</label>
+            <input class="xero-input--plain" type="text" id="emp-name" placeholder="Jane Smith" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="emp-id">Employee ID <span class="xero-field__optional">(optional)</span></label>
+            <input class="xero-input--plain" type="text" id="emp-id" placeholder="EMP-001" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="emp-dept">Department <span class="xero-field__optional">(optional)</span></label>
+            <input class="xero-input--plain" type="text" id="emp-dept" placeholder="Sales" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="emp-position">Position <span class="xero-field__optional">(optional)</span></label>
+            <input class="xero-input--plain" type="text" id="emp-position" placeholder="Account Manager" oninput="updatePreview()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Report Details -->
+      <div class="xero-section">
+        <p class="xero-section__title">Report Details</p>
+        <div class="xero-fields">
+          <div class="xero-field--full">
+            <label class="xero-field__label" for="rpt-title">Report title</label>
+            <input class="xero-input--plain" type="text" id="rpt-title" placeholder="March 2026 Expenses" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="rpt-start">Period start</label>
+            <input class="xero-input--plain" type="date" id="rpt-start" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="rpt-end">Period end</label>
+            <input class="xero-input--plain" type="date" id="rpt-end" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="rpt-submitted">Submission date</label>
+            <input class="xero-input--plain" type="date" id="rpt-submitted" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="rpt-approver">Approved by <span class="xero-field__optional">(optional)</span></label>
+            <input class="xero-input--plain" type="text" id="rpt-approver" placeholder="Manager name" oninput="updatePreview()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Expenses -->
+      <div class="xero-section">
+        <p class="xero-section__title">Expenses</p>
+        <div class="xero-exp-table-wrap">
+          <table class="xero-exp-table">
+            <thead>
+              <tr>
+                <th style="width:100px">Date</th>
+                <th style="width:140px">Category</th>
+                <th>Description</th>
+                <th class="right" style="width:100px">Amount</th>
+                <th class="center" style="width:48px">Rcpt</th>
+                <th style="width:28px"></th>
+              </tr>
+            </thead>
+            <tbody id="exp-tbody"></tbody>
+          </table>
+        </div>
+        <button class="xero-add-exp" type="button" onclick="addExpense()">+ Add expense</button>
+        <div class="xero-exp-total">
+          <span class="xero-exp-total__lbl">Total expenses:</span>
+          <span class="xero-exp-total__val" id="f-total">$0.00</span>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="xero-section">
+        <p class="xero-section__title">Notes</p>
+        <div class="xero-fields xero-fields--single">
+          <div>
+            <label class="xero-field__label" for="rpt-notes">Notes / additional info <span class="xero-field__optional">(optional)</span></label>
+            <textarea class="xero-textarea" id="rpt-notes" placeholder="All receipts attached." oninput="updatePreview()"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Company (Reimbursement) -->
+      <div class="xero-section">
+        <p class="xero-section__title">Company (for reimbursement)</p>
+        <div class="xero-fields">
+          <div class="xero-field--full">
+            <label class="xero-field__label" for="co-name">Company name</label>
+            <input class="xero-input--plain" type="text" id="co-name" placeholder="Acme Pty Ltd" oninput="updatePreview()">
+          </div>
+          <div class="xero-field--full">
+            <label class="xero-field__label" for="co-address">Address <span class="xero-field__optional">(optional)</span></label>
+            <input class="xero-input--plain" type="text" id="co-address" placeholder="123 Collins Street, Melbourne VIC 3000" oninput="updatePreview()">
+          </div>
+        </div>
+      </div>
+
+      <p style="font-size:0.75rem;color:var(--xero-text-muted);margin-top:16px;">*This tool generates expense report documents only and is not financial or tax advice.</p>
+    </div>
+
+    <!-- ── RIGHT: Preview ── -->
+    <div class="xero-preview">
+      <p class="xero-preview__label">Expense report preview</p>
+      <div class="inv-doc" id="exp-preview"></div>
+      <div class="xero-preview__dl">
+        <span class="xero-preview__dl-label">Download as:</span>
+        <button class="xero-dl-btn" onclick="downloadPDF()">
+          <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#E2574C"/><text x="8" y="11.5" font-size="5.5" font-weight="700" fill="white" text-anchor="middle" font-family="Arial,sans-serif">PDF</text></svg>
+          PDF
+        </button>
+        <button class="xero-dl-btn" onclick="downloadWord()">
+          <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#2B579A"/><text x="8" y="12.5" font-size="11" font-weight="700" fill="white" text-anchor="middle" font-family="Arial,sans-serif">W</text></svg>
+          Word
+        </button>
+        <button class="xero-dl-btn" onclick="downloadExcel()">
+          <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#217346"/><text x="8" y="12.5" font-size="10" font-weight="700" fill="white" text-anchor="middle" font-family="Arial,sans-serif">X</text></svg>
+          Excel
+        </button>
+        <button class="xero-dl-btn" onclick="downloadCSV()">
+          <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#0F9D58"/><rect x="4" y="5" width="8" height="1.5" fill="white" rx="0.5"/><rect x="4" y="7.5" width="8" height="1.5" fill="white" rx="0.5"/><rect x="4" y="10" width="5" height="1.5" fill="white" rx="0.5"/></svg>
+          CSV
+        </button>
+        <button class="xero-dl-btn" onclick="downloadHTML()">
+          <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#4285F4"/><text x="8" y="11" font-size="4.5" font-weight="700" fill="white" text-anchor="middle" font-family="Arial,sans-serif">HTML</text></svg>
+          HTML
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="exp-print-area"></div>
+
+<script>
+  // ─── Locale config ────────────────────────────────────────
+  const LOCALE = {
+    currency: '$',
+    currencyCode: 'AUD',
+    localeStr: 'en-AU',
+    dateFormat: 'DD/MM/YYYY',
+    signupUrl: 'https://www.xero.com/au/signup/',
+    fuelCategory: 'Fuel / Mileage',
+  };
+
+  const CATEGORIES = [
+    'Travel (flights, trains, car hire)',
+    'Accommodation',
+    'Meals & entertainment',
+    LOCALE.fuelCategory,
+    'Office supplies',
+    'Software & subscriptions',
+    'Phone & internet',
+    'Professional development',
+    'Client entertainment',
+    'Other',
+  ];
+
+  // ─── State ────────────────────────────────────────────────
+  let expenses = [];
+  let nextId = 1;
+
+  // ─── Helpers ─────────────────────────────────────────────
+  const $id = id => document.getElementById(id);
+  const gv  = id => ($id(id) ? $id(id).value.trim() : '');
+
+  function fmt(n) {
+    return LOCALE.currency + Math.abs(n).toLocaleString(LOCALE.localeStr, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+
+  // ISO → DD/MM/YYYY
+  function fmtDate(iso) {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  // DD/MM short (for preview table)
+  function fmtDateShort(iso) {
+    if (!iso) return '';
+    const [, m, d] = iso.split('-');
+    return `${d}/${m}`;
+  }
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function truncate(s, max) {
+    s = String(s);
+    return s.length > max ? s.slice(0, max - 1) + '…' : s;
+  }
+
+  // ─── Init ─────────────────────────────────────────────────
+  function init() {
+    const today = new Date().toISOString().split('T')[0];
+    $id('rpt-submitted').value = today;
+    addExpense();
+    updatePreview();
+  }
+
+  // ─── Expenses CRUD ────────────────────────────────────────
+  function addExpense() {
+    const today = new Date().toISOString().split('T')[0];
+    expenses.push({
+      id: nextId++,
+      date: today,
+      category: CATEGORIES[0],
+      description: '',
+      amount: 0,
+      hasReceipt: false,
+    });
+    renderExpenses();
+    calculate();
+  }
+
+  function removeExpense(id) {
+    expenses = expenses.filter(e => e.id !== id);
+    renderExpenses();
+    calculate();
+    updatePreview();
+  }
+
+  function updateExpense(id, field, value) {
+    const exp = expenses.find(e => e.id === id);
+    if (!exp) return;
+    if (field === 'amount') {
+      exp.amount = parseFloat(value) || 0;
+    } else if (field === 'hasReceipt') {
+      exp.hasReceipt = value;
+    } else {
+      exp[field] = value;
+    }
+    calculate();
+    updatePreview();
+  }
+
+  function renderExpenses() {
+    $id('exp-tbody').innerHTML = expenses.map(exp => `
+      <tr data-id="${exp.id}">
+        <td>
+          <input class="xero-input--plain" type="date" value="${exp.date}"
+            style="font-size:0.8125rem;padding:5px 8px;"
+            onchange="updateExpense(${exp.id},'date',this.value)">
+        </td>
+        <td>
+          <select class="xero-select" style="font-size:0.8125rem;padding:5px 24px 5px 8px;"
+            onchange="updateExpense(${exp.id},'category',this.value)">
+            ${CATEGORIES.map(c => `<option value="${esc(c)}"${c === exp.category ? ' selected' : ''}>${esc(c)}</option>`).join('')}
+          </select>
+        </td>
+        <td>
+          <input class="xero-input--plain" type="text" value="${esc(exp.description)}"
+            placeholder="Description"
+            style="font-size:0.8125rem;padding:5px 8px;"
+            oninput="updateExpense(${exp.id},'description',this.value)">
+        </td>
+        <td>
+          <div class="xero-amt-wrap">
+            <span class="xero-amt-prefix">${LOCALE.currency}</span>
+            <input class="xero-amt-input" type="number" min="0" step="0.01"
+              value="${exp.amount || ''}" placeholder="0.00"
+              oninput="updateExpense(${exp.id},'amount',this.value)">
+          </div>
+        </td>
+        <td class="center">
+          <input type="checkbox" class="exp-receipt-cb" ${exp.hasReceipt ? 'checked' : ''}
+            onchange="updateExpense(${exp.id},'hasReceipt',this.checked)">
+        </td>
+        <td>
+          <button class="exp-remove" type="button" onclick="removeExpense(${exp.id})" title="Remove">×</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // ─── Calculate total ─────────────────────────────────────
+  function calculate() {
+    const total = expenses.reduce((s, e) => s + e.amount, 0);
+    $id('f-total').textContent = fmt(total);
+    return total;
+  }
+
+  // ─── Build document HTML ─────────────────────────────────
+  function buildDocument() {
+    const total = calculate();
+
+    const empName   = gv('emp-name');
+    const empId     = gv('emp-id');
+    const empDept   = gv('emp-dept');
+    const empPos    = gv('emp-position');
+    const rptTitle  = gv('rpt-title');
+    const rptStart  = gv('rpt-start');
+    const rptEnd    = gv('rpt-end');
+    const rptSub    = gv('rpt-submitted');
+    const approver  = gv('rpt-approver');
+    const notes     = gv('rpt-notes');
+    const coName    = gv('co-name');
+    const coAddr    = gv('co-address');
+
+    const periodStr = rptStart && rptEnd
+      ? `${fmtDate(rptStart)} – ${fmtDate(rptEnd)}`
+      : (rptStart ? `From ${fmtDate(rptStart)}` : '—');
+
+    const submittedByLines = [
+      empName  ? `<div class="inv-block__name">${esc(empName)}</div>` : '<div class="inv-block__name" style="color:#9EB0BB">Employee Name</div>',
+      empDept  ? `<div class="inv-block__line">${esc(empDept)}</div>` : '',
+      empPos   ? `<div class="inv-block__line">${esc(empPos)}</div>` : '',
+      empId    ? `<div class="inv-block__line">ID: ${esc(empId)}</div>` : '',
+    ].join('');
+
+    const reportDetailLines = [
+      `<div class="inv-detail-row"><span class="k">Report:</span><span class="v">${esc(rptTitle || 'Expense Report')}</span></div>`,
+      `<div class="inv-detail-row"><span class="k">Period:</span><span class="v">${esc(periodStr)}</span></div>`,
+      rptSub   ? `<div class="inv-detail-row"><span class="k">Submitted:</span><span class="v">${fmtDate(rptSub)}</span></div>` : '',
+      approver ? `<div class="inv-detail-row"><span class="k">Approved by:</span><span class="v">${esc(approver)}</span></div>` : '',
+    ].join('');
+
+    const rows = expenses.map(e => `
+      <tr>
+        <td>${esc(fmtDateShort(e.date)) || '—'}</td>
+        <td>${esc(truncate(e.category, 22))}</td>
+        <td>${esc(e.description) || '<span style="color:#9EB0BB">—</span>'}</td>
+        <td class="r">${fmt(e.amount)}</td>
+        <td class="c">${e.hasReceipt ? '✓' : '—'}</td>
+      </tr>`).join('');
+
+    const coBlock = (coName || coAddr) ? `
+      <div style="margin-bottom:12px;">
+        <div class="inv-block__label">Submitted to</div>
+        ${coName ? `<div class="inv-block__name">${esc(coName)}</div>` : ''}
+        ${coAddr ? `<div class="inv-block__line">${esc(coAddr)}</div>` : ''}
+      </div>` : '';
+
+    return `
+      <div class="inv-header">
+        <div style="font-size:0.625rem;color:var(--xero-text-muted);font-weight:600;letter-spacing:0.04em;">${esc(coName) || ''}</div>
+        <div class="inv-title">EXPENSE REPORT</div>
+      </div>
+      <hr class="inv-rule">
+      <div class="inv-meta">
+        <div>
+          <div class="inv-block__label">Submitted by</div>
+          ${submittedByLines}
+        </div>
+        <div>
+          <div class="inv-block__label">Report details</div>
+          ${reportDetailLines}
+        </div>
+      </div>
+      ${coBlock}
+      <table class="inv-table">
+        <thead>
+          <tr>
+            <th style="width:36px">Date</th>
+            <th style="width:80px">Category</th>
+            <th>Description</th>
+            <th class="r" style="width:60px">Amount</th>
+            <th class="c" style="width:28px">Rcpt</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows || '<tr><td colspan="5" style="color:#9EB0BB;text-align:center;padding:12px;">No expenses added yet</td></tr>'}
+        </tbody>
+      </table>
+      <div class="inv-grand-total">
+        <span class="k">TOTAL (${LOCALE.currencyCode}):</span>
+        <span class="v">${fmt(total)}</span>
+      </div>
+      ${notes ? `<div class="inv-notes"><div class="inv-notes-heading">Notes</div><div>${esc(notes)}</div></div>` : ''}
+      <div class="inv-cta">Track and manage expenses automatically with Xero. Start a 30 day <a href="${LOCALE.signupUrl}" target="_blank">free trial</a>.</div>
+    `;
+  }
+
+  // ─── Update preview ───────────────────────────────────────
+  function updatePreview() {
+    $id('exp-preview').innerHTML = buildDocument();
+  }
+
+  // ─── Print area ───────────────────────────────────────────
+  function prepPrint() {
+    $id('exp-print-area').innerHTML = `
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Plus Jakarta Sans',Arial,sans-serif;color:#1B3A4B;padding:40px;max-width:780px}
+        .inv-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+        .inv-title{font-size:22px;font-weight:800;color:#1B3A4B;letter-spacing:-0.01em}
+        .inv-rule{border:none;border-top:2px solid #1B3A4B;margin-bottom:16px}
+        .inv-meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+        .inv-block__label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#4A6070;margin-bottom:3px}
+        .inv-block__name{font-size:13px;font-weight:700;color:#1B3A4B}
+        .inv-block__line{font-size:11px;color:#4A6070;line-height:1.4}
+        .inv-detail-row{display:flex;gap:6px;font-size:11px;margin-bottom:2px}
+        .inv-detail-row .k{font-weight:700;color:#1B3A4B;white-space:nowrap}
+        .inv-detail-row .v{color:#4A6070}
+        .inv-table{width:100%;border-collapse:collapse;margin-bottom:10px;font-size:11px}
+        .inv-table thead tr{background:#1B3A4B}
+        .inv-table th{padding:6px 8px;color:#fff;font-size:9px;text-transform:uppercase;letter-spacing:0.05em;text-align:left;white-space:nowrap}
+        .inv-table th.r,.inv-table td.r{text-align:right}
+        .inv-table th.c,.inv-table td.c{text-align:center}
+        .inv-table td{padding:5px 8px;border-bottom:1px solid #C2CDD6}
+        .inv-table tbody tr:nth-child(even){background:#f8fafb}
+        .inv-table tbody tr:last-child td{border-bottom:none}
+        .inv-grand-total{display:flex;justify-content:flex-end;align-items:center;gap:16px;margin-bottom:14px;padding-top:8px;border-top:1.5px solid #1B3A4B}
+        .inv-grand-total .k{font-size:12px;font-weight:700;color:#1B3A4B}
+        .inv-grand-total .v{font-size:16px;font-weight:800;color:#1B3A4B;min-width:70px;text-align:right}
+        .inv-notes{border-top:1px solid #C2CDD6;padding-top:12px;font-size:11px;color:#4A6070}
+        .inv-notes-heading{font-weight:700;color:#1B3A4B;margin-bottom:2px}
+        .inv-cta{font-size:11px;color:#4A6070;margin-top:12px;padding-top:12px;border-top:1px solid #C2CDD6}
+        .inv-cta a{color:#13B5EA}
+      </style>
+      ${buildDocument()}`;
+  }
+
+  // ─── Downloads ────────────────────────────────────────────
+  function downloadPDF() {
+    prepPrint();
+    window.print();
+  }
+
+  function downloadWord() {
+    prepPrint();
+    const content = $id('exp-print-area').innerHTML;
+    const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'><head><meta charset='utf-8'></head><body>${content}</body></html>`;
+    dlBlob(new Blob([html], { type: 'application/msword' }), `expense-report-${gv('emp-name') || 'export'}.doc`);
+  }
+
+  function downloadExcel() {
+    const total = calculate();
+    const header = [['Date', 'Category', 'Description', 'Amount (' + LOCALE.currencyCode + ')', 'Receipt (Y/N)']];
+    const rows = expenses.map(e => [
+      fmtDate(e.date),
+      e.category,
+      e.description,
+      e.amount.toFixed(2),
+      e.hasReceipt ? 'Y' : 'N',
+    ]);
+    const meta = [
+      [],
+      ['Employee', gv('emp-name')],
+      ['Department', gv('emp-dept')],
+      ['Report', gv('rpt-title')],
+      ['Period', [gv('rpt-start') ? fmtDate(gv('rpt-start')) : '', gv('rpt-end') ? fmtDate(gv('rpt-end')) : ''].filter(Boolean).join(' – ')],
+      ['Submitted', fmtDate(gv('rpt-submitted'))],
+      ['Approved by', gv('rpt-approver')],
+      [],
+      ...header,
+      ...rows,
+      [],
+      ['', '', 'TOTAL (' + LOCALE.currencyCode + ')', total.toFixed(2)],
+    ];
+    const tbl = meta.map(r => `<tr>${r.map(c => `<td>${esc(String(c))}</td>`).join('')}</tr>`).join('');
+    dlBlob(new Blob([`<html><head><meta charset="utf-8"></head><body><table>${tbl}</table></body></html>`], { type: 'application/vnd.ms-excel' }), `expense-report-${gv('emp-name') || 'export'}.xls`);
+  }
+
+  function downloadCSV() {
+    const total = calculate();
+    const rows = [
+      ['EXPENSE REPORT'],
+      ['Employee', gv('emp-name')],
+      ['Department', gv('emp-dept')],
+      ['Position', gv('emp-position')],
+      ['Employee ID', gv('emp-id')],
+      ['Report', gv('rpt-title')],
+      ['Period', [gv('rpt-start') ? fmtDate(gv('rpt-start')) : '', gv('rpt-end') ? fmtDate(gv('rpt-end')) : ''].filter(Boolean).join(' - ')],
+      ['Submitted', fmtDate(gv('rpt-submitted'))],
+      ['Approved by', gv('rpt-approver')],
+      [],
+      ['Date', 'Category', 'Description', 'Amount (' + LOCALE.currencyCode + ')', 'Receipt (Y/N)'],
+      ...expenses.map(e => [
+        fmtDate(e.date),
+        e.category,
+        e.description,
+        e.amount.toFixed(2),
+        e.hasReceipt ? 'Y' : 'N',
+      ]),
+      [],
+      ['', '', 'TOTAL (' + LOCALE.currencyCode + ')', total.toFixed(2)],
+      [],
+      ['Notes', gv('rpt-notes')],
+    ];
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    dlBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `expense-report-${gv('emp-name') || 'export'}.csv`);
+  }
+
+  function downloadHTML() {
+    prepPrint();
+    const html = `<!DOCTYPE html><html lang="en-AU"><head><meta charset="utf-8"><title>Expense Report – ${esc(gv('emp-name') || 'Export')}</title></head><body style="font-family:Arial,sans-serif;max-width:780px;margin:40px auto;">${$id('exp-print-area').innerHTML}</body></html>`;
+    dlBlob(new Blob([html], { type: 'text/html;charset=utf-8;' }), `expense-report-${gv('emp-name') || 'export'}.html`);
+  }
+
+  function dlBlob(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+  }
+
+  init();
+</script>
+</body>
+</html>

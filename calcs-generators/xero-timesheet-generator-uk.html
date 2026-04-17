@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xero Timesheet Generator — UK</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!--
+    XERO PROTOTYPE
+    Tool: Timesheet Generator (UK)
+    Locale: UK
+    Pattern: Two-column generator with live preview
+    Built: 2026-04-16
+    Inputs: Employee/company details, pay period, time entries (start/end/break per day), pay rate
+    Output: Styled timesheet — download PDF/Word/Excel/CSV/HTML
+    Notes for devs:
+      - days[] array drives the table; rebuilt on period change, updated in-place on keystroke
+      - Regular/OT hours auto-calculated per day from start/end/break
+      - OT threshold configurable (default 8hrs/day)
+      - Pay totals section is optional (toggle)
+      - Currency: GBP (£), locale string en-GB, date format DD/MM/YYYY
+      - Week starts Monday
+      - GT Walsheim → Plus Jakarta Sans (flag for prod)
+  -->
+  <style>
+    :root {
+      --xero-navy:       #1B3A4B;
+      --xero-blue:       #13B5EA;
+      --xero-blue-dark:  #0D8FBD;
+      --xero-panel-bg:   #EBF0F4;
+      --xero-border:     #C2CDD6;
+      --xero-bg:         #FFFFFF;
+      --xero-text:       #1B3A4B;
+      --xero-text-muted: #4A6070;
+      --xero-input-bg:   #FFFFFF;
+      --xero-green:      #1AB394;
+      --xero-red:        #E05A5A;
+      --radius: 4px;
+      --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      color: var(--xero-text);
+      background: var(--xero-bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── Tool wrapper ─── */
+    .xero-tool { padding: 40px 5% 56px; }
+
+    /* ─── Two-column layout ─── */
+    .xero-tool__layout {
+      display: grid;
+      grid-template-columns: 55fr 45fr;
+      gap: 48px;
+      align-items: start;
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 1000px) {
+      .xero-tool__layout { grid-template-columns: 1fr; }
+    }
+
+    /* ─── Form ─── */
+    .xero-form__title {
+      font-size: 1.375rem;
+      font-weight: 800;
+      color: var(--xero-navy);
+      letter-spacing: -0.02em;
+      margin-bottom: 28px;
+    }
+
+    .xero-section {
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--xero-border);
+      margin-bottom: 24px;
+    }
+
+    .xero-section:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+    .xero-section__title {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--xero-text-muted);
+      margin-bottom: 14px;
+    }
+
+    .xero-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .xero-fields--single { grid-template-columns: 1fr; }
+    .xero-field--full { grid-column: 1 / -1; }
+
+    @media (max-width: 540px) { .xero-fields { grid-template-columns: 1fr; } }
+
+    .xero-field__label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 4px;
+    }
+
+    .xero-field__label span {
+      font-weight: 400;
+      color: var(--xero-text-muted);
+    }
+
+    .xero-input--plain {
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      font-family: var(--font);
+      font-size: 0.875rem;
+      color: var(--xero-text);
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s;
+      background: var(--xero-input-bg);
+    }
+
+    .xero-input--plain:focus { border-color: var(--xero-blue); }
+    .xero-input--plain::placeholder { color: #9EB0BB; }
+
+    .xero-select {
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 8px 32px 8px 12px;
+      font-family: var(--font);
+      font-size: 0.875rem;
+      color: var(--xero-text);
+      width: 100%;
+      outline: none;
+      background: var(--xero-input-bg);
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234A6070' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      cursor: pointer;
+    }
+
+    .xero-select:focus { border-color: var(--xero-blue); }
+
+    /* ─── Period type tabs ─── */
+    .period-tabs {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      width: fit-content;
+      margin-bottom: 12px;
+    }
+
+    .period-tab {
+      padding: 7px 16px;
+      font-family: var(--font);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--xero-text-muted);
+      background: var(--xero-panel-bg);
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      border-right: 1px solid var(--xero-border);
+    }
+
+    .period-tab:last-child { border-right: none; }
+
+    .period-tab.active {
+      background: var(--xero-navy);
+      color: #fff;
+    }
+
+    /* ─── Toggle switch ─── */
+    .xero-toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .xero-toggle-row label {
+      font-size: 0.8125rem;
+      color: var(--xero-text);
+      cursor: pointer;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: var(--xero-border);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      left: 3px;
+      top: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+
+    .toggle-switch input:checked + .toggle-slider { background: var(--xero-blue); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+    /* ─── Timesheet table ─── */
+    .ts-table-wrap { overflow-x: auto; margin-top: 12px; }
+
+    .ts-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 600px;
+    }
+
+    .ts-table th {
+      font-size: 0.625rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--xero-text-muted);
+      padding: 0 4px 8px;
+      border-bottom: 1px solid var(--xero-border);
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .ts-table th.right,
+    .ts-table td.right { text-align: right; }
+
+    .ts-table td { padding: 4px 4px; vertical-align: middle; }
+
+    .ts-table tr:nth-child(even) td { background: #f7f9fb; }
+
+    .ts-day-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      white-space: nowrap;
+    }
+
+    .ts-date-label {
+      font-size: 0.75rem;
+      color: var(--xero-text-muted);
+      white-space: nowrap;
+    }
+
+    .ts-time-input {
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 5px 6px;
+      font-family: var(--font);
+      font-size: 0.8125rem;
+      color: var(--xero-text);
+      width: 78px;
+      outline: none;
+      transition: border-color 0.15s;
+      background: var(--xero-input-bg);
+    }
+
+    .ts-time-input:focus { border-color: var(--xero-blue); }
+
+    .ts-break-input {
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 5px 6px;
+      font-family: var(--font);
+      font-size: 0.8125rem;
+      color: var(--xero-text);
+      width: 56px;
+      outline: none;
+      transition: border-color 0.15s;
+      background: var(--xero-input-bg);
+      text-align: right;
+    }
+
+    .ts-break-input:focus { border-color: var(--xero-blue); }
+
+    .ts-notes-input {
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 5px 8px;
+      font-family: var(--font);
+      font-size: 0.8125rem;
+      color: var(--xero-text);
+      width: 100%;
+      min-width: 90px;
+      outline: none;
+      transition: border-color 0.15s;
+      background: var(--xero-input-bg);
+    }
+
+    .ts-notes-input:focus { border-color: var(--xero-blue); }
+    .ts-notes-input::placeholder { color: #9EB0BB; }
+
+    .ts-calc-val {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--xero-navy);
+      text-align: right;
+      white-space: nowrap;
+      padding: 0 4px;
+    }
+
+    .ts-calc-val.zero { color: var(--xero-text-muted); font-weight: 400; }
+
+    /* ─── Totals summary ─── */
+    .ts-totals {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 2px solid var(--xero-navy);
+    }
+
+    .ts-total-item { display: flex; flex-direction: column; gap: 2px; }
+
+    .ts-total-item .lbl {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--xero-text-muted);
+    }
+
+    .ts-total-item .val {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+    }
+
+    /* ─── Pay totals ─── */
+    .pay-totals {
+      background: var(--xero-panel-bg);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-top: 16px;
+    }
+
+    .pay-totals__row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      font-size: 0.875rem;
+      color: var(--xero-text);
+      border-bottom: 1px solid var(--xero-border);
+    }
+
+    .pay-totals__row:last-child { border-bottom: none; }
+
+    .pay-totals__row.grand {
+      font-weight: 800;
+      font-size: 1rem;
+      color: var(--xero-navy);
+      margin-top: 4px;
+      padding-top: 10px;
+      border-top: 2px solid var(--xero-navy);
+    }
+
+    /* ─── Preview pane ─── */
+    .xero-preview { position: sticky; top: 24px; }
+
+    .xero-preview__label {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--xero-text-muted);
+      margin-bottom: 10px;
+    }
+
+    /* ─── Timesheet document ─── */
+    .inv-doc {
+      background: #fff;
+      border: 1px solid var(--xero-border);
+      border-radius: 4px 4px 0 0;
+      padding: 28px 28px 20px;
+      font-size: 0.75rem;
+      color: var(--xero-navy);
+    }
+
+    .inv-doc__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .inv-doc__logo {
+      width: 80px;
+      height: 40px;
+      background: var(--xero-panel-bg);
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.625rem;
+      color: var(--xero-text-muted);
+      font-weight: 600;
+      overflow: hidden;
+    }
+
+    .inv-doc__logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+    .inv-doc__title {
+      font-size: 1.125rem;
+      font-weight: 800;
+      color: var(--xero-navy);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .inv-doc__divider {
+      border: none;
+      border-top: 2px solid var(--xero-navy);
+      margin: 12px 0;
+    }
+
+    .inv-doc__meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .inv-meta__block .meta-lbl {
+      font-size: 0.5625rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--xero-text-muted);
+      margin-bottom: 3px;
+    }
+
+    .inv-meta__block .meta-val {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--xero-navy);
+      line-height: 1.4;
+    }
+
+    .inv-meta__block .meta-val.muted {
+      font-weight: 400;
+      color: var(--xero-text-muted);
+    }
+
+    /* ─── Preview table ─── */
+    .prev-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.6875rem;
+    }
+
+    .prev-table thead tr {
+      background: var(--xero-navy);
+      color: #fff;
+    }
+
+    .prev-table thead th {
+      padding: 6px 6px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 0.5625rem;
+      text-align: left;
+    }
+
+    .prev-table thead th.right { text-align: right; }
+
+    .prev-table tbody tr:nth-child(even) { background: #f7f9fb; }
+
+    .prev-table tbody td {
+      padding: 4px 6px;
+      border-bottom: 1px solid #e8edf1;
+      color: var(--xero-text);
+    }
+
+    .prev-table tbody td.right { text-align: right; font-weight: 600; }
+    .prev-table tbody td.muted { color: var(--xero-text-muted); }
+
+    .prev-table tfoot tr { border-top: 2px solid var(--xero-navy); }
+
+    .prev-table tfoot td {
+      padding: 6px 6px;
+      font-weight: 800;
+      font-size: 0.6875rem;
+      color: var(--xero-navy);
+    }
+
+    .prev-table tfoot td.right { text-align: right; }
+
+    /* ─── Preview pay totals ─── */
+    .prev-pay {
+      margin-top: 12px;
+      border-top: 1px solid var(--xero-border);
+      padding-top: 10px;
+    }
+
+    .prev-pay__row {
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 0;
+      font-size: 0.6875rem;
+    }
+
+    .prev-pay__row.grand {
+      font-weight: 800;
+      font-size: 0.75rem;
+      color: var(--xero-navy);
+      margin-top: 4px;
+      padding-top: 6px;
+      border-top: 1px solid var(--xero-navy);
+    }
+
+    /* ─── Preview signatures ─── */
+    .prev-sigs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--xero-border);
+    }
+
+    .prev-sig__line {
+      border-bottom: 1px solid var(--xero-navy);
+      height: 20px;
+      margin-bottom: 4px;
+    }
+
+    .prev-sig__label {
+      font-size: 0.5625rem;
+      color: var(--xero-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* ─── Download strip ─── */
+    .dl-strip {
+      background: var(--xero-panel-bg);
+      border: 1px solid var(--xero-border);
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .dl-strip__label {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      color: var(--xero-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-right: 4px;
+    }
+
+    .dl-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      border-radius: var(--radius);
+      font-family: var(--font);
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: opacity 0.15s;
+      text-decoration: none;
+    }
+
+    .dl-btn:hover { opacity: 0.85; }
+
+    .dl-btn--pdf  { background: var(--xero-navy); color: #fff; }
+    .dl-btn--word { background: #2B5797; color: #fff; }
+    .dl-btn--xl   { background: #1E7145; color: #fff; }
+    .dl-btn--csv  { background: #fff; color: var(--xero-navy); border-color: var(--xero-border); }
+    .dl-btn--html { background: #fff; color: var(--xero-navy); border-color: var(--xero-border); }
+
+    /* ─── CTA ─── */
+    .xero-cta {
+      margin-top: 16px;
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      line-height: 1.5;
+    }
+
+    .xero-cta a { color: var(--xero-blue); font-weight: 600; text-decoration: none; }
+    .xero-cta a:hover { color: var(--xero-blue-dark); text-decoration: underline; }
+
+    /* ─── Footnote ─── */
+    .xero-footnote {
+      max-width: 1300px;
+      margin: 32px auto 0;
+      font-size: 0.75rem;
+      color: var(--xero-text-muted);
+      border-top: 1px solid var(--xero-border);
+      padding-top: 16px;
+    }
+
+    /* ─── OT threshold row ─── */
+    .ot-config {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .ot-config label {
+      font-size: 0.8125rem;
+      color: var(--xero-text);
+    }
+
+    .ot-num-input {
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 5px 8px;
+      font-family: var(--font);
+      font-size: 0.875rem;
+      color: var(--xero-text);
+      width: 60px;
+      outline: none;
+      text-align: right;
+    }
+
+    .ot-num-input:focus { border-color: var(--xero-blue); }
+
+    .rate-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .rate-prefix {
+      background: var(--xero-panel-bg);
+      border: 1px solid var(--xero-border);
+      border-right: none;
+      border-radius: var(--radius) 0 0 var(--radius);
+      padding: 8px 10px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--xero-text-muted);
+      line-height: 1;
+    }
+
+    .rate-input-wrap .xero-input--plain {
+      border-radius: 0 var(--radius) var(--radius) 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="xero-tool">
+  <div class="xero-tool__layout">
+
+    <!-- ═══════════════════════════════════════════════
+         LEFT: FORM
+    ═══════════════════════════════════════════════ -->
+    <div class="xero-form">
+      <h2 class="xero-form__title">Create timesheet</h2>
+
+      <!-- Employee & Employer -->
+      <div class="xero-section">
+        <div class="xero-section__title">Employee &amp; Employer</div>
+        <div class="xero-fields">
+          <div>
+            <label class="xero-field__label" for="emp-name">Employee name</label>
+            <input class="xero-input--plain" type="text" id="emp-name" placeholder="Jane Smith" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="emp-id">Employee ID <span>(optional)</span></label>
+            <input class="xero-input--plain" type="text" id="emp-id" placeholder="EMP-001" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="emp-position">Position / Job title <span>(optional)</span></label>
+            <input class="xero-input--plain" type="text" id="emp-position" placeholder="Senior Developer" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="emp-dept">Department <span>(optional)</span></label>
+            <input class="xero-input--plain" type="text" id="emp-dept" placeholder="Engineering" oninput="updatePreview()">
+          </div>
+          <div class="xero-field--full">
+            <label class="xero-field__label" for="company-name">Company name</label>
+            <input class="xero-input--plain" type="text" id="company-name" placeholder="Acme Pty Ltd" oninput="updatePreview()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Pay Period -->
+      <div class="xero-section">
+        <div class="xero-section__title">Pay Period</div>
+
+        <div class="period-tabs">
+          <button class="period-tab active" data-period="weekly" onclick="setPeriod('weekly')">Weekly</button>
+          <button class="period-tab" data-period="fortnightly" onclick="setPeriod('fortnightly')">Fortnightly</button>
+          <button class="period-tab" data-period="custom" onclick="setPeriod('custom')">Custom</button>
+        </div>
+
+        <div class="xero-fields" id="period-dates-wrap">
+          <div id="week-start-wrap">
+            <label class="xero-field__label" for="week-start">Week starting</label>
+            <input class="xero-input--plain" type="date" id="week-start" onchange="buildDays()">
+          </div>
+          <div id="custom-end-wrap" style="display:none;">
+            <label class="xero-field__label" for="custom-end">Period ending</label>
+            <input class="xero-input--plain" type="date" id="custom-end" onchange="buildDays()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Pay Rate -->
+      <div class="xero-section">
+        <div class="xero-section__title">Pay Rate</div>
+        <div class="xero-fields">
+          <div>
+            <label class="xero-field__label" for="reg-rate">Regular rate (£/hr)</label>
+            <div class="rate-input-wrap">
+              <span class="rate-prefix">£</span>
+              <input class="xero-input--plain" type="number" id="reg-rate" min="0" step="0.01" placeholder="25.00" oninput="updateOTRate(); updateTotals(); updatePreview()">
+            </div>
+          </div>
+          <div>
+            <label class="xero-field__label" for="ot-rate">Overtime rate (£/hr)</label>
+            <div class="rate-input-wrap">
+              <span class="rate-prefix">£</span>
+              <input class="xero-input--plain" type="number" id="ot-rate" min="0" step="0.01" placeholder="37.50" oninput="updateTotals(); updatePreview()">
+            </div>
+          </div>
+          <div class="xero-field--full">
+            <div class="ot-config">
+              <label for="ot-threshold">OT after</label>
+              <input class="ot-num-input" type="number" id="ot-threshold" min="1" max="24" step="0.5" value="8" oninput="recalcAll(); updateTotals(); updatePreview()">
+              <label for="ot-threshold">hrs/day</label>
+            </div>
+          </div>
+          <div class="xero-field--full">
+            <div class="xero-toggle-row">
+              <label class="toggle-switch">
+                <input type="checkbox" id="show-pay" checked onchange="updateTotals(); updatePreview()">
+                <span class="toggle-slider"></span>
+              </label>
+              <label for="show-pay">Show pay totals on timesheet</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Time Entries -->
+      <div class="xero-section">
+        <div class="xero-section__title">Time Entries</div>
+        <div class="ts-table-wrap">
+          <table class="ts-table" id="ts-table">
+            <thead>
+              <tr>
+                <th>Day</th>
+                <th>Date</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Break<br>(min)</th>
+                <th class="right">Reg hrs</th>
+                <th class="right">OT hrs</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody id="ts-tbody">
+              <!-- populated by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Totals summary -->
+        <div class="ts-totals" id="ts-totals">
+          <div class="ts-total-item">
+            <span class="lbl">Regular hours</span>
+            <span class="val" id="total-reg">0.00</span>
+          </div>
+          <div class="ts-total-item">
+            <span class="lbl">Overtime hours</span>
+            <span class="val" id="total-ot">0.00</span>
+          </div>
+          <div class="ts-total-item">
+            <span class="lbl">Total hours</span>
+            <span class="val" id="total-hrs">0.00</span>
+          </div>
+        </div>
+
+        <!-- Pay totals -->
+        <div class="pay-totals" id="pay-totals-section" style="display:none;">
+          <div class="pay-totals__row">
+            <span id="pay-reg-lbl">Regular pay (0.00 hrs × $0.00)</span>
+            <span id="pay-reg-val">$0.00</span>
+          </div>
+          <div class="pay-totals__row">
+            <span id="pay-ot-lbl">Overtime pay (0.00 hrs × $0.00)</span>
+            <span id="pay-ot-val">$0.00</span>
+          </div>
+          <div class="pay-totals__row grand">
+            <span>Total pay</span>
+            <span id="pay-total-val">$0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Approval -->
+      <div class="xero-section">
+        <div class="xero-section__title">Approval</div>
+        <div class="xero-fields">
+          <div>
+            <label class="xero-field__label" for="sig-employee">Employee signature <span>(name)</span></label>
+            <input class="xero-input--plain" type="text" id="sig-employee" placeholder="Jane Smith" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="sig-approver">Approved by</label>
+            <input class="xero-input--plain" type="text" id="sig-approver" placeholder="John Manager" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="approval-date">Approval date</label>
+            <input class="xero-input--plain" type="date" id="approval-date" oninput="updatePreview()">
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /xero-form -->
+
+    <!-- ═══════════════════════════════════════════════
+         RIGHT: PREVIEW + DOWNLOAD
+    ═══════════════════════════════════════════════ -->
+    <div class="xero-preview">
+      <div class="xero-preview__label">Timesheet preview</div>
+
+      <div class="inv-doc" id="preview-doc">
+
+        <!-- Header -->
+        <div class="inv-doc__header">
+          <div class="inv-doc__logo" id="prev-logo">LOGO</div>
+          <div class="inv-doc__title">Timesheet</div>
+        </div>
+
+        <hr class="inv-doc__divider">
+
+        <!-- Meta -->
+        <div class="inv-doc__meta">
+          <div class="inv-meta__block">
+            <div class="meta-lbl">Employee</div>
+            <div class="meta-val" id="prev-emp-name">—</div>
+            <div class="meta-val muted" id="prev-emp-sub"></div>
+            <div class="meta-val muted" id="prev-company"></div>
+          </div>
+          <div class="inv-meta__block" style="text-align:right;">
+            <div class="meta-lbl">Period</div>
+            <div class="meta-val" id="prev-period">—</div>
+          </div>
+        </div>
+
+        <!-- Timesheet table -->
+        <table class="prev-table" id="prev-table">
+          <thead>
+            <tr>
+              <th>Day</th>
+              <th>Date</th>
+              <th>Start</th>
+              <th>End</th>
+              <th>Break</th>
+              <th class="right">Reg hrs</th>
+              <th class="right">OT hrs</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="prev-tbody">
+            <!-- populated by JS -->
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="5" class="right">Totals</td>
+              <td class="right" id="prev-total-reg">0.00</td>
+              <td class="right" id="prev-total-ot">0.00</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <!-- Pay totals in preview -->
+        <div class="prev-pay" id="prev-pay-section" style="display:none;">
+          <div class="prev-pay__row">
+            <span id="prev-pay-reg-lbl">Regular pay</span>
+            <span id="prev-pay-reg-val">$0.00</span>
+          </div>
+          <div class="prev-pay__row">
+            <span id="prev-pay-ot-lbl">Overtime pay</span>
+            <span id="prev-pay-ot-val">$0.00</span>
+          </div>
+          <div class="prev-pay__row grand">
+            <span>Total pay</span>
+            <span id="prev-pay-total">$0.00</span>
+          </div>
+        </div>
+
+        <!-- Signatures -->
+        <div class="prev-sigs">
+          <div>
+            <div class="prev-sig__line"></div>
+            <div class="prev-sig__label" id="prev-sig-emp">Employee: —</div>
+          </div>
+          <div>
+            <div class="prev-sig__line"></div>
+            <div class="prev-sig__label" id="prev-sig-approver">Approved by: —</div>
+          </div>
+          <div>
+            <div class="prev-sig__label" id="prev-sig-date">Date: —</div>
+          </div>
+        </div>
+
+      </div><!-- /inv-doc -->
+
+      <!-- Download strip -->
+      <div class="dl-strip">
+        <span class="dl-strip__label">Download</span>
+        <button class="dl-btn dl-btn--pdf" onclick="downloadPDF()">
+          <svg width="12" height="14" viewBox="0 0 12 14" fill="none"><path d="M7 1H2a1 1 0 00-1 1v10a1 1 0 001 1h8a1 1 0 001-1V5L7 1z" stroke="currentColor" stroke-width="1.5"/><path d="M7 1v4h4" stroke="currentColor" stroke-width="1.5"/></svg>
+          PDF
+        </button>
+        <button class="dl-btn dl-btn--xl" onclick="downloadExcel()">
+          <svg width="12" height="14" viewBox="0 0 12 14" fill="none"><path d="M7 1H2a1 1 0 00-1 1v10a1 1 0 001 1h8a1 1 0 001-1V5L7 1z" stroke="currentColor" stroke-width="1.5"/><path d="M7 1v4h4" stroke="currentColor" stroke-width="1.5"/></svg>
+          Excel
+        </button>
+        <button class="dl-btn dl-btn--csv" onclick="downloadCSV()">CSV</button>
+        <button class="dl-btn dl-btn--html" onclick="downloadHTML()">HTML</button>
+      </div>
+
+      <!-- CTA -->
+      <p class="xero-cta">
+        Track employee time automatically with Xero. Start a 30 day <a href="https://www.xero.com/uk/signup/" target="_blank">free trial</a>.
+      </p>
+
+    </div><!-- /xero-preview -->
+
+  </div><!-- /layout -->
+
+  <p class="xero-footnote">*This tool generates timesheet documents only and is not financial or tax advice.</p>
+</div>
+
+<script>
+// ─── Config ───────────────────────────────────────────
+const LOCALE   = 'en-GB';
+const CURRENCY = 'GBP';
+const SYMBOL   = '£';
+const DATE_FMT = 'DD/MM/YYYY'; // display format hint
+const SIGNUP   = 'https://www.xero.com/uk/signup/';
+
+// ─── State ────────────────────────────────────────────
+let days        = [];
+let periodType  = 'weekly';
+
+// ─── Utilities ────────────────────────────────────────
+function timeToMins(t) {
+  if (!t) return null;
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function fmtHrs(v) {
+  return v.toFixed(2);
+}
+
+function fmtDate(dateObj) {
+  // DD/MM/YYYY
+  const d = String(dateObj.getDate()).padStart(2, '0');
+  const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const y = dateObj.getFullYear();
+  return `${d}/${m}/${y}`;
+}
+
+function fmtDateShort(dateObj) {
+  // DD/MM for table
+  const d = String(dateObj.getDate()).padStart(2, '0');
+  const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+  return `${d}/${m}`;
+}
+
+function fmtMoney(v) {
+  return SYMBOL + v.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function toISODate(dateObj) {
+  const y = dateObj.getFullYear();
+  const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const d = String(dateObj.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function fromISODate(str) {
+  const [y, m, d] = str.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+// ─── Period ───────────────────────────────────────────
+function setPeriod(type) {
+  periodType = type;
+  document.querySelectorAll('.period-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.period === type);
+  });
+  const customEnd = document.getElementById('custom-end-wrap');
+  const weekLabel = document.querySelector('label[for="week-start"]');
+  if (type === 'custom') {
+    customEnd.style.display = '';
+    weekLabel.textContent = 'Period starting';
+  } else {
+    customEnd.style.display = 'none';
+    weekLabel.textContent = 'Week starting';
+  }
+  buildDays();
+}
+
+function buildDays() {
+  const startInput = document.getElementById('week-start').value;
+  if (!startInput) { days = []; renderTimesheet(); updatePreview(); return; }
+
+  const startDate = fromISODate(startInput);
+  let count = 7;
+
+  if (periodType === 'fortnightly') {
+    count = 14;
+  } else if (periodType === 'custom') {
+    const endInput = document.getElementById('custom-end').value;
+    if (!endInput) { days = []; renderTimesheet(); updatePreview(); return; }
+    const endDate = fromISODate(endInput);
+    const diff = Math.round((endDate - startDate) / 86400000);
+    count = diff >= 0 ? diff + 1 : 1;
+  }
+
+  days = [];
+  for (let i = 0; i < count; i++) {
+    const d = new Date(startDate);
+    d.setDate(startDate.getDate() + i);
+    days.push({
+      dayName:    DAY_NAMES[d.getDay()],
+      dateObj:    d,
+      start:      '',
+      end:        '',
+      breakMin:   0,
+      notes:      '',
+      regularHrs: 0,
+      otHrs:      0
+    });
+  }
+
+  renderTimesheet();
+  updatePreview();
+}
+
+// ─── Render timesheet table ────────────────────────────
+function renderTimesheet() {
+  const tbody = document.getElementById('ts-tbody');
+  tbody.innerHTML = '';
+
+  days.forEach((day, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="ts-day-label">${day.dayName}</td>
+      <td class="ts-date-label">${fmtDateShort(day.dateObj)}</td>
+      <td><input class="ts-time-input" type="time" value="${day.start}" data-i="${i}" data-f="start" onchange="updateDay(${i},'start',this.value)"></td>
+      <td><input class="ts-time-input" type="time" value="${day.end}" data-i="${i}" data-f="end" onchange="updateDay(${i},'end',this.value)"></td>
+      <td><input class="ts-break-input" type="number" min="0" step="5" value="${day.breakMin || ''}" placeholder="0" data-i="${i}" oninput="updateDay(${i},'breakMin',+this.value||0)"></td>
+      <td class="ts-calc-val${day.regularHrs === 0 ? ' zero' : ''}" id="reg-${i}">${fmtHrs(day.regularHrs)}</td>
+      <td class="ts-calc-val${day.otHrs === 0 ? ' zero' : ''}" id="ot-${i}">${fmtHrs(day.otHrs)}</td>
+      <td><input class="ts-notes-input" type="text" value="${day.notes}" placeholder="—" oninput="updateDay(${i},'notes',this.value)"></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  updateTotals();
+}
+
+// ─── Day update ───────────────────────────────────────
+function updateDay(index, field, value) {
+  days[index][field] = value;
+  recalcDay(index);
+
+  // Update calc cells in-place
+  const regCell = document.getElementById(`reg-${index}`);
+  const otCell  = document.getElementById(`ot-${index}`);
+  if (regCell) {
+    regCell.textContent = fmtHrs(days[index].regularHrs);
+    regCell.className = 'ts-calc-val' + (days[index].regularHrs === 0 ? ' zero' : '');
+  }
+  if (otCell) {
+    otCell.textContent = fmtHrs(days[index].otHrs);
+    otCell.className = 'ts-calc-val' + (days[index].otHrs === 0 ? ' zero' : '');
+  }
+
+  updateTotals();
+  updatePreview();
+}
+
+function recalcDay(index) {
+  const d = days[index];
+  if (!d.start || !d.end) { d.regularHrs = 0; d.otHrs = 0; return; }
+  const startMins = timeToMins(d.start);
+  const endMins   = timeToMins(d.end);
+  const worked    = Math.max(0, (endMins - startMins) / 60 - (d.breakMin || 0) / 60);
+  const threshold = parseFloat(document.getElementById('ot-threshold').value) || 8;
+  d.regularHrs    = Math.min(threshold, worked);
+  d.otHrs         = Math.max(0, worked - threshold);
+}
+
+function recalcAll() {
+  days.forEach((_, i) => recalcDay(i));
+  renderTimesheet();
+}
+
+// ─── OT rate auto-fill ────────────────────────────────
+function updateOTRate() {
+  const reg = parseFloat(document.getElementById('reg-rate').value);
+  const otEl = document.getElementById('ot-rate');
+  if (!isNaN(reg) && reg > 0) {
+    otEl.placeholder = (reg * 1.5).toFixed(2);
+    if (!otEl.value) otEl.value = '';
+  }
+}
+
+// ─── Totals ───────────────────────────────────────────
+function updateTotals() {
+  const totReg  = days.reduce((s, d) => s + d.regularHrs, 0);
+  const totOT   = days.reduce((s, d) => s + d.otHrs, 0);
+  const totHrs  = totReg + totOT;
+
+  document.getElementById('total-reg').textContent = fmtHrs(totReg);
+  document.getElementById('total-ot').textContent  = fmtHrs(totOT);
+  document.getElementById('total-hrs').textContent = fmtHrs(totHrs);
+
+  const regRate = parseFloat(document.getElementById('reg-rate').value) || 0;
+  const otRate  = parseFloat(document.getElementById('ot-rate').value)  || (regRate * 1.5);
+  const payReg  = totReg * regRate;
+  const payOT   = totOT * otRate;
+  const payTot  = payReg + payOT;
+
+  const showPay = document.getElementById('show-pay').checked;
+  document.getElementById('pay-totals-section').style.display = showPay ? '' : 'none';
+  document.getElementById('prev-pay-section').style.display   = showPay ? '' : 'none';
+
+  if (showPay) {
+    document.getElementById('pay-reg-lbl').textContent = `Regular pay (${fmtHrs(totReg)} hrs × ${fmtMoney(regRate)})`;
+    document.getElementById('pay-reg-val').textContent = fmtMoney(payReg);
+    document.getElementById('pay-ot-lbl').textContent  = `Overtime pay (${fmtHrs(totOT)} hrs × ${fmtMoney(otRate)})`;
+    document.getElementById('pay-ot-val').textContent  = fmtMoney(payOT);
+    document.getElementById('pay-total-val').textContent = fmtMoney(payTot);
+
+    document.getElementById('prev-pay-reg-lbl').textContent = `Regular pay (${fmtHrs(totReg)} hrs × ${fmtMoney(regRate)})`;
+    document.getElementById('prev-pay-reg-val').textContent = fmtMoney(payReg);
+    document.getElementById('prev-pay-ot-lbl').textContent  = `Overtime pay (${fmtHrs(totOT)} hrs × ${fmtMoney(otRate)})`;
+    document.getElementById('prev-pay-ot-val').textContent  = fmtMoney(payOT);
+    document.getElementById('prev-pay-total').textContent   = fmtMoney(payTot);
+  }
+}
+
+// ─── Preview update ───────────────────────────────────
+function updatePreview() {
+  // Employee info
+  const empName   = document.getElementById('emp-name').value   || '—';
+  const empId     = document.getElementById('emp-id').value;
+  const empPos    = document.getElementById('emp-position').value;
+  const empDept   = document.getElementById('emp-dept').value;
+  const company   = document.getElementById('company-name').value;
+
+  document.getElementById('prev-emp-name').textContent = empName;
+
+  let subParts = [];
+  if (empPos)  subParts.push(empPos);
+  if (empDept) subParts.push(empDept);
+  if (empId)   subParts.push(`ID: ${empId}`);
+  document.getElementById('prev-emp-sub').textContent  = subParts.join(' · ');
+  document.getElementById('prev-company').textContent  = company;
+
+  // Period label
+  if (days.length > 0) {
+    const first = days[0].dateObj;
+    const last  = days[days.length - 1].dateObj;
+    document.getElementById('prev-period').textContent =
+      `${fmtDate(first)} – ${fmtDate(last)}`;
+  } else {
+    document.getElementById('prev-period').textContent = '—';
+  }
+
+  // Rebuild preview table
+  const prevTbody = document.getElementById('prev-tbody');
+  prevTbody.innerHTML = '';
+  days.forEach(d => {
+    const hasTime = d.start && d.end;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${d.dayName}</td>
+      <td>${fmtDateShort(d.dateObj)}</td>
+      <td class="${hasTime ? '' : 'muted'}">${d.start || '—'}</td>
+      <td class="${hasTime ? '' : 'muted'}">${d.end   || '—'}</td>
+      <td class="muted">${hasTime && d.breakMin > 0 ? d.breakMin + 'min' : '—'}</td>
+      <td class="right${d.regularHrs === 0 ? ' muted' : ''}">${fmtHrs(d.regularHrs)}</td>
+      <td class="right${d.otHrs === 0 ? ' muted' : ''}">${fmtHrs(d.otHrs)}</td>
+      <td class="muted">${d.notes || ''}</td>
+    `;
+    prevTbody.appendChild(tr);
+  });
+
+  const totReg = days.reduce((s, d) => s + d.regularHrs, 0);
+  const totOT  = days.reduce((s, d) => s + d.otHrs, 0);
+  document.getElementById('prev-total-reg').textContent = fmtHrs(totReg);
+  document.getElementById('prev-total-ot').textContent  = fmtHrs(totOT);
+
+  // Signatures
+  const sigEmp      = document.getElementById('sig-employee').value;
+  const sigApprover = document.getElementById('sig-approver').value;
+  const approvalDate = document.getElementById('approval-date').value;
+  document.getElementById('prev-sig-emp').textContent      = `Employee: ${sigEmp || '_______________'}`;
+  document.getElementById('prev-sig-approver').textContent = `Approved by: ${sigApprover || '_______________'}`;
+  document.getElementById('prev-sig-date').textContent     = `Date: ${approvalDate ? fmtDate(fromISODate(approvalDate)) : '_______________'}`;
+}
+
+// ─── Download helpers ─────────────────────────────────
+function getFilenameBase() {
+  const emp    = document.getElementById('emp-name').value.replace(/\s+/g, '-') || 'timesheet';
+  const period = document.getElementById('week-start').value || 'period';
+  return `timesheet-${emp}-${period}`.toLowerCase();
+}
+
+function downloadPDF() {
+  // Trigger browser print dialog targeting the preview doc
+  const style = `<style>
+    body { font-family: Arial, sans-serif; font-size: 11px; color: #1B3A4B; margin: 20px; }
+    h1 { font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
+    hr { border: none; border-top: 2px solid #1B3A4B; margin: 10px 0; }
+    .meta { display: flex; justify-content: space-between; margin-bottom: 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 10px; }
+    thead tr { background: #1B3A4B; color: white; }
+    thead th { padding: 5px 6px; text-align: left; font-size: 9px; text-transform: uppercase; }
+    thead th.r { text-align: right; }
+    tbody tr:nth-child(even) { background: #f7f9fb; }
+    tbody td { padding: 3px 6px; border-bottom: 1px solid #e8edf1; }
+    tbody td.r { text-align: right; font-weight: 600; }
+    tfoot tr { border-top: 2px solid #1B3A4B; }
+    tfoot td { padding: 5px 6px; font-weight: 800; }
+    tfoot td.r { text-align: right; }
+    .pay-row { display: flex; justify-content: space-between; padding: 2px 0; font-size: 10px; }
+    .pay-grand { font-weight: 800; font-size: 12px; border-top: 1px solid #1B3A4B; padding-top: 5px; margin-top: 4px; }
+    .sigs { display: flex; gap: 40px; margin-top: 20px; }
+    .sig-line { border-bottom: 1px solid #1B3A4B; width: 160px; height: 18px; margin-bottom: 3px; }
+    .sig-lbl { font-size: 8px; text-transform: uppercase; color: #4A6070; }
+    @media print { @page { margin: 15mm; } }
+  </style>`;
+
+  const empName  = document.getElementById('emp-name').value || '—';
+  const empPos   = document.getElementById('emp-position').value;
+  const empDept  = document.getElementById('emp-dept').value;
+  const company  = document.getElementById('company-name').value;
+  const period   = document.getElementById('prev-period').textContent;
+  const sigEmp   = document.getElementById('sig-employee').value || '_______________';
+  const sigApp   = document.getElementById('sig-approver').value || '_______________';
+  const appDate  = document.getElementById('approval-date').value
+    ? fmtDate(fromISODate(document.getElementById('approval-date').value)) : '_______________';
+  const showPay  = document.getElementById('show-pay').checked;
+
+  let rowsHTML = days.map(d => {
+    const hasTime = d.start && d.end;
+    return `<tr>
+      <td>${d.dayName}</td>
+      <td>${fmtDateShort(d.dateObj)}</td>
+      <td>${d.start || '—'}</td>
+      <td>${d.end || '—'}</td>
+      <td>${hasTime && d.breakMin > 0 ? d.breakMin + 'min' : '—'}</td>
+      <td class="r">${fmtHrs(d.regularHrs)}</td>
+      <td class="r">${fmtHrs(d.otHrs)}</td>
+      <td>${d.notes || ''}</td>
+    </tr>`;
+  }).join('');
+
+  const totReg = days.reduce((s, d) => s + d.regularHrs, 0);
+  const totOT  = days.reduce((s, d) => s + d.otHrs, 0);
+  const regRate = parseFloat(document.getElementById('reg-rate').value) || 0;
+  const otRate  = parseFloat(document.getElementById('ot-rate').value)  || (regRate * 1.5);
+  const payReg  = totReg * regRate;
+  const payOT   = totOT * otRate;
+  const payTot  = payReg + payOT;
+
+  let payHTML = '';
+  if (showPay) {
+    payHTML = `
+      <div style="margin-top:10px; border-top:1px solid #C2CDD6; padding-top:8px;">
+        <div class="pay-row"><span>Regular pay (${fmtHrs(totReg)} hrs × ${fmtMoney(regRate)})</span><span>${fmtMoney(payReg)}</span></div>
+        <div class="pay-row"><span>Overtime pay (${fmtHrs(totOT)} hrs × ${fmtMoney(otRate)})</span><span>${fmtMoney(payOT)}</span></div>
+        <div class="pay-row pay-grand"><span>Total pay</span><span>${fmtMoney(payTot)}</span></div>
+      </div>`;
+  }
+
+  let subLine = [empPos, empDept].filter(Boolean).join(', ');
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Timesheet</title>${style}</head><body>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-size:10px;color:#4A6070;">LOGO</div>
+      <h1>Timesheet</h1>
+    </div>
+    <hr>
+    <div class="meta">
+      <div>
+        <strong>${empName}</strong><br>
+        ${subLine ? `<span style="color:#4A6070;">${subLine}</span><br>` : ''}
+        ${company ? `<span style="color:#4A6070;">${company}</span>` : ''}
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:9px;text-transform:uppercase;color:#4A6070;letter-spacing:1px;">Period</div>
+        <strong>${period}</strong>
+      </div>
+    </div>
+    <table>
+      <thead><tr>
+        <th>Day</th><th>Date</th><th>Start</th><th>End</th><th>Break</th>
+        <th class="r">Reg hrs</th><th class="r">OT hrs</th><th>Notes</th>
+      </tr></thead>
+      <tbody>${rowsHTML}</tbody>
+      <tfoot><tr>
+        <td colspan="5" class="r">Totals</td>
+        <td class="r">${fmtHrs(totReg)}</td>
+        <td class="r">${fmtHrs(totOT)}</td>
+        <td></td>
+      </tr></tfoot>
+    </table>
+    ${payHTML}
+    <div class="sigs">
+      <div><div class="sig-line"></div><div class="sig-lbl">Employee: ${sigEmp}</div></div>
+      <div><div class="sig-line"></div><div class="sig-lbl">Approved by: ${sigApp}</div></div>
+    </div>
+    <div style="margin-top:6px;font-size:9px;color:#4A6070;">Date: ${appDate}</div>
+    <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`;
+
+  const w = window.open('', '_blank');
+  if (w) { w.document.write(html); w.document.close(); }
+}
+
+function downloadCSV() {
+  const empName = document.getElementById('emp-name').value || '';
+  const company = document.getElementById('company-name').value || '';
+  const period  = document.getElementById('prev-period').textContent;
+  const regRate = parseFloat(document.getElementById('reg-rate').value) || 0;
+  const otRate  = parseFloat(document.getElementById('ot-rate').value)  || (regRate * 1.5);
+  const showPay = document.getElementById('show-pay').checked;
+
+  let rows = [
+    ['Employee', empName],
+    ['Company', company],
+    ['Period', period],
+    [],
+    showPay
+      ? ['Day','Date','Start','End','Break (min)','Regular hrs','OT hrs','Notes','Regular pay','OT pay']
+      : ['Day','Date','Start','End','Break (min)','Regular hrs','OT hrs','Notes']
+  ];
+
+  days.forEach(d => {
+    const row = [
+      d.dayName,
+      fmtDateShort(d.dateObj),
+      d.start || '',
+      d.end || '',
+      d.breakMin || 0,
+      d.regularHrs.toFixed(2),
+      d.otHrs.toFixed(2),
+      d.notes || ''
+    ];
+    if (showPay) {
+      row.push((d.regularHrs * regRate).toFixed(2));
+      row.push((d.otHrs * otRate).toFixed(2));
+    }
+    rows.push(row);
+  });
+
+  const totReg = days.reduce((s, d) => s + d.regularHrs, 0);
+  const totOT  = days.reduce((s, d) => s + d.otHrs, 0);
+  const totRow = ['TOTALS','','','','', totReg.toFixed(2), totOT.toFixed(2), ''];
+  if (showPay) {
+    totRow.push((totReg * regRate).toFixed(2));
+    totRow.push((totOT * otRate).toFixed(2));
+  }
+  rows.push(totRow);
+
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = getFilenameBase() + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadExcel() {
+  // Generate simple XLSX-compatible HTML table (opens in Excel)
+  const empName = document.getElementById('emp-name').value || '';
+  const company = document.getElementById('company-name').value || '';
+  const period  = document.getElementById('prev-period').textContent;
+  const regRate = parseFloat(document.getElementById('reg-rate').value) || 0;
+  const otRate  = parseFloat(document.getElementById('ot-rate').value) || (regRate * 1.5);
+  const showPay = document.getElementById('show-pay').checked;
+  const totReg  = days.reduce((s, d) => s + d.regularHrs, 0);
+  const totOT   = days.reduce((s, d) => s + d.otHrs, 0);
+
+  let rowsHTML = days.map(d => {
+    let r = `<tr>
+      <td>${d.dayName}</td><td>${fmtDateShort(d.dateObj)}</td>
+      <td>${d.start||''}</td><td>${d.end||''}</td><td>${d.breakMin||0}</td>
+      <td>${d.regularHrs.toFixed(2)}</td><td>${d.otHrs.toFixed(2)}</td>
+      <td>${d.notes||''}</td>`;
+    if (showPay) r += `<td>${(d.regularHrs*regRate).toFixed(2)}</td><td>${(d.otHrs*otRate).toFixed(2)}</td>`;
+    return r + '</tr>';
+  }).join('');
+
+  let hdrs = '<th>Day</th><th>Date</th><th>Start</th><th>End</th><th>Break(min)</th><th>Reg hrs</th><th>OT hrs</th><th>Notes</th>';
+  if (showPay) hdrs += `<th>Reg pay(${SYMBOL})</th><th>OT pay(${SYMBOL})</th>`;
+
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+    <head><meta charset="UTF-8"></head><body>
+    <table><tr><th colspan="8">Timesheet — ${empName} — ${company} — ${period}</th></tr>
+    <tr>${hdrs}</tr>${rowsHTML}
+    <tr><td>TOTALS</td><td></td><td></td><td></td><td></td>
+      <td>${totReg.toFixed(2)}</td><td>${totOT.toFixed(2)}</td><td></td>
+      ${showPay ? `<td>${(totReg*regRate).toFixed(2)}</td><td>${(totOT*otRate).toFixed(2)}</td>` : ''}
+    </tr></table></body></html>`;
+
+  const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = getFilenameBase() + '.xls';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadHTML() {
+  const docEl   = document.getElementById('preview-doc');
+  const content = docEl.outerHTML;
+  const html = `<!DOCTYPE html><html lang="en-GB"><head>
+    <meta charset="UTF-8"><title>Timesheet</title>
+    <style>
+      body { font-family: Arial, sans-serif; padding: 40px; color: #1B3A4B; max-width: 900px; margin: 0 auto; }
+      .inv-doc { border: 1px solid #C2CDD6; border-radius: 4px; padding: 28px; }
+      .inv-doc__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+      .inv-doc__title { font-size: 1.2rem; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; }
+      .inv-doc__divider { border: none; border-top: 2px solid #1B3A4B; margin: 12px 0; }
+      .inv-doc__meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+      .inv-meta__block .meta-lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #4A6070; margin-bottom: 3px; }
+      .inv-meta__block .meta-val { font-size: 12px; font-weight: 600; line-height: 1.4; }
+      .inv-meta__block .meta-val.muted { font-weight: 400; color: #4A6070; }
+      .prev-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+      .prev-table thead tr { background: #1B3A4B; color: white; }
+      .prev-table thead th { padding: 6px; text-transform: uppercase; font-size: 9px; text-align: left; }
+      .prev-table thead th.right { text-align: right; }
+      .prev-table tbody tr:nth-child(even) { background: #f7f9fb; }
+      .prev-table tbody td { padding: 4px 6px; border-bottom: 1px solid #e8edf1; }
+      .prev-table tbody td.right { text-align: right; font-weight: 600; }
+      .prev-table tbody td.muted { color: #4A6070; }
+      .prev-table tfoot tr { border-top: 2px solid #1B3A4B; }
+      .prev-table tfoot td { padding: 6px; font-weight: 800; }
+      .prev-table tfoot td.right { text-align: right; }
+      .prev-pay { margin-top: 12px; border-top: 1px solid #C2CDD6; padding-top: 10px; }
+      .prev-pay__row { display: flex; justify-content: space-between; padding: 2px 0; font-size: 11px; }
+      .prev-pay__row.grand { font-weight: 800; font-size: 13px; border-top: 1px solid #1B3A4B; padding-top: 6px; margin-top: 4px; }
+      .prev-sigs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; padding-top: 12px; border-top: 1px solid #C2CDD6; }
+      .prev-sig__line { border-bottom: 1px solid #1B3A4B; height: 20px; margin-bottom: 4px; }
+      .prev-sig__label { font-size: 9px; color: #4A6070; text-transform: uppercase; letter-spacing: 1px; }
+      .inv-doc__logo { width: 80px; height: 40px; background: #EBF0F4; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #4A6070; font-weight: 600; }
+    </style>
+  </head><body>${content}</body></html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = getFilenameBase() + '.html';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── Init ─────────────────────────────────────────────
+function getMostRecentMonday() {
+  const today = new Date();
+  const day   = today.getDay(); // 0=Sun
+  const diff  = day === 0 ? 6 : day - 1; // days since Monday
+  const mon   = new Date(today);
+  mon.setDate(today.getDate() - diff);
+  return mon;
+}
+
+function init() {
+  const mon  = getMostRecentMonday();
+  document.getElementById('week-start').value = toISODate(mon);
+  buildDays();
+}
+
+init();
+</script>
+</body>
+</html>

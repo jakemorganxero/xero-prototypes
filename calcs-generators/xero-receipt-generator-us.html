@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xero Receipt Generator — US</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!--
+    XERO PROTOTYPE
+    Tool: Receipt Generator (US)
+    Locale: US
+    Pattern: Two-column generator with live preview
+    Built: 2026-04-16
+    Inputs: Business info, sold-to (optional), receipt details, payment method, line items, notes
+    Output: Styled receipt document — download PDF/Word/Excel/CSV/HTML
+    Notes for devs:
+      - Cash payment mode shows amount tendered + change fields (hidden otherwise)
+      - lineItems array is source of truth; re-renders on add/remove/update
+      - Live preview updates on every input event via updatePreview()
+      - GT Walsheim → Plus Jakarta Sans (flag for prod)
+      - US locale: $USD, Sales Tax, Check, MM/DD/YYYY, State/ZIP labels
+  -->
+  <style>
+    :root {
+      --xero-navy:       #1B3A4B;
+      --xero-blue:       #13B5EA;
+      --xero-blue-dark:  #0D8FBD;
+      --xero-panel-bg:   #EBF0F4;
+      --xero-border:     #C2CDD6;
+      --xero-bg:         #FFFFFF;
+      --xero-text:       #1B3A4B;
+      --xero-text-muted: #4A6070;
+      --xero-green:      #1AB394;
+      --xero-red:        #E05A5A;
+      --radius: 4px;
+      --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      color: var(--xero-text);
+      background: var(--xero-bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .xero-tool {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 40px 5% 56px;
+    }
+
+    .xero-tool__grid {
+      display: grid;
+      grid-template-columns: 55% 1fr;
+      gap: 48px;
+      align-items: start;
+    }
+
+    @media (max-width: 1000px) {
+      .xero-tool__grid { grid-template-columns: 1fr; }
+      .xero-preview-col { position: static !important; }
+    }
+
+    .xero-form__title {
+      font-size: 1.375rem;
+      font-weight: 800;
+      color: var(--xero-navy);
+      letter-spacing: -0.02em;
+      margin-bottom: 28px;
+    }
+
+    .xero-section {
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--xero-border);
+      margin-bottom: 24px;
+    }
+
+    .xero-section:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+    .xero-section__title {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--xero-text-muted);
+      margin-bottom: 14px;
+    }
+
+    .xero-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+
+    .xero-fields--two   { grid-template-columns: 1fr 1fr; }
+    .xero-fields--single { grid-template-columns: 1fr; }
+    .xero-field--full   { grid-column: 1 / -1; }
+    .xero-field--two    { grid-column: span 2; }
+
+    @media (max-width: 640px) {
+      .xero-fields, .xero-fields--two { grid-template-columns: 1fr; }
+      .xero-field--two { grid-column: 1; }
+    }
+
+    .xero-field__label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--xero-navy);
+      margin-bottom: 4px;
+    }
+
+    .xero-input--plain {
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      font-family: var(--font);
+      font-size: 0.875rem;
+      color: var(--xero-text);
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s;
+      background: #fff;
+    }
+
+    .xero-input--plain:focus { border-color: var(--xero-blue); }
+    .xero-input--plain::placeholder { color: #9EB0BB; }
+
+    .xero-select {
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 8px 32px 8px 12px;
+      font-family: var(--font);
+      font-size: 0.875rem;
+      color: var(--xero-text);
+      width: 100%;
+      outline: none;
+      background: #fff;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234A6070' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .xero-select:focus { border-color: var(--xero-blue); }
+
+    .xero-textarea {
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      font-family: var(--font);
+      font-size: 0.875rem;
+      color: var(--xero-text);
+      width: 100%;
+      outline: none;
+      resize: vertical;
+      min-height: 72px;
+      transition: border-color 0.15s;
+      background: #fff;
+    }
+
+    .xero-textarea:focus { border-color: var(--xero-blue); }
+    .xero-textarea::placeholder { color: #9EB0BB; }
+
+    .xero-logo-upload { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+
+    .xero-logo-preview {
+      width: 80px; height: 52px;
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      display: flex; align-items: center; justify-content: center;
+      background: var(--xero-panel-bg);
+      overflow: hidden; flex-shrink: 0;
+    }
+
+    .xero-logo-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+    .xero-logo-upload-btn {
+      background: none;
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 7px 14px;
+      font-family: var(--font);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--xero-navy);
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .xero-logo-upload-btn:hover { border-color: var(--xero-navy); }
+
+    .xero-items-table { width: 100%; border-collapse: collapse; }
+
+    .xero-items-table th {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--xero-text-muted);
+      padding: 0 4px 8px;
+      border-bottom: 1px solid var(--xero-border);
+      text-align: left;
+    }
+
+    .xero-items-table th.r,
+    .xero-items-table td.r { text-align: right; }
+
+    .xero-items-table td { padding: 5px 4px; vertical-align: middle; }
+
+    .item-amount { font-size: 0.875rem; font-weight: 600; color: var(--xero-navy); white-space: nowrap; }
+
+    .item-remove {
+      background: none; border: none;
+      color: var(--xero-text-muted);
+      cursor: pointer; font-size: 1.1rem; line-height: 1;
+      padding: 2px 4px; transition: color 0.15s;
+    }
+
+    .item-remove:hover { color: var(--xero-red); }
+
+    .xero-add-item {
+      background: none; border: none;
+      color: var(--xero-blue);
+      font-family: var(--font); font-size: 0.875rem; font-weight: 600;
+      cursor: pointer; padding: 10px 0 2px; display: block;
+    }
+
+    .xero-add-item:hover { color: var(--xero-blue-dark); }
+
+    .xero-totals {
+      display: flex; flex-direction: column; align-items: flex-end;
+      gap: 8px; margin-top: 16px; padding-top: 16px;
+      border-top: 1px solid var(--xero-border);
+    }
+
+    .totals-row { display: flex; align-items: center; gap: 12px; }
+
+    .totals-row .lbl {
+      font-size: 0.875rem; color: var(--xero-text-muted);
+      min-width: 130px; text-align: right;
+    }
+
+    .totals-row .val {
+      font-size: 0.875rem; font-weight: 600;
+      color: var(--xero-navy); min-width: 90px; text-align: right;
+    }
+
+    .totals-row--grand .lbl,
+    .totals-row--grand .val { font-size: 1rem; font-weight: 800; }
+
+    .tax-rate-wrap { display: flex; align-items: center; gap: 6px; }
+
+    .tax-rate-input {
+      border: 1px solid var(--xero-border); border-radius: var(--radius);
+      padding: 4px 6px; font-family: var(--font); font-size: 0.875rem;
+      width: 52px; text-align: right; outline: none;
+    }
+
+    .tax-rate-input:focus { border-color: var(--xero-blue); }
+
+    .cash-fields {
+      display: none;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .cash-fields.visible { display: grid; }
+
+    .cash-change-display {
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      font-family: var(--font);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--xero-navy);
+      background: var(--xero-panel-bg);
+      width: 100%;
+    }
+
+    .xero-preview-col {
+      position: sticky;
+      top: 24px;
+    }
+
+    .xero-preview-label {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--xero-text-muted);
+      margin-bottom: 10px;
+    }
+
+    .inv-doc {
+      background: #fff;
+      border: 1px solid var(--xero-border);
+      border-radius: 4px 4px 0 0;
+      padding: 32px;
+      font-family: var(--font);
+      font-size: 12px;
+      color: var(--xero-navy);
+      line-height: 1.5;
+    }
+
+    .xero-dl-strip {
+      background: var(--xero-panel-bg);
+      border: 1px solid var(--xero-border);
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .xero-dl-strip__label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--xero-text-muted);
+      white-space: nowrap;
+    }
+
+    .xero-dl-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #fff;
+      border: 1px solid var(--xero-border);
+      color: var(--xero-navy);
+      font-family: var(--font);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      white-space: nowrap;
+    }
+
+    .xero-dl-btn:hover { border-color: var(--xero-navy); background: var(--xero-panel-bg); }
+
+    .xero-cta {
+      margin-top: 20px;
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      line-height: 1.55;
+    }
+
+    .xero-cta a { color: var(--xero-blue); text-decoration: none; font-weight: 600; }
+    .xero-cta a:hover { color: var(--xero-blue-dark); text-decoration: underline; }
+
+    .xero-disclaimer {
+      font-size: 0.75rem;
+      color: var(--xero-text-muted);
+      margin-top: 8px;
+    }
+
+    @media print {
+      body > * { display: none !important; }
+      #receipt-print-area { display: block !important; }
+    }
+
+    #receipt-print-area { display: none; }
+  </style>
+</head>
+<body>
+
+<div class="xero-tool">
+  <div class="xero-tool__grid">
+
+    <!-- LEFT: FORM -->
+    <div class="xero-form-col">
+      <h2 class="xero-form__title">Create receipt</h2>
+
+      <!-- Your Business -->
+      <div class="xero-section">
+        <p class="xero-section__title">Your Business</p>
+        <div class="xero-logo-upload">
+          <div class="xero-logo-preview" id="logo-preview-box">
+            <span style="font-size:0.5625rem;color:var(--xero-text-muted);text-align:center;padding:4px;">Your logo</span>
+          </div>
+          <div>
+            <button class="xero-logo-upload-btn" type="button" onclick="document.getElementById('logo-file').click()">Upload logo</button>
+            <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="handleLogo(this)">
+            <p style="font-size:0.6875rem;color:var(--xero-text-muted);margin-top:4px;">PNG or JPG recommended</p>
+          </div>
+        </div>
+        <div class="xero-fields">
+          <div class="xero-field--two">
+            <label class="xero-field__label" for="biz-name">Business name</label>
+            <input class="xero-input--plain" type="text" id="biz-name" placeholder="Acme Corp" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="biz-phone">Phone</label>
+            <input class="xero-input--plain" type="tel" id="biz-phone" placeholder="(555) 000-0000" oninput="updatePreview()">
+          </div>
+          <div class="xero-field--two">
+            <label class="xero-field__label" for="biz-address">Street address</label>
+            <input class="xero-input--plain" type="text" id="biz-address" placeholder="123 Main St" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="biz-email">Email</label>
+            <input class="xero-input--plain" type="email" id="biz-email" placeholder="hello@acme.com" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="biz-city">City</label>
+            <input class="xero-input--plain" type="text" id="biz-city" placeholder="New York" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="biz-state">State</label>
+            <input class="xero-input--plain" type="text" id="biz-state" placeholder="NY" maxlength="2" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="biz-postcode">ZIP</label>
+            <input class="xero-input--plain" type="text" id="biz-postcode" placeholder="10001" oninput="updatePreview()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Sold To -->
+      <div class="xero-section">
+        <p class="xero-section__title">Sold To <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></p>
+        <div class="xero-fields xero-fields--two">
+          <div>
+            <label class="xero-field__label" for="cust-name">Customer name</label>
+            <input class="xero-input--plain" type="text" id="cust-name" placeholder="Jane Smith" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="cust-email">Email</label>
+            <input class="xero-input--plain" type="email" id="cust-email" placeholder="jane@example.com" oninput="updatePreview()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Receipt Details -->
+      <div class="xero-section">
+        <p class="xero-section__title">Receipt Details</p>
+        <div class="xero-fields xero-fields--two">
+          <div>
+            <label class="xero-field__label" for="rec-number">Receipt number</label>
+            <input class="xero-input--plain" type="text" id="rec-number" value="REC-001" oninput="updatePreview()">
+          </div>
+          <div>
+            <label class="xero-field__label" for="rec-date">Date</label>
+            <input class="xero-input--plain" type="date" id="rec-date" oninput="updatePreview()">
+          </div>
+          <div class="xero-field--full">
+            <label class="xero-field__label" for="pay-method">Payment method</label>
+            <select class="xero-select" id="pay-method" onchange="handlePaymentChange()">
+              <option value="cash">Cash</option>
+              <option value="credit" selected>Credit card</option>
+              <option value="debit">Debit card</option>
+              <option value="bank">Bank transfer</option>
+              <option value="check">Check</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="cash-fields" id="cash-fields">
+          <div>
+            <label class="xero-field__label" for="cash-tendered">Amount tendered ($)</label>
+            <input class="xero-input--plain" type="number" id="cash-tendered" min="0" step="0.01" placeholder="0.00" oninput="calcChange()">
+          </div>
+          <div>
+            <label class="xero-field__label">Change ($)</label>
+            <div class="cash-change-display" id="cash-change-display">$0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Items -->
+      <div class="xero-section">
+        <p class="xero-section__title">Items</p>
+        <table class="xero-items-table">
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th class="r" style="width:56px">Qty</th>
+              <th class="r" style="width:88px">Rate</th>
+              <th class="r" style="width:88px">Amount</th>
+              <th style="width:24px"></th>
+            </tr>
+          </thead>
+          <tbody id="items-tbody"></tbody>
+        </table>
+        <button class="xero-add-item" type="button" onclick="addLineItem()">+ Add item</button>
+        <div class="xero-totals">
+          <div class="totals-row">
+            <span class="lbl">Subtotal</span>
+            <span class="val" id="f-subtotal">$0.00</span>
+          </div>
+          <div class="totals-row">
+            <div class="tax-rate-wrap">
+              <span style="font-size:0.8125rem;color:var(--xero-text-muted)">Sales Tax</span>
+              <input class="tax-rate-input" type="number" id="tax-rate" value="0" min="0" max="100" step="0.1" oninput="calculate()">
+              <span style="font-size:0.8125rem;color:var(--xero-text-muted)">%</span>
+            </div>
+            <span class="val" id="f-tax">$0.00</span>
+          </div>
+          <div class="totals-row totals-row--grand">
+            <span class="lbl">Total (USD)</span>
+            <span class="val" id="f-total">$0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="xero-section">
+        <p class="xero-section__title">Notes <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></p>
+        <textarea class="xero-textarea" id="rec-notes" placeholder="Thank you for your purchase." oninput="updatePreview()"></textarea>
+      </div>
+
+      <p class="xero-disclaimer">*This tool generates receipt documents only and is not financial or tax advice.</p>
+    </div>
+
+    <!-- RIGHT: PREVIEW -->
+    <div class="xero-preview-col">
+      <p class="xero-preview-label">Receipt preview</p>
+
+      <div class="inv-doc" id="receipt-preview"></div>
+
+      <div class="xero-dl-strip">
+        <span class="xero-dl-strip__label">Download:</span>
+        <button class="xero-dl-btn" onclick="downloadPDF()">
+          <svg width="15" height="15" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#E2574C"/><text x="8" y="11.5" font-size="5.5" font-weight="700" fill="white" text-anchor="middle" font-family="Arial,sans-serif">PDF</text></svg>
+          PDF
+        </button>
+        <button class="xero-dl-btn" onclick="downloadWord()">
+          <svg width="15" height="15" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#2B579A"/><text x="8" y="12.5" font-size="11" font-weight="700" fill="white" text-anchor="middle" font-family="Arial,sans-serif">W</text></svg>
+          Word
+        </button>
+        <button class="xero-dl-btn" onclick="downloadExcel()">
+          <svg width="15" height="15" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#217346"/><text x="8" y="12.5" font-size="10" font-weight="700" fill="white" text-anchor="middle" font-family="Arial,sans-serif">X</text></svg>
+          Excel
+        </button>
+        <button class="xero-dl-btn" onclick="downloadSheets()">
+          <svg width="15" height="15" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#0F9D58"/><rect x="4" y="5" width="8" height="1.5" fill="white" rx="0.5"/><rect x="4" y="7.5" width="8" height="1.5" fill="white" rx="0.5"/><rect x="4" y="10" width="5" height="1.5" fill="white" rx="0.5"/><rect x="8.5" y="3.5" width="1" height="9" fill="rgba(0,0,0,0.2)"/></svg>
+          Google Sheets
+        </button>
+        <button class="xero-dl-btn" onclick="downloadGDoc()">
+          <svg width="15" height="15" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#4285F4"/><rect x="4" y="5" width="8" height="1.5" fill="white" rx="0.5"/><rect x="4" y="7.5" width="8" height="1.5" fill="white" rx="0.5"/><rect x="4" y="10" width="5" height="1.5" fill="white" rx="0.5"/></svg>
+          Google Doc
+        </button>
+      </div>
+
+      <p class="xero-cta">Manage all your receipts in one place with Xero. Start a 30 day <a href="https://www.xero.com/us/signup/">free trial</a>.</p>
+      <p class="xero-disclaimer">*This tool generates receipt documents only and is not financial or tax advice.</p>
+    </div>
+
+  </div>
+</div>
+
+<div id="receipt-print-area"></div>
+
+<script>
+  const LOCALE    = 'en-US';
+  const CURRENCY  = 'USD';
+  const SYMBOL    = '$';
+  const TAX_LABEL = 'Sales Tax';
+  const CHECK     = 'Check';
+
+  let lineItems   = [];
+  let nextId      = 1;
+  let logoDataURL = null;
+
+  const $  = id => document.getElementById(id);
+  const gv = id => ($(id) ? $(id).value.trim() : '');
+
+  function fmt(n) {
+    return SYMBOL + Math.abs(n).toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-');
+    return `${m}/${d}/${y}`; /* MM/DD/YYYY */
+  }
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function paymentLabel(val) {
+    const map = {
+      cash: 'Cash', credit: 'Credit card', debit: 'Debit card',
+      bank: 'Bank transfer', check: CHECK, other: 'Other'
+    };
+    return map[val] || val;
+  }
+
+  function init() {
+    $('rec-date').value = new Date().toISOString().split('T')[0];
+    addLineItem();
+    updatePreview();
+  }
+
+  function handleLogo(input) {
+    if (!input.files || !input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      logoDataURL = e.target.result;
+      $('logo-preview-box').innerHTML = `<img src="${logoDataURL}" style="max-width:100%;max-height:100%;object-fit:contain;">`;
+      updatePreview();
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+
+  function handlePaymentChange() {
+    const isCash = gv('pay-method') === 'cash';
+    $('cash-fields').classList.toggle('visible', isCash);
+    calcChange();
+    updatePreview();
+  }
+
+  function calcChange() {
+    const { total } = calculate();
+    const tendered  = parseFloat($('cash-tendered').value) || 0;
+    const change    = Math.max(0, tendered - total);
+    $('cash-change-display').textContent = fmt(change);
+    updatePreview();
+  }
+
+  function addLineItem() {
+    lineItems.push({ id: nextId++, description: '', qty: 1, rate: 0 });
+    renderLineItems();
+    calculate();
+  }
+
+  function removeLineItem(id) {
+    if (lineItems.length === 1) return;
+    lineItems = lineItems.filter(i => i.id !== id);
+    renderLineItems();
+    calculate();
+  }
+
+  function renderLineItems() {
+    $('items-tbody').innerHTML = lineItems.map(item => `
+      <tr data-id="${item.id}">
+        <td><input class="xero-input--plain" type="text" value="${esc(item.description)}"
+          placeholder="Description" style="font-size:0.8125rem;padding:6px 8px;"
+          oninput="updateItem(${item.id},'description',this.value)"></td>
+        <td><input class="xero-input--plain" type="number" value="${item.qty}" min="0" step="1"
+          style="font-size:0.8125rem;padding:6px 8px;text-align:right;"
+          oninput="updateItem(${item.id},'qty',this.value)"></td>
+        <td><input class="xero-input--plain" type="number" value="${item.rate}" min="0" step="0.01"
+          style="font-size:0.8125rem;padding:6px 8px;text-align:right;"
+          oninput="updateItem(${item.id},'rate',this.value)"></td>
+        <td class="r item-amount" id="amt-${item.id}">${fmt(item.qty * item.rate)}</td>
+        <td><button class="item-remove" type="button" onclick="removeLineItem(${item.id})" title="Remove">&#x00D7;</button></td>
+      </tr>`).join('');
+  }
+
+  function updateItem(id, field, value) {
+    const item = lineItems.find(i => i.id === id);
+    if (!item) return;
+    item[field] = field === 'description' ? value : (parseFloat(value) || 0);
+    const el = $(`amt-${id}`);
+    if (el) el.textContent = fmt(item.qty * item.rate);
+    calculate();
+  }
+
+  function calculate() {
+    const subtotal = lineItems.reduce((s, i) => s + i.qty * i.rate, 0);
+    const taxRate  = parseFloat($('tax-rate').value) || 0;
+    const tax      = subtotal * taxRate / 100;
+    const total    = subtotal + tax;
+    $('f-subtotal').textContent = fmt(subtotal);
+    $('f-tax').textContent      = fmt(tax);
+    $('f-total').textContent    = fmt(total);
+    updatePreview();
+    return { subtotal, tax, taxRate, total };
+  }
+
+  function buildDocument() {
+    const { subtotal, tax, taxRate, total } = calculate();
+    const isCash    = gv('pay-method') === 'cash';
+    const tendered  = parseFloat($('cash-tendered').value) || 0;
+    const change    = Math.max(0, tendered - total);
+    const bizCityLine = [gv('biz-city'), gv('biz-state'), gv('biz-postcode')].filter(Boolean).join(', ');
+
+    const logoHTML = logoDataURL
+      ? `<img src="${logoDataURL}" style="max-height:40px;max-width:110px;object-fit:contain;">`
+      : `<div style="width:72px;height:32px;border:1px dashed #C2CDD6;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#4A6070;">Logo</div>`;
+
+    const custName  = gv('cust-name');
+    const custEmail = gv('cust-email');
+    const soldToHTML = (custName || custEmail) ? `
+      <div style="margin-bottom:14px;">
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#4A6070;margin-bottom:3px;">Sold To</div>
+        ${custName  ? `<div style="font-size:12px;font-weight:700;color:#1B3A4B;">${esc(custName)}</div>` : ''}
+        ${custEmail ? `<div style="font-size:11px;color:#4A6070;">${esc(custEmail)}</div>` : ''}
+      </div>` : '';
+
+    const rows = lineItems.map(i => `<tr>
+      <td style="padding:5px 8px;border-bottom:1px solid #E8EFF4;">${esc(i.description) || '—'}</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #E8EFF4;text-align:right;">${i.qty}</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #E8EFF4;text-align:right;">${fmt(i.rate)}</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #E8EFF4;text-align:right;font-weight:600;">${fmt(i.qty * i.rate)}</td>
+    </tr>`).join('');
+
+    const cashRows = isCash ? `
+      <div style="display:flex;gap:16px;font-size:11px;">
+        <span style="color:#4A6070;min-width:110px;text-align:right;">Tendered</span>
+        <span style="font-weight:600;min-width:64px;text-align:right;">${fmt(tendered)}</span>
+      </div>
+      <div style="display:flex;gap:16px;font-size:11px;">
+        <span style="color:#4A6070;min-width:110px;text-align:right;">Change</span>
+        <span style="font-weight:600;min-width:64px;text-align:right;">${fmt(change)}</span>
+      </div>` : '';
+
+    const notes = gv('rec-notes');
+
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+        ${logoHTML}
+        <div style="font-size:20px;font-weight:800;letter-spacing:0.06em;color:#1B3A4B;">RECEIPT</div>
+      </div>
+      <hr style="border:none;border-top:2px solid #1B3A4B;margin:0 0 14px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px;">
+        <div style="text-align:center;">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#4A6070;margin-bottom:3px;">From</div>
+          <div style="font-size:13px;font-weight:700;color:#1B3A4B;margin-bottom:2px;">${esc(gv('biz-name')) || 'Your Business'}</div>
+          ${gv('biz-address') ? `<div style="font-size:11px;color:#4A6070;">${esc(gv('biz-address'))}</div>` : ''}
+          ${bizCityLine       ? `<div style="font-size:11px;color:#4A6070;">${esc(bizCityLine)}</div>` : ''}
+          ${gv('biz-email')   ? `<div style="font-size:11px;color:#4A6070;">${esc(gv('biz-email'))}</div>` : ''}
+          ${gv('biz-phone')   ? `<div style="font-size:11px;color:#4A6070;">${esc(gv('biz-phone'))}</div>` : ''}
+        </div>
+        <div>
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#4A6070;margin-bottom:4px;">Receipt Details</div>
+          <div style="display:flex;gap:6px;font-size:11px;margin-bottom:2px;"><b style="color:#1B3A4B;">Receipt #</b><span style="color:#4A6070;">${esc(gv('rec-number') || 'REC-001')}</span></div>
+          ${gv('rec-date') ? `<div style="display:flex;gap:6px;font-size:11px;margin-bottom:2px;"><b style="color:#1B3A4B;">Date</b><span style="color:#4A6070;">${fmtDate(gv('rec-date'))}</span></div>` : ''}
+          <div style="display:flex;gap:6px;font-size:11px;"><b style="color:#1B3A4B;">Payment</b><span style="color:#4A6070;">${paymentLabel(gv('pay-method'))}</span></div>
+        </div>
+      </div>
+      ${soldToHTML}
+      <table style="width:100%;border-collapse:collapse;margin-bottom:10px;">
+        <thead><tr style="background:#1B3A4B;">
+          <th style="padding:6px 8px;color:#fff;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;text-align:left;">Description</th>
+          <th style="padding:6px 8px;color:#fff;font-size:9px;font-weight:700;text-transform:uppercase;text-align:right;width:36px;">Qty</th>
+          <th style="padding:6px 8px;color:#fff;font-size:9px;font-weight:700;text-transform:uppercase;text-align:right;width:72px;">Price</th>
+          <th style="padding:6px 8px;color:#fff;font-size:9px;font-weight:700;text-transform:uppercase;text-align:right;width:72px;">Amount</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-bottom:14px;">
+        <div style="display:flex;gap:16px;font-size:11px;"><span style="color:#4A6070;min-width:110px;text-align:right;">Subtotal</span><span style="font-weight:600;min-width:64px;text-align:right;">${fmt(subtotal)}</span></div>
+        <div style="display:flex;gap:16px;font-size:11px;"><span style="color:#4A6070;min-width:110px;text-align:right;">${TAX_LABEL} (${taxRate}%)</span><span style="font-weight:600;min-width:64px;text-align:right;">${fmt(tax)}</span></div>
+        <div style="display:flex;gap:16px;font-size:13px;border-top:1.5px solid #1B3A4B;padding-top:4px;margin-top:2px;"><span style="font-weight:800;color:#1B3A4B;min-width:110px;text-align:right;">Total (${CURRENCY})</span><span style="font-weight:800;color:#1B3A4B;min-width:64px;text-align:right;">${fmt(total)}</span></div>
+        ${cashRows}
+      </div>
+      ${notes ? `<div style="border-top:1px solid #C2CDD6;padding-top:10px;font-size:10px;color:#4A6070;"><b style="font-size:9px;text-transform:uppercase;letter-spacing:0.05em;color:#1B3A4B;">Notes</b><br>${esc(notes)}</div>` : ''}`;
+  }
+
+  function updatePreview() {
+    $('receipt-preview').innerHTML = buildDocument();
+  }
+
+  function prepPrint() {
+    $('receipt-print-area').innerHTML = `
+      <style>* { box-sizing:border-box; margin:0; padding:0; } body { font-family:Arial,sans-serif; padding:40px; max-width:680px; color:#1B3A4B; } table td { padding:6px 8px; border-bottom:1px solid #C2CDD6; font-size:11px; } table tbody tr:nth-child(even) { background:#f8fafb; } table tbody tr:last-child td { border-bottom:none; }</style>
+      ${buildDocument()}`;
+  }
+
+  function downloadPDF()  { prepPrint(); window.print(); }
+
+  function downloadWord() {
+    prepPrint();
+    const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'><head><meta charset='utf-8'></head><body>${$('receipt-print-area').innerHTML}</body></html>`;
+    dlBlob(new Blob([html], { type: 'application/msword' }), `${gv('rec-number') || 'REC-001'}.doc`);
+  }
+
+  function downloadExcel() {
+    const { subtotal, tax, taxRate, total } = calculate();
+    const isCash   = gv('pay-method') === 'cash';
+    const tendered = parseFloat($('cash-tendered').value) || 0;
+    const change   = Math.max(0, tendered - total);
+    const rows = [
+      ['RECEIPT'], ['Receipt #', gv('rec-number') || 'REC-001'],
+      ['Date', fmtDate(gv('rec-date'))], ['Payment', paymentLabel(gv('pay-method'))],
+      [], ['FROM', gv('biz-name')], ['SOLD TO', gv('cust-name')],
+      [], ['Description', 'Qty', 'Rate', 'Amount'],
+      ...lineItems.map(i => [i.description, i.qty, i.rate.toFixed(2), (i.qty * i.rate).toFixed(2)]),
+      [], ['', '', 'Subtotal', subtotal.toFixed(2)],
+      ['', '', `${TAX_LABEL} (${taxRate}%)`, tax.toFixed(2)],
+      ['', '', `Total (${CURRENCY})`, total.toFixed(2)],
+      ...(isCash ? [['', '', 'Tendered', tendered.toFixed(2)], ['', '', 'Change', change.toFixed(2)]] : []),
+      [], ['Notes', gv('rec-notes')],
+    ];
+    const tbl = rows.map(r => `<tr>${r.map(c => `<td>${esc(String(c))}</td>`).join('')}</tr>`).join('');
+    dlBlob(new Blob([`<html><head><meta charset="utf-8"></head><body><table>${tbl}</table></body></html>`], { type: 'application/vnd.ms-excel' }), `${gv('rec-number') || 'REC-001'}.xls`);
+  }
+
+  function downloadSheets() {
+    const { subtotal, tax, taxRate, total } = calculate();
+    const isCash   = gv('pay-method') === 'cash';
+    const tendered = parseFloat($('cash-tendered').value) || 0;
+    const change   = Math.max(0, tendered - total);
+    const rows = [
+      ['Receipt #', gv('rec-number') || 'REC-001'], ['Date', fmtDate(gv('rec-date'))],
+      ['Payment', paymentLabel(gv('pay-method'))], ['Business', gv('biz-name')], ['Customer', gv('cust-name')],
+      [], ['Description', 'Qty', 'Rate', 'Amount'],
+      ...lineItems.map(i => [i.description, i.qty, i.rate.toFixed(2), (i.qty * i.rate).toFixed(2)]),
+      [], ['', '', 'Subtotal', subtotal.toFixed(2)],
+      ['', '', `${TAX_LABEL} (${taxRate}%)`, tax.toFixed(2)],
+      ['', '', `Total (${CURRENCY})`, total.toFixed(2)],
+      ...(isCash ? [['', '', 'Tendered', tendered.toFixed(2)], ['', '', 'Change', change.toFixed(2)]] : []),
+    ];
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    dlBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `${gv('rec-number') || 'REC-001'}.csv`);
+  }
+
+  function downloadGDoc() {
+    prepPrint();
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Receipt ${gv('rec-number') || 'REC-001'}</title></head><body style="font-family:Arial,sans-serif;max-width:680px;margin:40px auto;">${$('receipt-print-area').innerHTML}</body></html>`;
+    dlBlob(new Blob([html], { type: 'text/html;charset=utf-8;' }), `${gv('rec-number') || 'REC-001'}.html`);
+  }
+
+  function dlBlob(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+  }
+
+  init();
+</script>
+</body>
+</html>

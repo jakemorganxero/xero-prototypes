@@ -1,0 +1,1026 @@
+<!--
+  XERO PROTOTYPE
+  Tool: Purchase Order Generator (NZ)
+  Locale: NZ
+  Pattern: Two-column generator with live preview
+  Built: 2026-04-16
+  Inputs: Buyer info, supplier info, delivery address (optional), order details, line items, notes
+  Output: Styled PO document — download PDF/Word/Excel/CSV/HTML
+  Notes for devs:
+    - Delivery address section toggles based on "same as business address" checkbox
+    - Line items include a unit field (display only — amount = qty × rate)
+    - Date format: DD/MM/YYYY
+    - Currency: NZD ($), Tax label: GST (15% default)
+    - State label: Region, ZIP label: Postcode
+    - GT Walsheim → Plus Jakarta Sans (flag for prod)
+    - Signup URL: xero.com/nz/signup/
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --xero-navy: #1B3A4B;
+    --xero-blue: #13B5EA;
+    --xero-blue-dark: #0D8FBD;
+    --xero-panel-bg: #EBF0F4;
+    --xero-border: #C2CDD6;
+    --xero-bg: #FFFFFF;
+    --xero-text: #1B3A4B;
+    --xero-text-muted: #4A6070;
+    --xero-green: #1AB394;
+    --xero-red: #E05A5A;
+    --radius: 4px;
+    --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  .xpog-wrap {
+    font-family: var(--font);
+    color: var(--xero-text);
+    background: #F5F7F9;
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 40px 5% 56px;
+  }
+
+  .xpog-wrap * { font-family: var(--font); }
+
+  .xpog-layout {
+    display: grid;
+    grid-template-columns: 55% 1fr;
+    gap: 48px;
+    align-items: start;
+  }
+
+  @media (max-width: 1000px) {
+    .xpog-layout { grid-template-columns: 1fr; gap: 32px; }
+    .xpog-preview-col { position: static !important; }
+  }
+
+  .xpog-form-col { min-width: 0; }
+
+  .xpog-form-title {
+    font-size: 1.375rem;
+    font-weight: 800;
+    color: var(--xero-navy);
+    margin-bottom: 28px;
+  }
+
+  .xpog-section {
+    background: var(--xero-bg);
+    border: 1px solid var(--xero-border);
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .xpog-section-header {
+    background: var(--xero-navy);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 10px 16px;
+  }
+
+  .xpog-section-body { padding: 20px 16px; }
+
+  .xpog-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .xpog-row.three { grid-template-columns: 1fr 1fr 1fr; }
+  .xpog-row.full { grid-template-columns: 1fr; }
+
+  .xpog-field { display: flex; flex-direction: column; gap: 4px; }
+
+  .xpog-field label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--xero-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .xpog-field input,
+  .xpog-field select,
+  .xpog-field textarea {
+    border: 1px solid var(--xero-border);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    font-size: 0.875rem;
+    color: var(--xero-text);
+    background: #fff;
+    width: 100%;
+    transition: border-color 0.15s;
+    font-family: var(--font);
+  }
+
+  .xpog-field input:focus,
+  .xpog-field select:focus,
+  .xpog-field textarea:focus {
+    outline: none;
+    border-color: var(--xero-blue);
+    box-shadow: 0 0 0 3px rgba(19,181,234,0.15);
+  }
+
+  .xpog-field textarea { resize: vertical; min-height: 72px; }
+
+  .xpog-logo-upload {
+    border: 2px dashed var(--xero-border);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    margin-bottom: 12px;
+    background: #FAFBFC;
+  }
+
+  .xpog-logo-upload:hover { border-color: var(--xero-blue); background: #F0FAFF; }
+  .xpog-logo-upload input[type="file"] { display: none; }
+
+  .xpog-logo-upload-label {
+    font-size: 0.8rem;
+    color: var(--xero-text-muted);
+    cursor: pointer;
+  }
+
+  .xpog-logo-upload-label span {
+    color: var(--xero-blue);
+    font-weight: 600;
+    text-decoration: underline;
+  }
+
+  .xpog-logo-preview {
+    max-height: 60px;
+    max-width: 180px;
+    display: none;
+    margin: 0 auto 8px;
+  }
+
+  .xpog-logo-remove {
+    font-size: 0.75rem;
+    color: var(--xero-red);
+    cursor: pointer;
+    display: none;
+    background: none;
+    border: none;
+    font-family: var(--font);
+  }
+
+  .xpog-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    cursor: pointer;
+  }
+
+  .xpog-checkbox-row input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--xero-blue);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .xpog-checkbox-row label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--xero-text);
+    cursor: pointer;
+  }
+
+  .xpog-items-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+
+  .xpog-items-table th {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--xero-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--xero-border);
+  }
+
+  .xpog-items-table th.right,
+  .xpog-items-table td.right { text-align: right; }
+
+  .xpog-items-table td { padding: 6px 4px; vertical-align: middle; }
+
+  .xpog-items-table td input {
+    border: 1px solid var(--xero-border);
+    border-radius: var(--radius);
+    padding: 6px 8px;
+    font-size: 0.8rem;
+    color: var(--xero-text);
+    width: 100%;
+    background: #fff;
+    font-family: var(--font);
+  }
+
+  .xpog-items-table td input:focus {
+    outline: none;
+    border-color: var(--xero-blue);
+    box-shadow: 0 0 0 2px rgba(19,181,234,0.15);
+  }
+
+  .xpog-col-desc { width: 32%; }
+  .xpog-col-qty  { width: 10%; }
+  .xpog-col-unit { width: 12%; }
+  .xpog-col-rate { width: 15%; }
+  .xpog-col-amt  { width: 15%; }
+  .xpog-col-del  { width: 6%; }
+
+  .xpog-amount-cell {
+    font-size: 0.8rem;
+    color: var(--xero-text);
+    font-weight: 500;
+    text-align: right;
+    padding-right: 4px;
+  }
+
+  .xpog-remove-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--xero-text-muted);
+    padding: 4px;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s;
+  }
+
+  .xpog-remove-btn:hover { color: var(--xero-red); }
+
+  .xpog-add-item-btn {
+    background: none;
+    border: 1px dashed var(--xero-border);
+    border-radius: var(--radius);
+    padding: 8px 14px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--xero-blue);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: border-color 0.15s, background 0.15s;
+    font-family: var(--font);
+    margin-bottom: 16px;
+  }
+
+  .xpog-add-item-btn:hover { border-color: var(--xero-blue); background: #F0FAFF; }
+
+  .xpog-totals {
+    border-top: 1px solid var(--xero-border);
+    padding-top: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+
+  .xpog-total-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.85rem;
+    color: var(--xero-text-muted);
+    min-width: 260px;
+    justify-content: flex-end;
+  }
+
+  .xpog-total-row .label { flex: 1; text-align: right; font-weight: 500; }
+  .xpog-total-row .value { min-width: 90px; text-align: right; font-weight: 600; color: var(--xero-text); }
+
+  .xpog-total-row.grand {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--xero-navy);
+    border-top: 2px solid var(--xero-navy);
+    padding-top: 8px;
+    margin-top: 2px;
+  }
+
+  .xpog-tax-input {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .xpog-tax-input input {
+    border: 1px solid var(--xero-border);
+    border-radius: var(--radius);
+    padding: 4px 6px;
+    width: 52px;
+    font-size: 0.8rem;
+    text-align: center;
+    font-family: var(--font);
+  }
+
+  .xpog-tax-input input:focus {
+    outline: none;
+    border-color: var(--xero-blue);
+    box-shadow: 0 0 0 2px rgba(19,181,234,0.15);
+  }
+
+  .xpog-preview-col {
+    position: sticky;
+    top: 24px;
+    min-width: 0;
+  }
+
+  .xpog-preview-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--xero-text-muted);
+    margin-bottom: 10px;
+  }
+
+  .inv-doc {
+    background: #fff;
+    border: 1px solid var(--xero-border);
+    border-radius: 4px 4px 0 0;
+    padding: 28px 28px 24px;
+    font-size: 0.78rem;
+    color: var(--xero-text);
+    line-height: 1.5;
+    min-height: 400px;
+  }
+
+  .inv-doc-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+  }
+
+  .inv-doc-logo { max-height: 52px; max-width: 140px; object-fit: contain; }
+
+  .inv-doc-logo-placeholder {
+    width: 100px;
+    height: 40px;
+    border: 1.5px dashed var(--xero-border);
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    color: var(--xero-border);
+    font-weight: 500;
+  }
+
+  .inv-doc-heading {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--xero-navy);
+    letter-spacing: 0.04em;
+    text-align: right;
+  }
+
+  .inv-doc-divider {
+    border: none;
+    border-top: 2px solid var(--xero-navy);
+    margin: 12px 0 14px;
+  }
+
+  .inv-doc-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 20px;
+    margin-bottom: 14px;
+  }
+
+  .inv-doc-meta-block { display: flex; flex-direction: column; gap: 2px; }
+
+  .inv-doc-meta-heading {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--xero-text-muted);
+    margin-bottom: 3px;
+  }
+
+  .inv-doc-meta-name { font-weight: 700; font-size: 0.82rem; color: var(--xero-navy); }
+  .inv-doc-meta-line { color: var(--xero-text-muted); font-size: 0.75rem; }
+
+  .inv-doc-order-row td { padding: 1px 0; color: var(--xero-text-muted); }
+  .inv-doc-order-row td:first-child { font-weight: 600; color: var(--xero-navy); padding-right: 8px; white-space: nowrap; }
+
+  .inv-doc-items { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+
+  .inv-doc-items th {
+    background: var(--xero-panel-bg);
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--xero-text-muted);
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--xero-border);
+  }
+
+  .inv-doc-items th.r, .inv-doc-items td.r { text-align: right; }
+
+  .inv-doc-items td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #EEF1F4;
+    font-size: 0.73rem;
+    color: var(--xero-text);
+    vertical-align: middle;
+  }
+
+  .inv-doc-items tbody tr:last-child td { border-bottom: none; }
+
+  .inv-doc-totals {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    margin-bottom: 14px;
+  }
+
+  .inv-doc-total-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 20px;
+    font-size: 0.75rem;
+    min-width: 200px;
+  }
+
+  .inv-doc-total-row .lbl { color: var(--xero-text-muted); font-weight: 500; min-width: 100px; text-align: right; }
+  .inv-doc-total-row .val { font-weight: 600; min-width: 80px; text-align: right; color: var(--xero-text); }
+
+  .inv-doc-total-row.grand {
+    font-size: 0.85rem;
+    border-top: 1.5px solid var(--xero-navy);
+    padding-top: 5px;
+    margin-top: 2px;
+    font-weight: 800;
+    color: var(--xero-navy);
+  }
+
+  .inv-doc-total-row.grand .lbl,
+  .inv-doc-total-row.grand .val { color: var(--xero-navy); }
+
+  .inv-doc-notes-section { margin-top: 10px; font-size: 0.73rem; }
+  .inv-doc-notes-heading { font-weight: 700; color: var(--xero-navy); margin-bottom: 2px; }
+  .inv-doc-notes-text { color: var(--xero-text-muted); white-space: pre-wrap; }
+
+  .xpog-download-strip {
+    background: var(--xero-panel-bg);
+    border: 1px solid var(--xero-border);
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .xpog-dl-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 13px;
+    border-radius: var(--radius);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--xero-border);
+    background: #fff;
+    color: var(--xero-text);
+    text-decoration: none;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    font-family: var(--font);
+  }
+
+  .xpog-dl-btn:hover { background: var(--xero-navy); color: #fff; border-color: var(--xero-navy); }
+
+  .xpog-dl-btn.primary {
+    background: var(--xero-blue);
+    border-color: var(--xero-blue);
+    color: #fff;
+  }
+
+  .xpog-dl-btn.primary:hover { background: var(--xero-blue-dark); border-color: var(--xero-blue-dark); }
+
+  .xpog-cta {
+    background: var(--xero-panel-bg);
+    border: 1px solid var(--xero-border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-top: 16px;
+    font-size: 0.85rem;
+    color: var(--xero-text-muted);
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  .xpog-cta a { color: var(--xero-blue); font-weight: 600; text-decoration: none; }
+  .xpog-cta a:hover { text-decoration: underline; }
+
+  .xpog-disclaimer {
+    font-size: 0.72rem;
+    color: var(--xero-text-muted);
+    margin-top: 10px;
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  #deliveryFields { margin-top: 4px; }
+</style>
+
+<div class="xpog-wrap">
+  <div class="xpog-layout">
+
+    <div class="xpog-form-col">
+      <h2 class="xpog-form-title">Create purchase order</h2>
+
+      <!-- YOUR BUSINESS -->
+      <div class="xpog-section">
+        <div class="xpog-section-header">Your Business (Buyer)</div>
+        <div class="xpog-section-body">
+          <div class="xpog-logo-upload" id="logoUploadArea" onclick="document.getElementById('logoFileInput').click()">
+            <img id="logoPreviewImg" class="xpog-logo-preview" src="" alt="Logo preview">
+            <input type="file" id="logoFileInput" accept="image/*">
+            <div class="xpog-logo-upload-label" id="logoUploadLabel">
+              <span>Upload logo</span> (optional, PNG/JPG/SVG)
+            </div>
+            <button class="xpog-logo-remove" id="logoRemoveBtn" onclick="removeLogo(event)">Remove logo</button>
+          </div>
+          <div class="xpog-row full">
+            <div class="xpog-field"><label>Business name</label><input type="text" id="buyerName" placeholder="Acme Ltd" oninput="updatePreview()"></div>
+          </div>
+          <div class="xpog-row full">
+            <div class="xpog-field"><label>Street address</label><input type="text" id="buyerStreet" placeholder="123 Queen Street" oninput="updatePreview()"></div>
+          </div>
+          <div class="xpog-row three">
+            <div class="xpog-field"><label>City</label><input type="text" id="buyerCity" placeholder="Auckland" oninput="updatePreview()"></div>
+            <div class="xpog-field"><label>Region</label><input type="text" id="buyerState" placeholder="Auckland" oninput="updatePreview()"></div>
+            <div class="xpog-field"><label>Postcode</label><input type="text" id="buyerZip" placeholder="1010" oninput="updatePreview()"></div>
+          </div>
+          <div class="xpog-row">
+            <div class="xpog-field"><label>Email</label><input type="email" id="buyerEmail" placeholder="accounts@acme.co.nz" oninput="updatePreview()"></div>
+            <div class="xpog-field"><label>Phone</label><input type="tel" id="buyerPhone" placeholder="+64 9 000 0000" oninput="updatePreview()"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUPPLIER -->
+      <div class="xpog-section">
+        <div class="xpog-section-header">Supplier / Vendor</div>
+        <div class="xpog-section-body">
+          <div class="xpog-row">
+            <div class="xpog-field"><label>Supplier name</label><input type="text" id="supplierName" placeholder="NZ Supplies Ltd" oninput="updatePreview()"></div>
+            <div class="xpog-field"><label>Contact name</label><input type="text" id="supplierContact" placeholder="Jane Smith" oninput="updatePreview()"></div>
+          </div>
+          <div class="xpog-row full">
+            <div class="xpog-field"><label>Street address</label><input type="text" id="supplierStreet" placeholder="456 Lambton Quay" oninput="updatePreview()"></div>
+          </div>
+          <div class="xpog-row three">
+            <div class="xpog-field"><label>City</label><input type="text" id="supplierCity" placeholder="Wellington" oninput="updatePreview()"></div>
+            <div class="xpog-field"><label>Region</label><input type="text" id="supplierState" placeholder="Wellington" oninput="updatePreview()"></div>
+            <div class="xpog-field"><label>Postcode</label><input type="text" id="supplierZip" placeholder="6011" oninput="updatePreview()"></div>
+          </div>
+          <div class="xpog-row">
+            <div class="xpog-field"><label>Email</label><input type="email" id="supplierEmail" placeholder="orders@nzsupplies.co.nz" oninput="updatePreview()"></div>
+            <div class="xpog-field"><label>Phone</label><input type="tel" id="supplierPhone" placeholder="+64 4 000 0000" oninput="updatePreview()"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DELIVERY ADDRESS -->
+      <div class="xpog-section">
+        <div class="xpog-section-header">Delivery Address</div>
+        <div class="xpog-section-body">
+          <label class="xpog-checkbox-row">
+            <input type="checkbox" id="sameAddressChk" checked onchange="toggleDeliveryAddress()">
+            <label for="sameAddressChk">Same as business address</label>
+          </label>
+          <div id="deliveryFields" style="display:none;">
+            <div class="xpog-row full">
+              <div class="xpog-field"><label>Street address</label><input type="text" id="deliveryStreet" placeholder="789 Warehouse Road" oninput="updatePreview()"></div>
+            </div>
+            <div class="xpog-row three">
+              <div class="xpog-field"><label>City</label><input type="text" id="deliveryCity" placeholder="Christchurch" oninput="updatePreview()"></div>
+              <div class="xpog-field"><label>Region</label><input type="text" id="deliveryState" placeholder="Canterbury" oninput="updatePreview()"></div>
+              <div class="xpog-field"><label>Postcode</label><input type="text" id="deliveryZip" placeholder="8011" oninput="updatePreview()"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ORDER DETAILS -->
+      <div class="xpog-section">
+        <div class="xpog-section-header">Order Details</div>
+        <div class="xpog-section-body">
+          <div class="xpog-row">
+            <div class="xpog-field"><label>PO Number</label><input type="text" id="poNumber" value="PO-001" oninput="updatePreview()"></div>
+            <div class="xpog-field"><label>Order date</label><input type="date" id="orderDate" oninput="updatePreview()"></div>
+          </div>
+          <div class="xpog-row">
+            <div class="xpog-field"><label>Required by date</label><input type="date" id="requiredBy" oninput="updatePreview()"></div>
+            <div class="xpog-field">
+              <label>Payment terms</label>
+              <select id="paymentTerms" onchange="updatePreview()">
+                <option>Due on receipt</option>
+                <option>Net 15</option>
+                <option selected>Net 30</option>
+                <option>Net 60</option>
+                <option>Custom</option>
+              </select>
+            </div>
+          </div>
+          <div class="xpog-row full">
+            <div class="xpog-field"><label>Shipping method (optional)</label><input type="text" id="shippingMethod" placeholder="Standard delivery" oninput="updatePreview()"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LINE ITEMS -->
+      <div class="xpog-section">
+        <div class="xpog-section-header">Line Items</div>
+        <div class="xpog-section-body">
+          <table class="xpog-items-table">
+            <thead>
+              <tr>
+                <th class="xpog-col-desc">Description</th>
+                <th class="xpog-col-qty right">Qty</th>
+                <th class="xpog-col-unit">Unit</th>
+                <th class="xpog-col-rate right">Unit price</th>
+                <th class="xpog-col-amt right">Amount</th>
+                <th class="xpog-col-del"></th>
+              </tr>
+            </thead>
+            <tbody id="itemsBody"></tbody>
+          </table>
+          <button class="xpog-add-item-btn" onclick="addItem()">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="#13B5EA" stroke-width="2" stroke-linecap="round"/></svg>
+            Add item
+          </button>
+          <div class="xpog-totals">
+            <div class="xpog-total-row">
+              <span class="label">Subtotal</span>
+              <span class="value" id="subtotalVal">$0.00</span>
+            </div>
+            <div class="xpog-total-row">
+              <span class="label">
+                <span class="xpog-tax-input">
+                  GST (<input type="number" id="taxRate" value="15" min="0" max="100" step="0.1" oninput="calculate()">%)
+                </span>
+              </span>
+              <span class="value" id="taxVal">$0.00</span>
+            </div>
+            <div class="xpog-total-row grand">
+              <span class="label">Total</span>
+              <span class="value" id="totalVal">$0.00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NOTES & TERMS -->
+      <div class="xpog-section">
+        <div class="xpog-section-header">Notes &amp; Terms</div>
+        <div class="xpog-section-body">
+          <div class="xpog-row full" style="margin-bottom:12px">
+            <div class="xpog-field">
+              <label>Notes</label>
+              <textarea id="poNotes" placeholder="Please confirm receipt of this order." oninput="updatePreview()"></textarea>
+            </div>
+          </div>
+          <div class="xpog-row full">
+            <div class="xpog-field">
+              <label>Terms</label>
+              <textarea id="poTerms" placeholder="All orders subject to our standard terms and conditions." oninput="updatePreview()"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="xpog-disclaimer">*This tool generates purchase order documents only and is not legal or financial advice.</p>
+    </div>
+
+    <!-- PREVIEW COLUMN -->
+    <div class="xpog-preview-col">
+      <div class="xpog-preview-label">Purchase order preview</div>
+      <div class="inv-doc" id="invDoc"></div>
+      <div class="xpog-download-strip">
+        <button class="xpog-dl-btn primary" onclick="downloadPDF()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3M2 11h10v2H2z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          PDF
+        </button>
+        <button class="xpog-dl-btn" onclick="downloadWord()">
+          <svg width="14" height="14" viewBox="0 0 14 14"><rect x="1" y="1" width="12" height="12" rx="1.5" fill="#2B579A"/><path d="M3.5 4h7M3.5 6.5h7M3.5 9h4.5" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/></svg>
+          Word
+        </button>
+        <button class="xpog-dl-btn" onclick="downloadExcel()">
+          <svg width="14" height="14" viewBox="0 0 14 14"><rect x="1" y="1" width="12" height="12" rx="1.5" fill="#217346"/><path d="M4 4l6 6M10 4L4 10" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/></svg>
+          Excel
+        </button>
+        <button class="xpog-dl-btn" onclick="downloadCSV()">
+          <svg width="14" height="14" viewBox="0 0 14 14"><rect x="1" y="1" width="12" height="12" rx="1.5" fill="#34A853"/><path d="M3.5 4.5h7M3.5 7h7M3.5 9.5h7" stroke="#fff" stroke-width="1.1" stroke-linecap="round"/></svg>
+          CSV
+        </button>
+        <button class="xpog-dl-btn" onclick="downloadHTML()">
+          <svg width="14" height="14" viewBox="0 0 14 14"><rect x="1" y="1" width="12" height="12" rx="1.5" fill="#F48024"/><path d="M4 5l-2 2 2 2M10 5l2 2-2 2M8 3.5L6 10.5" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          HTML
+        </button>
+      </div>
+      <div class="xpog-cta">
+        Manage your purchase orders and supplier payments with Xero. Start a 30 day <a href="https://www.xero.com/nz/signup/" target="_blank">free trial</a>.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const LOCALE = {
+    currency: 'NZD',
+    symbol: '$',
+    localeStr: 'en-NZ',
+    taxLabel: 'GST',
+    taxDefault: 15,
+    stateLabel: 'Region',
+    zipLabel: 'Postcode',
+    dateFormat: 'DD/MM/YYYY',
+    signupUrl: 'https://www.xero.com/nz/signup/'
+  };
+
+  let lineItems = [];
+  let logoDataURL = null;
+  let nextId = 1;
+
+  function fmt(n) {
+    return LOCALE.symbol + n.toLocaleString(LOCALE.localeStr, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function fmtDate(dateStr) {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  function todayISO() {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  function escHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  document.getElementById('logoFileInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      logoDataURL = ev.target.result;
+      document.getElementById('logoPreviewImg').src = logoDataURL;
+      document.getElementById('logoPreviewImg').style.display = 'block';
+      document.getElementById('logoUploadLabel').style.display = 'none';
+      document.getElementById('logoRemoveBtn').style.display = 'inline';
+      updatePreview();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function removeLogo(e) {
+    e.stopPropagation();
+    logoDataURL = null;
+    document.getElementById('logoFileInput').value = '';
+    document.getElementById('logoPreviewImg').style.display = 'none';
+    document.getElementById('logoPreviewImg').src = '';
+    document.getElementById('logoUploadLabel').style.display = '';
+    document.getElementById('logoRemoveBtn').style.display = 'none';
+    updatePreview();
+  }
+
+  function toggleDeliveryAddress() {
+    const checked = document.getElementById('sameAddressChk').checked;
+    document.getElementById('deliveryFields').style.display = checked ? 'none' : 'block';
+    updatePreview();
+  }
+
+  function addItem() {
+    const id = nextId++;
+    lineItems.push({ id, description: '', qty: 1, unit: 'each', rate: 0 });
+    renderLineItems();
+    updatePreview();
+  }
+
+  function removeItem(id) {
+    lineItems = lineItems.filter(i => i.id !== id);
+    renderLineItems();
+    calculate();
+  }
+
+  function updateItem(id, field, value) {
+    const item = lineItems.find(i => i.id === id);
+    if (!item) return;
+    if (field === 'qty' || field === 'rate') {
+      item[field] = parseFloat(value) || 0;
+    } else {
+      item[field] = value;
+    }
+    if (field === 'qty' || field === 'rate') {
+      const amtCell = document.getElementById('amt-' + id);
+      if (amtCell) amtCell.textContent = fmt(item.qty * item.rate);
+    }
+    calculate();
+  }
+
+  function renderLineItems() {
+    const tbody = document.getElementById('itemsBody');
+    tbody.innerHTML = lineItems.map(item => `
+      <tr>
+        <td class="xpog-col-desc"><input type="text" value="${escHtml(item.description)}" placeholder="Item description" oninput="updateItem(${item.id},'description',this.value)"></td>
+        <td class="xpog-col-qty right"><input type="number" value="${item.qty}" min="0" step="any" style="text-align:right" oninput="updateItem(${item.id},'qty',this.value)"></td>
+        <td class="xpog-col-unit"><input type="text" value="${escHtml(item.unit)}" placeholder="each" oninput="updateItem(${item.id},'unit',this.value)"></td>
+        <td class="xpog-col-rate right"><input type="number" value="${item.rate}" min="0" step="any" style="text-align:right" oninput="updateItem(${item.id},'rate',this.value)"></td>
+        <td class="xpog-col-amt right"><span class="xpog-amount-cell" id="amt-${item.id}">${fmt(item.qty * item.rate)}</span></td>
+        <td class="xpog-col-del">
+          <button class="xpog-remove-btn" onclick="removeItem(${item.id})" title="Remove">
+            <svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function calculate() {
+    const subtotal = lineItems.reduce((s, i) => s + i.qty * i.rate, 0);
+    const rate = parseFloat(document.getElementById('taxRate').value) || 0;
+    const tax = subtotal * rate / 100;
+    const total = subtotal + tax;
+    document.getElementById('subtotalVal').textContent = fmt(subtotal);
+    document.getElementById('taxVal').textContent = fmt(tax);
+    document.getElementById('totalVal').textContent = fmt(total);
+    updatePreview();
+  }
+
+  function buildDocument() {
+    const v = id => (document.getElementById(id) || {}).value || '';
+    const subtotal = lineItems.reduce((s, i) => s + i.qty * i.rate, 0);
+    const taxRate = parseFloat(document.getElementById('taxRate').value) || 0;
+    const tax = subtotal * taxRate / 100;
+    const total = subtotal + tax;
+    const sameAddr = document.getElementById('sameAddressChk').checked;
+    let deliveryLines = [];
+    if (sameAddr) {
+      deliveryLines = ['Same as above'];
+    } else {
+      const ds = v('deliveryStreet'), dc = v('deliveryCity'), dst = v('deliveryState'), dz = v('deliveryZip');
+      if (ds) deliveryLines.push(ds);
+      const cityLine = [dc, dst, dz].filter(Boolean).join(', ');
+      if (cityLine) deliveryLines.push(cityLine);
+      if (!deliveryLines.length) deliveryLines = ['Same as above'];
+    }
+    return {
+      buyer: { name: v('buyerName'), street: v('buyerStreet'), city: v('buyerCity'), state: v('buyerState'), zip: v('buyerZip'), email: v('buyerEmail'), phone: v('buyerPhone') },
+      supplier: { name: v('supplierName'), contact: v('supplierContact'), street: v('supplierStreet'), city: v('supplierCity'), state: v('supplierState'), zip: v('supplierZip'), email: v('supplierEmail'), phone: v('supplierPhone') },
+      delivery: deliveryLines,
+      order: { poNumber: v('poNumber') || 'PO-001', date: v('orderDate'), requiredBy: v('requiredBy'), terms: v('paymentTerms'), shipping: v('shippingMethod') },
+      lineItems, taxRate, subtotal, tax, total,
+      notes: v('poNotes'), termsText: v('poTerms')
+    };
+  }
+
+  function updatePreview() {
+    const d = buildDocument();
+    const doc = document.getElementById('invDoc');
+    const buyerLines = [];
+    if (d.buyer.street) buyerLines.push(d.buyer.street);
+    const bcl = [d.buyer.city, d.buyer.state, d.buyer.zip].filter(Boolean).join(', ');
+    if (bcl) buyerLines.push(bcl);
+    if (d.buyer.email) buyerLines.push(d.buyer.email);
+    if (d.buyer.phone) buyerLines.push(d.buyer.phone);
+    const supLines = [];
+    if (d.supplier.contact) supLines.push(d.supplier.contact);
+    if (d.supplier.street) supLines.push(d.supplier.street);
+    const scl = [d.supplier.city, d.supplier.state, d.supplier.zip].filter(Boolean).join(', ');
+    if (scl) supLines.push(scl);
+    if (d.supplier.email) supLines.push(d.supplier.email);
+    const logoHTML = logoDataURL ? `<img class="inv-doc-logo" src="${logoDataURL}" alt="Logo">` : `<div class="inv-doc-logo-placeholder">Your logo</div>`;
+    const orderRows = [
+      ['PO #:', d.order.poNumber], ['Date:', d.order.date ? fmtDate(d.order.date) : ''],
+      ['Required by:', d.order.requiredBy ? fmtDate(d.order.requiredBy) : ''],
+      ['Terms:', d.order.terms], ['Ship via:', d.order.shipping]
+    ].filter(r => r[1]).map(r => `<tr class="inv-doc-order-row"><td>${escHtml(r[0])}</td><td>${escHtml(r[1])}</td></tr>`).join('');
+    const itemRows = d.lineItems.length
+      ? d.lineItems.map(item => `<tr><td>${escHtml(item.description)||'<em style="color:#C2CDD6">Item description</em>'}</td><td class="r">${item.qty}</td><td>${escHtml(item.unit)}</td><td class="r">${fmt(item.rate)}</td><td class="r">${fmt(item.qty*item.rate)}</td></tr>`).join('')
+      : `<tr><td colspan="5" style="text-align:center;color:#C2CDD6;font-style:italic;padding:12px">Add line items above</td></tr>`;
+    const notesHTML = (d.notes || d.termsText) ? `
+      <div class="inv-doc-notes-section">
+        ${d.notes ? `<div style="margin-bottom:6px"><div class="inv-doc-notes-heading">Notes</div><div class="inv-doc-notes-text">${escHtml(d.notes)}</div></div>` : ''}
+        ${d.termsText ? `<div><div class="inv-doc-notes-heading">Terms</div><div class="inv-doc-notes-text">${escHtml(d.termsText)}</div></div>` : ''}
+      </div>` : '';
+    doc.innerHTML = `
+      <div class="inv-doc-top">${logoHTML}<div class="inv-doc-heading">PURCHASE ORDER</div></div>
+      <hr class="inv-doc-divider">
+      <div class="inv-doc-meta">
+        <div class="inv-doc-meta-block"><div class="inv-doc-meta-heading">From (Buyer)</div>${d.buyer.name?`<div class="inv-doc-meta-name">${escHtml(d.buyer.name)}</div>`:''}${buyerLines.map(l=>`<div class="inv-doc-meta-line">${escHtml(l)}</div>`).join('')}</div>
+        <div class="inv-doc-meta-block"><div class="inv-doc-meta-heading">Order Details</div><table style="border-collapse:collapse">${orderRows}</table></div>
+        <div class="inv-doc-meta-block" style="margin-top:10px"><div class="inv-doc-meta-heading">To (Supplier)</div>${d.supplier.name?`<div class="inv-doc-meta-name">${escHtml(d.supplier.name)}</div>`:''}${supLines.map(l=>`<div class="inv-doc-meta-line">${escHtml(l)}</div>`).join('')}</div>
+        <div class="inv-doc-meta-block" style="margin-top:10px"><div class="inv-doc-meta-heading">Deliver To</div>${d.delivery.map(l=>`<div class="inv-doc-meta-line">${escHtml(l)}</div>`).join('')}</div>
+      </div>
+      <table class="inv-doc-items"><thead><tr><th>Description</th><th class="r">Qty</th><th>Unit</th><th class="r">Unit price</th><th class="r">Amount</th></tr></thead><tbody>${itemRows}</tbody></table>
+      <div class="inv-doc-totals">
+        <div class="inv-doc-total-row"><span class="lbl">Subtotal</span><span class="val">${fmt(d.subtotal)}</span></div>
+        <div class="inv-doc-total-row"><span class="lbl">${escHtml(LOCALE.taxLabel)} (${d.taxRate}%)</span><span class="val">${fmt(d.tax)}</span></div>
+        <div class="inv-doc-total-row grand"><span class="lbl">Total</span><span class="val">${fmt(d.total)}</span></div>
+      </div>${notesHTML}`;
+  }
+
+  function downloadPDF() {
+    const d = buildDocument();
+    const win = window.open('', '_blank');
+    const buyerLines = [];
+    if (d.buyer.street) buyerLines.push(d.buyer.street);
+    const bcl = [d.buyer.city,d.buyer.state,d.buyer.zip].filter(Boolean).join(', ');
+    if (bcl) buyerLines.push(bcl);
+    if (d.buyer.email) buyerLines.push(d.buyer.email);
+    if (d.buyer.phone) buyerLines.push(d.buyer.phone);
+    const supLines = [];
+    if (d.supplier.contact) supLines.push(d.supplier.contact);
+    if (d.supplier.street) supLines.push(d.supplier.street);
+    const scl = [d.supplier.city,d.supplier.state,d.supplier.zip].filter(Boolean).join(', ');
+    if (scl) supLines.push(scl);
+    if (d.supplier.email) supLines.push(d.supplier.email);
+    const orderRows = [['PO #:',d.order.poNumber],['Date:',d.order.date?fmtDate(d.order.date):''],['Required by:',d.order.requiredBy?fmtDate(d.order.requiredBy):''],['Terms:',d.order.terms],['Ship via:',d.order.shipping]].filter(r=>r[1]).map(r=>`<tr class="orow"><td>${escHtml(r[0])}</td><td>${escHtml(r[1])}</td></tr>`).join('');
+    const itemRows = d.lineItems.map(i=>`<tr><td>${escHtml(i.description)}</td><td class="r">${i.qty}</td><td>${escHtml(i.unit)}</td><td class="r">${fmt(i.rate)}</td><td class="r">${fmt(i.qty*i.rate)}</td></tr>`).join('');
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>PO ${escHtml(d.order.poNumber)}</title><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Plus Jakarta Sans',sans-serif;color:#1B3A4B;padding:40px;max-width:800px;margin:0 auto;font-size:11px}.top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}.logo{max-height:52px;max-width:140px}.heading{font-size:20px;font-weight:800;color:#1B3A4B;letter-spacing:0.04em}hr{border:none;border-top:2px solid #1B3A4B;margin:12px 0 14px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;margin-bottom:14px}.meta-heading{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#4A6070;margin-bottom:3px}.meta-name{font-weight:700;font-size:12px;color:#1B3A4B}.meta-line{color:#4A6070;font-size:10px}.orow td{padding:1px 0;color:#4A6070;font-size:10px}.orow td:first-child{font-weight:600;color:#1B3A4B;padding-right:8px;white-space:nowrap}table.items{width:100%;border-collapse:collapse;margin-bottom:10px}table.items th{background:#EBF0F4;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#4A6070;padding:6px 8px;text-align:left;border-bottom:1px solid #C2CDD6}table.items th.r,table.items td.r{text-align:right}table.items td{padding:5px 8px;border-bottom:1px solid #EEF1F4;font-size:10px}.totals{display:flex;flex-direction:column;align-items:flex-end;gap:3px;margin-bottom:14px}.trow{display:flex;justify-content:flex-end;gap:20px;font-size:10px;min-width:200px}.trow .lbl{color:#4A6070;font-weight:500;min-width:100px;text-align:right}.trow .val{font-weight:600;min-width:80px;text-align:right}.trow.grand{font-size:12px;border-top:1.5px solid #1B3A4B;padding-top:5px;margin-top:2px;font-weight:800}.trow.grand .lbl,.trow.grand .val{color:#1B3A4B}.notes{margin-top:10px;font-size:10px}.notes-heading{font-weight:700;color:#1B3A4B;margin-bottom:2px}.notes-text{color:#4A6070;white-space:pre-wrap}@media print{body{padding:20px}}</style></head><body>
+    <div class="top">${logoDataURL?`<img class="logo" src="${logoDataURL}">`:'<div></div>'}<div class="heading">PURCHASE ORDER</div></div>
+    <hr><div class="meta"><div><div class="meta-heading">From (Buyer)</div>${d.buyer.name?`<div class="meta-name">${escHtml(d.buyer.name)}</div>`:''}${buyerLines.map(l=>`<div class="meta-line">${escHtml(l)}</div>`).join('')}</div><div><div class="meta-heading">Order Details</div><table style="border-collapse:collapse">${orderRows}</table></div><div style="margin-top:10px"><div class="meta-heading">To (Supplier)</div>${d.supplier.name?`<div class="meta-name">${escHtml(d.supplier.name)}</div>`:''}${supLines.map(l=>`<div class="meta-line">${escHtml(l)}</div>`).join('')}</div><div style="margin-top:10px"><div class="meta-heading">Deliver To</div>${d.delivery.map(l=>`<div class="meta-line">${escHtml(l)}</div>`).join('')}</div></div>
+    <table class="items"><thead><tr><th>Description</th><th class="r">Qty</th><th>Unit</th><th class="r">Unit price</th><th class="r">Amount</th></tr></thead><tbody>${itemRows}</tbody></table>
+    <div class="totals"><div class="trow"><span class="lbl">Subtotal</span><span class="val">${fmt(d.subtotal)}</span></div><div class="trow"><span class="lbl">${escHtml(LOCALE.taxLabel)} (${d.taxRate}%)</span><span class="val">${fmt(d.tax)}</span></div><div class="trow grand"><span class="lbl">Total</span><span class="val">${fmt(d.total)}</span></div></div>
+    ${d.notes?`<div class="notes"><div class="notes-heading">Notes</div><div class="notes-text">${escHtml(d.notes)}</div></div>`:''}
+    ${d.termsText?`<div class="notes" style="margin-top:8px"><div class="notes-heading">Terms</div><div class="notes-text">${escHtml(d.termsText)}</div></div>`:''}
+    </body></html>`);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 400);
+  }
+
+  function downloadWord() {
+    const d = buildDocument();
+    const buyerBlock = [d.buyer.name,d.buyer.street,[d.buyer.city,d.buyer.state,d.buyer.zip].filter(Boolean).join(', '),d.buyer.email,d.buyer.phone].filter(Boolean).join('<br>');
+    const supBlock = [d.supplier.name,d.supplier.contact,d.supplier.street,[d.supplier.city,d.supplier.state,d.supplier.zip].filter(Boolean).join(', '),d.supplier.email].filter(Boolean).join('<br>');
+    const itemRows = d.lineItems.map(i=>`<tr><td>${escHtml(i.description)}</td><td align="right">${i.qty}</td><td>${escHtml(i.unit)}</td><td align="right">${fmt(i.rate)}</td><td align="right">${fmt(i.qty*i.rate)}</td></tr>`).join('');
+    const html = `<html><head><meta charset="utf-8"><title>PO ${escHtml(d.order.poNumber)}</title></head><body><h1>PURCHASE ORDER</h1><hr><table width="100%"><tr><td><b>From (Buyer)</b><br>${buyerBlock}</td><td><b>Order Details</b><br>PO #: ${escHtml(d.order.poNumber)}<br>Date: ${d.order.date?fmtDate(d.order.date):''}<br>Required by: ${d.order.requiredBy?fmtDate(d.order.requiredBy):''}<br>Terms: ${escHtml(d.order.terms)}<br>Ship via: ${escHtml(d.order.shipping)}</td></tr><tr><td><b>To (Supplier)</b><br>${supBlock}</td><td><b>Deliver To</b><br>${d.delivery.map(l=>escHtml(l)).join('<br>')}</td></tr></table><br><table border="1" cellpadding="6" cellspacing="0" width="100%"><tr bgcolor="#EBF0F4"><th align="left">Description</th><th align="right">Qty</th><th>Unit</th><th align="right">Unit price</th><th align="right">Amount</th></tr>${itemRows}</table><br><table align="right"><tr><td align="right"><b>Subtotal:</b></td><td align="right">${fmt(d.subtotal)}</td></tr><tr><td align="right"><b>${escHtml(LOCALE.taxLabel)} (${d.taxRate}%):</b></td><td align="right">${fmt(d.tax)}</td></tr><tr><td align="right"><b>Total:</b></td><td align="right"><b>${fmt(d.total)}</b></td></tr></table><br clear="all">${d.notes?`<p><b>Notes:</b><br>${escHtml(d.notes)}</p>`:''} ${d.termsText?`<p><b>Terms:</b><br>${escHtml(d.termsText)}</p>`:''}</body></html>`;
+    triggerDownload('data:application/vnd.ms-word;charset=utf-8,'+encodeURIComponent(html),`purchase-order-${d.order.poNumber}.doc`);
+  }
+
+  function downloadExcel() {
+    const d = buildDocument();
+    const rows = [['PURCHASE ORDER'],['PO Number',d.order.poNumber],['Date',d.order.date?fmtDate(d.order.date):''],['Required By',d.order.requiredBy?fmtDate(d.order.requiredBy):''],['Terms',d.order.terms],['Ship Via',d.order.shipping],[],['BUYER'],['Name',d.buyer.name],['Address',[d.buyer.street,d.buyer.city,d.buyer.state,d.buyer.zip].filter(Boolean).join(', ')],['Email',d.buyer.email],['Phone',d.buyer.phone],[],['SUPPLIER'],['Name',d.supplier.name],['Contact',d.supplier.contact],['Address',[d.supplier.street,d.supplier.city,d.supplier.state,d.supplier.zip].filter(Boolean).join(', ')],['Email',d.supplier.email],[],['DELIVER TO',d.delivery.join(', ')],[],['Description','Qty','Unit','Unit Price','Amount'],...d.lineItems.map(i=>[i.description,i.qty,i.unit,i.rate,i.qty*i.rate]),[],['Subtotal','','','',d.subtotal],[`${LOCALE.taxLabel} (${d.taxRate}%)`,'','','',d.tax],['Total','','','',d.total],[],['Notes',d.notes],['Terms',d.termsText]];
+    const csv = rows.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    triggerDownload('data:application/vnd.ms-excel;charset=utf-8,'+encodeURIComponent(csv),`purchase-order-${d.order.poNumber}.xls`);
+  }
+
+  function downloadCSV() {
+    const d = buildDocument();
+    const rows = [['Description','Qty','Unit','Unit Price','Amount'],...d.lineItems.map(i=>[i.description,i.qty,i.unit,i.rate,i.qty*i.rate]),[],['','','','Subtotal',d.subtotal],['','','',`${LOCALE.taxLabel} (${d.taxRate}%)`,d.tax],['','','','Total',d.total]];
+    const csv = rows.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    triggerDownload('data:text/csv;charset=utf-8,'+encodeURIComponent(csv),`purchase-order-${d.order.poNumber}.csv`);
+  }
+
+  function downloadHTML() {
+    const d = buildDocument();
+    const docHTML = document.getElementById('invDoc').innerHTML;
+    const fullHTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Purchase Order ${escHtml(d.order.poNumber)}</title><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>body{font-family:'Plus Jakarta Sans',sans-serif;color:#1B3A4B;padding:40px;max-width:800px;margin:0 auto}.inv-doc{background:#fff;border:1px solid #C2CDD6;border-radius:4px;padding:28px;font-size:0.78rem;color:#1B3A4B;line-height:1.5}.inv-doc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}.inv-doc-logo{max-height:52px;max-width:140px;object-fit:contain}.inv-doc-logo-placeholder{width:100px;height:40px;border:1.5px dashed #C2CDD6;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:0.65rem;color:#C2CDD6}.inv-doc-heading{font-size:1.3rem;font-weight:800;color:#1B3A4B;letter-spacing:0.04em;text-align:right}.inv-doc-divider{border:none;border-top:2px solid #1B3A4B;margin:12px 0 14px}.inv-doc-meta{display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;margin-bottom:14px}.inv-doc-meta-block{display:flex;flex-direction:column;gap:2px}.inv-doc-meta-heading{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#4A6070;margin-bottom:3px}.inv-doc-meta-name{font-weight:700;font-size:0.82rem;color:#1B3A4B}.inv-doc-meta-line{color:#4A6070;font-size:0.75rem}.inv-doc-order-row td{padding:1px 0;color:#4A6070}.inv-doc-order-row td:first-child{font-weight:600;color:#1B3A4B;padding-right:8px;white-space:nowrap}.inv-doc-items{width:100%;border-collapse:collapse;margin-bottom:10px}.inv-doc-items th{background:#EBF0F4;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#4A6070;padding:6px 8px;text-align:left;border-bottom:1px solid #C2CDD6}.inv-doc-items th.r,.inv-doc-items td.r{text-align:right}.inv-doc-items td{padding:5px 8px;border-bottom:1px solid #EEF1F4;font-size:0.73rem;color:#1B3A4B}.inv-doc-totals{display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-bottom:14px}.inv-doc-total-row{display:flex;justify-content:flex-end;gap:20px;font-size:0.75rem;min-width:200px}.inv-doc-total-row .lbl{color:#4A6070;font-weight:500;min-width:100px;text-align:right}.inv-doc-total-row .val{font-weight:600;min-width:80px;text-align:right;color:#1B3A4B}.inv-doc-total-row.grand{font-size:0.85rem;border-top:1.5px solid #1B3A4B;padding-top:5px;margin-top:2px;font-weight:800;color:#1B3A4B}.inv-doc-notes-section{margin-top:10px;font-size:0.73rem}.inv-doc-notes-heading{font-weight:700;color:#1B3A4B;margin-bottom:2px}.inv-doc-notes-text{color:#4A6070;white-space:pre-wrap}</style></head><body><div class="inv-doc">${docHTML}</div></body></html>`;
+    triggerDownload('data:text/html;charset=utf-8,'+encodeURIComponent(fullHTML),`purchase-order-${d.order.poNumber}.html`);
+  }
+
+  function triggerDownload(href, filename) {
+    const a = document.createElement('a');
+    a.href = href; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+
+  function init() {
+    document.getElementById('orderDate').value = new Date().toISOString().split('T')[0];
+    addItem();
+  }
+
+  init();
+</script>
