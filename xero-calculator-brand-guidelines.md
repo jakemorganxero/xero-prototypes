@@ -368,6 +368,25 @@ When Claude Code creates a new prototype:
 - Button: *"Calculate your [tool name]"* / Reset link: *"Reset"*
 - Disclaimer footnote: `*This calculator provides estimates only and is not financial advice.`
 
+### Pattern B hero copy pattern (confirmed against xero.com)
+
+Use this structure for the left-column copy in Pattern B hero calculators:
+
+- **H1:** *"Xero's free [tool name]"* — possessive, no subtitle needed
+- **Body:** Action-led, 2–3 sentences. Lead with the outcome ("Nail your numbers every time…"), explain what it does, end with a trust signal ("no downloads required").
+- **Bullets:** 3 tick-mark bullets (✓), plain navy, no icon circles. Phrase as actions: *"Calculate the GST to add to your prices"* not *"Add GST to a price"*
+
+Example (NZ GST):
+```
+H1:   Xero's free GST calculator
+Body: Nail your numbers every time with Xero's goods and services tax (GST)
+      calculator. Get fast, accurate GST figures for your invoices and
+      expenses – no downloads required.
+✓ Apply the right GST rate instantly
+✓ Calculate the GST to add to your prices
+✓ Calculate the GST to claim on your expenses
+```
+
 ---
 
 ## How to request a new prototype
