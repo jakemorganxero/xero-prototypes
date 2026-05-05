@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xero Prototype Library</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy:       #1B3A4B;
+      --blue:       #13B5EA;
+      --blue-dark:  #0D8FBD;
+      --panel-bg:   #EBF0F4;
+      --border:     #C2CDD6;
+      --text-muted: #4A6070;
+      --green:      #1AB394;
+      --font:       'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      color: var(--navy);
+      background: #f7f9fb;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Header */
+    .header {
+      background: var(--navy);
+      padding: 32px 5%;
+    }
+
+    .header__inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .header__logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header__logo-mark {
+      width: 36px;
+      height: 36px;
+      background: var(--blue);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .header__title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .header__subtitle {
+      font-size: 0.8125rem;
+      color: rgba(255,255,255,0.6);
+      margin-top: 2px;
+    }
+
+    .header__badge {
+      background: rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.8);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 20px;
+    }
+
+    /* Main */
+    .main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 48px 5%;
+    }
+
+    /* Filter bar */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+      align-items: center;
+    }
+
+    .filter-bar__label {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-right: 4px;
+    }
+
+    .filter-btn {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--navy);
+      font-family: var(--font);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .filter-btn:hover { border-color: var(--navy); }
+    .filter-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+    /* Section */
+    .section { margin-bottom: 48px; }
+
+    .section__header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .section__icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9375rem;
+      flex-shrink: 0;
+    }
+
+    .section__icon--calc { background: #e8f7fd; }
+    .section__icon--gen  { background: #e8f7f0; }
+
+    .section__title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    .section__count {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--panel-bg);
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    /* Grid */
+    .tool-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    /* Card */
+    .tool-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+
+    .tool-card:hover {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      border-color: #a0b4c0;
+    }
+
+    .tool-card__head {
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--panel-bg);
+    }
+
+    .tool-card__name {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 4px;
+    }
+
+    .tool-card__type {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+    }
+
+    .tool-card__type--calc { color: var(--blue-dark); }
+    .tool-card__type--gen  { color: var(--green); }
+
+    .tool-card__locales {
+      padding: 12px 20px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .locale-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--navy);
+      text-decoration: none;
+      background: var(--panel-bg);
+      padding: 5px 10px;
+      border-radius: 4px;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .locale-link:hover {
+      background: var(--blue);
+      color: #fff;
+    }
+
+    .locale-link__flag {
+      font-size: 0.875rem;
+    }
+
+    /* Variant tag */
+    .tool-card__variants {
+      padding: 0 20px 12px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .variant-tag {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: #f0f4f7;
+      padding: 2px 8px;
+      border-radius: 3px;
+    }
+
+    /* Stats bar */
+    .stats {
+      display: flex;
+      gap: 32px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 28px;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+    }
+
+    .stat { }
+    .stat__value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--navy);
+      line-height: 1;
+    }
+    .stat__label {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Hidden for filter */
+    .tool-card.hidden { display: none; }
+
+    @media (max-width: 600px) {
+      .stats { gap: 20px; }
+      .stat__value { font-size: 1.375rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header__inner">
+    <div class="header__logo">
+      <div class="header__logo-mark">X</div>
+      <div>
+        <div class="header__title">Xero Prototype Library</div>
+        <div class="header__subtitle">Calculators & Generators — AEM-ready HTML specs</div>
+      </div>
+    </div>
+    <div class="header__badge">Q1 FY27</div>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat__value">61</div>
+      <div class="stat__label">Total prototypes</div>
+    </div>
+    <div class="stat">
+      <div class="stat__value">10</div>
+      <div class="stat__label">Calculator tools</div>
+    </div>
+    <div class="stat">
+      <div class="stat__value">7</div>
+      <div class="stat__label">Generator tools</div>
+    </div>
+    <div class="stat">
+      <div class="stat__value">4</div>
+      <div class="stat__label">Locales (AU/NZ/US/UK)</div>
+    </div>
+  </div>
+
+  <!-- Filter -->
+  <div class="filter-bar">
+    <span class="filter-bar__label">Show:</span>
+    <button class="filter-btn active" onclick="filter('all')">All</button>
+    <button class="filter-btn" onclick="filter('calculator')">Calculators</button>
+    <button class="filter-btn" onclick="filter('generator')">Generators</button>
+    <button class="filter-btn" onclick="filter('au')">AU</button>
+    <button class="filter-btn" onclick="filter('nz')">NZ</button>
+    <button class="filter-btn" onclick="filter('us')">US</button>
+    <button class="filter-btn" onclick="filter('uk')">UK</button>
+  </div>
+
+  <!-- Calculators -->
+  <div class="section" id="section-calculators">
+    <div class="section__header">
+      <div class="section__icon section__icon--calc">🧮</div>
+      <div class="section__title">Calculators</div>
+      <div class="section__count">10 tools</div>
+    </div>
+    <div class="tool-grid">
+
+      <div class="tool-card" data-type="calculator" data-locales="au nz">
+        <div class="tool-card__head">
+          <div class="tool-card__type tool-card__type--calc">Calculator</div>
+          <div class="tool-card__name">GST Calculator</div>
+        </div>
+        <div class="tool-card__locales">
+          <a class="locale-link" href="calcs-generators/xero-gst-calculator-au-hero.html" target="_blank"><span class="locale-link__flag">🇦🇺</span> AU</a>
+          <a class="locale-link" href="calcs-generators/xero-gst-calculator-nz-hero.html" target="_blank"><span class="locale-link__flag">🇳🇿</span> NZ</a>
+        </div>
+        <div class="tool-card__variants">
+          <span class="variant-tag">NZ Wide</span>
+          <a class="locale-link" style="font-size:0.75rem;padding:3px 8px;" href="calcs-generators/xero-gst-calculator-nz-hero-wide.html" target="_blank">Wide</a>
+          <a class="locale-link" style="font-size:0.75rem;padding:3px 8px;" href="calcs-generators/xero-gst-calculator-nz-card.html" target="_blank">Card</a>
+        </div>
+      </div>
+
+      <div class="tool-card" data-type="calculator" data-locales="uk">
+        <div class="tool-card__head">
+          <div class="tool-card__type tool-card__type--calc">Calculator</div>
+          <div class="tool-card__name">VAT Calculator</div>
+        </div>
+        <div class="tool-card__locales">
+          <a class="locale-link" href="calcs-generators/xero-vat-calculator-uk-hero.html" target="_blank"><span class="locale-link__flag">🇬🇧</span> UK</a>
+        </div>
+      </div>
+
+      <div class="tool-card" data-type="calculator" data-locales="us">
+        <div class="tool-card__head">
+          <div class="tool-card__type tool-card__type--calc">Calculator</div>
+          <div class="tool-card__name">Sales Tax Calculator</div>
+        </div>
+        <div class="tool-card__locales">
+          <a class="locale-link" href="calcs-generators/xero-sales-tax-calculator-us-hero.html" target="_blank"><span class="locale-link__flag">🇺🇸</span> US</a>
+        </div>
+        <div class="tool-card__variants">
+          <span class="variant-tag">Address-based state detection · Avalara-ready</span>
+        </div>
+      </div>
+
+      <div class="tool-card" data-type="calculator" data-locales="au nz uk">
+        <div class="tool-card__head">
+          <div class="tool-card__type tool-card__type--calc">Calculator</div>
+          <div class="tool-card__name">Income Tax Calculator</div>
+        </div>
+        <div class="tool-card__locales">
+          <a class="locale-link" href="calcs-generators/xero-income-tax-calculator-au.html" target="_blank"><span class="locale-link__flag">🇦🇺</span> AU</a>
+          <a class="locale-link" href="calcs-generators/xero-income-tax-calculator-nz.html" target="_blank"><span class="locale-link__flag">🇳🇿</span> NZ</a>
+          <a class="locale-link" href="calcs-generators/xero-income-tax-calculator-uk-hero.html" target="_blank"><span class="locale-link__flag">🇬🇧</span> UK</a>
+        </div>
+        <div class="tool-card__variants">
+          <span class="variant-tag">AU/NZ: Pattern A · UK: Pattern B hero</span>
+        </div>
+      </div>
+
+      <div class="tool-card" data-type="calculator" data-locales="au nz us uk">
+        <div class="tool-card__head">
+          <div class="tool-card__type tool-card__type--calc">Calculator</div>
+          <div class="tool-card__name">Markup Calculator</div>
+        </div>
+        <div class="tool-card__locales">
+          <a class="locale-link" href="calcs-generators/xero-markup-calculator-au-hero.html" target="_blank"><span class="locale-link__flag">🇦🇺</span> AU</a>
+          <a class="locale-link" href="calcs-generators/xero-markup-calculator-nz-hero.html" target="_blank"><span class="locale-link__flag">🇳🇿</span> NZ</a>
+          <a class="locale-link" href="calcs-generators/xero-markup-calculator-us-hero.html" target="_blank"><span class="locale-link__flag">🇺🇸</span> US</a>
+          <a class="locale-link" href="calcs-generators/xero-markup-calculator-uk-hero.html" target="_blank"><span class="locale-link__flag">🇬🇧</span> UK</a>
+        </div>
+      </div>
+
+      <div class="tool-card" data-type="calculator" data-locales="au nz us uk">
+        <div class="tool-card__head">
+          <div class="tool-card__type tool-card__type--calc">Calculator</div>
+          <div class="tool-card__name">Net Profit Margin Calculator</div>
+        </div>
+        <div class="tool-card__locales">
+          <a class="locale-link" href="calcs-generators/xero-net-profit-margin-calculator-au-hero.html" target="_blank"><span class="locale-link__flag">🇦🇺</span> AU</a>
+          <a class="locale-link" href="calcs-generators/xero-net-profit-margin-calculator-nz-hero.html" target="_blank"><span class="locale-link__flag">🇳🇿</span> NZ</a>
+          <a class="locale-link" href="calcs-generators/xero-net-profit-margin-calculator-us-hero.html" target="_blank"><span class="locale-link__flag">🇺🇸</span> US</a>
+          <a class="locale-link" href="calcs-generators/xero-net-profit-margin-calculator-uk-hero.html" target="_blank"><span class="locale-link__flag">🇬🇧</span> UK</a>
+        </div>
+      </div>
+
+      <div class="tool-card" data-type="calculator" data-locales="au nz us uk">
+        <div class="tool-card__head">
+          <div class="tool-card__type tool-card__type--calc">Calculator</div>
+          <div class="tool-card__name">Gross Margin Calculator</div>
+        </div>
+        <div class="tool-card__locales">
+          <a class="locale-link" href="calcs-generators/xero-gross-margin-calculator-au-hero.html" target="_blank"><span class="locale-link__flag">🇦🇺</span> AU</a>
+          <a class="locale-link" href="calcs-generators/xero-gross-margin-calculator-nz-hero.html" target="_blank"><span class="locale-link__flag">🇳🇿</span> NZ</a>
+          <a class="locale-link" href="calcs-generators/xero-gross-margin-calculator-us-hero.html" target="_blank"><span class="locale-link__flag">🇺🇸</span> US</a>
+          <a class="locale-link" href="calcs-generators/xero-gross-margin-calculator-uk-hero.html" target="_blank"><span class="locale-link__flag">🇬🇧</span> UK</a>
+        </div>
+      </div>
+
+      <div class="tool-card" data-type="calculator" data-locales="au nz us uk">
+        <div class="tool-card__head">
+          <div class="tool-card__type tool-card__type--calc">Calculator</div>
+          <div class="tool-card__name">Business Loan Calculator</div>
+        </div>
+        <div class="tool-card__locales">
+          <a class="locale-link" href="calcs-generators/xero-business-loan-calculator-au-hero.html" target="_blank"><span class="locale-link__flag">🇦🇺</span> AU</a>
+          <a class="locale-link" href="calcs-generators/xero-business-loan-calculator-nz-hero.html" target="_blank"><span class="locale-link__flag">🇳🇿</span> NZ</a>
+          <a class="locale-link" href="calcs-generators/xero-business-loan-calculator-us-hero.html" target="_blank"><span class="locale-link__flag">🇺🇸</span> US</a>
+          <a class="locale-link" href="calcs-generators/xero-business-loan-calculator-uk-hero.html" target="_blank"><span class="locale-link__flag">🇬🇧</span> UK</a>
+        </div>
+      </div>
+
+      <div class="tool-card" data-type="calculator" data-locales="au nz us uk">
+        <div class="tool-card__head">
+          <div class="tool-card__type tool-card__type--calc">Calculator</div>
+          <div class="tool-card__name">Depreciation Calculator</div>
+        </div>
+        <div class="tool-card__locales">
+          <a class="locale-link" href="calcs-generators/xero-depreciation-calculator-au-hero.html" target="_blank"><span class="locale-link__flag">🇦🇺</span> AU</a>
+          <a class="locale-link" href="calcs-generators/xero-depreciation-calculator-nz-hero.html" target="_blank"><span class="locale-link__flag">🇳🇿</span> NZ</a>
+          <a class="locale-link" href="calcs-generators/xero-depreciation-calculator-us-hero.html" target="_blank"><span class="locale-link__flag">🇺🇸</span> US</a>
+          <a class="locale-link" href="calcs-generators/xero-depreciation-calculator-uk-hero.html" target="_blank"><span class="locale-link__flag">🇬🇧</span> UK</a>
+        </div>
+        <div class="tool-card__variants">
+          <span class="variant-tag">Live schedule table · CSV download</span>
+        </div>
+      </div>
+
+      <div class="tool-card" data-type="calculator" data-locales="au nz us uk">
+        <div class="tool-card__head">
+          <div class="tool-card__type tool-card__type--calc">Calculator</div>
+          <div class="tool-card__name">Timesheet Calculator</div>
+        </div>
+        <div class="tool-card__locales">
+          <a class="locale-link" href="calcs-generators/xero-timesheet-calculator-au-hero.html" target="_blank"><span class="locale-link__flag">🇦🇺</span> AU</a>
+          <a class="locale-link" href="calcs-generators/xero-timesheet-calculator-nz-hero.html" target="_blank"><span class="locale-link__flag">🇳🇿</span> NZ</a>
+          <a class="locale-link" href="calcs-generators/xero-timesheet-calculator-us-hero.html" target="_blank"><span class="locale-link__flag">🇺🇸</span> US</a>
+          <a class="locale-link" href="calcs-generators/xero-timesheet-calculator-uk-hero.html" target="_blank"><span class="locale-link__flag">🇬🇧</span> UK</a>
+        </div>
+        <div class="tool-card__variants">
+          <span class="variant-tag">Inline time-entry · OT threshold · CSV download</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Generators -->
+  <div class="section" id="section-generators">
+    <div class="section__header">
+      <div class="section__icon section__icon--gen">📄</div>
+      <div class="section__title">Generators</div>
+      <div class="section__count">7 tools</div>
+    </div>
+    <div class="tool-grid">
+
+      <div class="tool-card" data-type="generator" data-locales="au nz us uk">
+        <div class="tool-card__head">
+          <div class="tool-card__type tool-card__type--gen">Generator</div>
+          <div class="tool-card__name">Invoice Generator</div>
+        </div>
+        <div class="tool-card__locales">
+          <a class="locale-link" href="calcs-generators/xero-invoice-generator-au.html" target="_blank"><span class="locale-link__flag">🇦🇺</span> AU</a>
+          <a class="locale-link" href="calcs-generators/xero-invoice-generator-nz.html" target="_blank"><span class="locale-link__flag">🇳🇿</span> NZ</a>
+          <a class="locale-link" href="calcs-generators/xero-invoice-generator-us.html" target="_blank"><span class="locale-link__flag">🇺🇸</span> US</a>
+          <a class="locale-link" href="calcs-generators/xero-invoice-generator-uk.html" target="_blank"><span class="locale-link__flag">🇬🇧</span> UK</a>
+        </div>
+        <div class="tool-card__variants">
+          <a class="locale-link" style="font-size:0.75rem;padding:3px 8px;" href="calcs-generators/xero-invoice-generator-us-preview.html" target="_blank">US Preview variant</a>
+        </div>
+      </div>
+
+      <div class="tool-card" data-type="generator" data-locales="au nz us uk">
+        <div class="tool-card__head">
+          <div class="tool-card__type tool-card__type--gen">Generator</div>
+          <div class="tool-card__name">Quote Generator</div>
+        </div>
+        <div class="tool-card__locales">
+          <a class="locale-link" href="calcs-generators/xero-quote-generator-au.html" target="_blank"><span class="locale-link__flag">🇦🇺</span> AU</a>
+          <a class="locale-link" href="calcs-generators/xero-quote-generator-nz.html" target="_blank"><span class="locale-link__flag">🇳🇿</span> NZ</a>
+          <a class="locale-link" href="calcs-generators/xero-quote-generator-us.html" target="_blank"><span class="locale-link__flag">🇺🇸</span> US</a>
+          <a class="locale-link" href="calcs-generators/xero-quote-generator-uk.html" target="_blank"><span class="locale-link__flag">🇬🇧</span> UK</a>
+        </div>
+      </div>
+
+      <div class="tool-card" data-type="generator" data-locales="au nz us uk">
+        <div class="tool-card__head">
+          <div class="tool-card__type tool-card__type--gen">Generator</div>
+          <div class="tool-card__name">Receipt Generator</div>
+        </div>
+        <div class="tool-card__locales">
+          <a class="locale-link" href="calcs-generators/xero-receipt-generator-au.html" target="_blank"><span class="locale-link__flag">🇦🇺</span> AU</a>
+          <a class="locale-link" href="calcs-generators/xero-receipt-generator-nz.html" target="_blank"><span class="locale-link__flag">🇳🇿</span> NZ</a>
+          <a class="locale-link" href="calcs-generators/xero-receipt-generator-us.html" target="_blank"><span class="locale-link__flag">🇺🇸</span> US</a>
+          <a class="locale-link" href="calcs-generators/xero-receipt-generator-uk.html" target="_blank"><span class="locale-link__flag">🇬🇧</span> UK</a>
+        </div>
+      </div>
+
+      <div class="tool-card" data-type="generator" data-locales="au nz us uk">
+        <div class="tool-card__head">
+          <div class="tool-card__type tool-card__type--gen">Generator</div>
+          <div class="tool-card__name">Purchase Order Generator</div>
+        </div>
+        <div class="tool-card__locales">
+          <a class="locale-link" href="calcs-generators/xero-purchase-order-generator-au.html" target="_blank"><span class="locale-link__flag">🇦🇺</span> AU</a>
+          <a class="locale-link" href="calcs-generators/xero-purchase-order-generator-nz.html" target="_blank"><span class="locale-link__flag">🇳🇿</span> NZ</a>
+          <a class="locale-link" href="calcs-generators/xero-purchase-order-generator-us.html" target="_blank"><span class="locale-link__flag">🇺🇸</span> US</a>
+          <a class="locale-link" href="calcs-generators/xero-purchase-order-generator-uk.html" target="_blank"><span class="locale-link__flag">🇬🇧</span> UK</a>
+        </div>
+      </div>
+
+      <div class="tool-card" data-type="generator" data-locales="au nz us uk">
+        <div class="tool-card__head">
+          <div class="tool-card__type tool-card__type--gen">Generator</div>
+          <div class="tool-card__name">Payslip / Pay Stub Generator</div>
+        </div>
+        <div class="tool-card__locales">
+          <a class="locale-link" href="calcs-generators/xero-payslip-generator-au.html" target="_blank"><span class="locale-link__flag">🇦🇺</span> AU</a>
+          <a class="locale-link" href="calcs-generators/xero-payslip-generator-nz.html" target="_blank"><span class="locale-link__flag">🇳🇿</span> NZ</a>
+          <a class="locale-link" href="calcs-generators/xero-pay-stub-generator-us.html" target="_blank"><span class="locale-link__flag">🇺🇸</span> US</a>
+          <a class="locale-link" href="calcs-generators/xero-payslip-generator-uk.html" target="_blank"><span class="locale-link__flag">🇬🇧</span> UK</a>
+        </div>
+      </div>
+
+      <div class="tool-card" data-type="generator" data-locales="au nz us uk">
+        <div class="tool-card__head">
+          <div class="tool-card__type tool-card__type--gen">Generator</div>
+          <div class="tool-card__name">Expense Report Generator</div>
+        </div>
+        <div class="tool-card__locales">
+          <a class="locale-link" href="calcs-generators/xero-expense-report-generator-au.html" target="_blank"><span class="locale-link__flag">🇦🇺</span> AU</a>
+          <a class="locale-link" href="calcs-generators/xero-expense-report-generator-nz.html" target="_blank"><span class="locale-link__flag">🇳🇿</span> NZ</a>
+          <a class="locale-link" href="calcs-generators/xero-expense-report-generator-us.html" target="_blank"><span class="locale-link__flag">🇺🇸</span> US</a>
+          <a class="locale-link" href="calcs-generators/xero-expense-report-generator-uk.html" target="_blank"><span class="locale-link__flag">🇬🇧</span> UK</a>
+        </div>
+      </div>
+
+      <div class="tool-card" data-type="generator" data-locales="au nz us uk">
+        <div class="tool-card__head">
+          <div class="tool-card__type tool-card__type--gen">Generator</div>
+          <div class="tool-card__name">Timesheet Generator</div>
+        </div>
+        <div class="tool-card__locales">
+          <a class="locale-link" href="calcs-generators/xero-timesheet-generator-au.html" target="_blank"><span class="locale-link__flag">🇦🇺</span> AU</a>
+          <a class="locale-link" href="calcs-generators/xero-timesheet-generator-nz.html" target="_blank"><span class="locale-link__flag">🇳🇿</span> NZ</a>
+          <a class="locale-link" href="calcs-generators/xero-timesheet-generator-us.html" target="_blank"><span class="locale-link__flag">🇺🇸</span> US</a>
+          <a class="locale-link" href="calcs-generators/xero-timesheet-generator-uk.html" target="_blank"><span class="locale-link__flag">🇬🇧</span> UK</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<script>
+  function filter(val) {
+    // Update buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    // Filter cards
+    document.querySelectorAll('.tool-card').forEach(card => {
+      if (val === 'all') {
+        card.classList.remove('hidden');
+      } else if (val === 'calculator' || val === 'generator') {
+        card.classList.toggle('hidden', card.dataset.type !== val);
+      } else {
+        card.classList.toggle('hidden', !card.dataset.locales.includes(val));
+      }
+    });
+  }
+</script>
+
+</body>
+</html>
