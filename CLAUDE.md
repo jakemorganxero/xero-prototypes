@@ -1,11 +1,16 @@
-# Xero Calculator & Template Prototyping
+# Xero Calculator, Template & Data Viz Prototyping
 
-You are helping prototype calculator and template tools for embedding on xero.com — specifically under `/calculators/` and `/templates/` pages. These are used by the Xero marketing team and handed off to the dev team for production implementation.
+You are helping prototype calculator, template, and data visualisation tools for embedding on xero.com — specifically under `/calculators/`, `/templates/`, and data/insights pages. These are used by the Xero marketing team and handed off to the dev team for production implementation.
 
 ## Before you build anything
 
-1. Read `xero-calculator-brand-guidelines.md` — it has exact colours, fonts, layout patterns, and component CSS
-2. Use `xero-calculator-template.html` as your starting point — replace the placeholder sections, don't rebuild from scratch
+**Calculators / generators:**
+1. Read `xero-calculator-brand-guidelines.md` — exact colours, fonts, layout patterns, and component CSS
+2. Use `xero-calculator-template.html` as your starting point
+
+**Data visualisations / charts:**
+1. Read `xero-dataviz-brand-guidelines.md` — chart colours, Chart.js config, stat card/range pill components, all three layout patterns
+2. Use `xero-dataviz-template.html` as your starting point
 
 ## Output rules
 
@@ -100,9 +105,21 @@ Add this HTML comment near the top of every prototype, filled in:
 
 ```
 xero-prototypes/
-├── CLAUDE.md                        ← this file
-├── xero-calculator-brand-guidelines.md
-├── xero-calculator-template.html
+├── CLAUDE.md                              ← this file
+├── xero-calculator-brand-guidelines.md    ← calc/generator design system
+├── xero-calculator-template.html          ← calc/generator starter
+├── xero-dataviz-brand-guidelines.md       ← chart/data viz design system
+├── xero-dataviz-template.html             ← chart/data viz starter
 └── prototypes/
     └── xero-[tool-name]-[locale].html
 ```
+
+## Data viz layout patterns — ask if not specified
+
+Three patterns (documented in full in `xero-dataviz-brand-guidelines.md`):
+
+- **Pattern 1 — Full section**: header copy + eyebrow + meta badges + stat selector cards + chart. Default for standalone data index pages.
+- **Pattern 2 — Chart only**: no header, starts at stat cards. Drop into an AEM editorial section alongside existing copy.
+- **Pattern 3 — Compact cards**: single-metric mini-cards, 120px chart, delta badge. For sidebars, dashboards, or AEM column grids.
+
+Uses Chart.js 4.x from cdnjs. Data embedded inline as JS arrays for prototypes; note where the API call goes in production.
