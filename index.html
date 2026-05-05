@@ -146,6 +146,7 @@
 
     .section__icon--calc { background: #e8f7fd; }
     .section__icon--gen  { background: #e8f7f0; }
+    .section__icon--viz  { background: #f0edfb; }
 
     .section__title {
       font-size: 1.125rem;
@@ -205,6 +206,7 @@
 
     .tool-card__type--calc { color: var(--blue-dark); }
     .tool-card__type--gen  { color: var(--green); }
+    .tool-card__type--viz  { color: #7c5cbf; }
 
     .tool-card__locales {
       padding: 12px 20px;
@@ -295,7 +297,7 @@
       <div class="header__logo-mark">X</div>
       <div>
         <div class="header__title">Xero Prototype Library</div>
-        <div class="header__subtitle">Calculators & Generators — AEM-ready HTML specs</div>
+        <div class="header__subtitle">Calculators, Generators & Data Visualisations — AEM-ready HTML specs</div>
       </div>
     </div>
     <div class="header__badge">Q1 FY27</div>
@@ -307,7 +309,7 @@
   <!-- Stats -->
   <div class="stats">
     <div class="stat">
-      <div class="stat__value">61</div>
+      <div class="stat__value">70</div>
       <div class="stat__label">Total prototypes</div>
     </div>
     <div class="stat">
@@ -317,6 +319,10 @@
     <div class="stat">
       <div class="stat__value">7</div>
       <div class="stat__label">Generator tools</div>
+    </div>
+    <div class="stat">
+      <div class="stat__value">9</div>
+      <div class="stat__label">Data viz prototypes</div>
     </div>
     <div class="stat">
       <div class="stat__value">4</div>
@@ -330,6 +336,7 @@
     <button class="filter-btn active" onclick="filter('all')">All</button>
     <button class="filter-btn" onclick="filter('calculator')">Calculators</button>
     <button class="filter-btn" onclick="filter('generator')">Generators</button>
+    <button class="filter-btn" onclick="filter('dataviz')">Data Viz</button>
     <button class="filter-btn" onclick="filter('au')">AU</button>
     <button class="filter-btn" onclick="filter('nz')">NZ</button>
     <button class="filter-btn" onclick="filter('us')">US</button>
@@ -592,19 +599,86 @@
     </div>
   </div>
 
+  <!-- Data Visualisations -->
+  <div class="section" id="section-dataviz">
+    <div class="section__header">
+      <div class="section__icon section__icon--viz">📊</div>
+      <div class="section__title">Data Visualisations</div>
+      <div class="section__count">9 prototypes</div>
+    </div>
+    <div class="tool-grid">
+
+      <div class="tool-card" data-type="dataviz" data-locales="us">
+        <div class="tool-card__head">
+          <div class="tool-card__type tool-card__type--viz">Data Viz · Full section</div>
+          <div class="tool-card__name">XSBI US — All Metrics Dashboard</div>
+        </div>
+        <div class="tool-card__locales">
+          <a class="locale-link" href="prototypes/xero-xsbi-data-us.html" target="_blank"><span class="locale-link__flag">🇺🇸</span> Full section</a>
+          <a class="locale-link" href="prototypes/xero-xsbi-data-us-chart-only.html" target="_blank">Chart only</a>
+          <a class="locale-link" href="prototypes/xero-xsbi-data-us-compact.html" target="_blank">Compact cards</a>
+        </div>
+        <div class="tool-card__variants">
+          <span class="variant-tag">Sales · Time to be paid · Late payments</span>
+        </div>
+      </div>
+
+      <div class="tool-card" data-type="dataviz" data-locales="us">
+        <div class="tool-card__head">
+          <div class="tool-card__type tool-card__type--viz">Data Viz · Standalone</div>
+          <div class="tool-card__name">XSBI US — Sales Growth</div>
+        </div>
+        <div class="tool-card__locales">
+          <a class="locale-link" href="prototypes/xero-xsbi-us-sales.html" target="_blank"><span class="locale-link__flag">🇺🇸</span> Full width</a>
+          <a class="locale-link" href="prototypes/xero-xsbi-us-sales-half.html" target="_blank">Half width</a>
+        </div>
+        <div class="tool-card__variants">
+          <span class="variant-tag">Year-over-year % · Jan 2017–Mar 2026</span>
+        </div>
+      </div>
+
+      <div class="tool-card" data-type="dataviz" data-locales="us">
+        <div class="tool-card__head">
+          <div class="tool-card__type tool-card__type--viz">Data Viz · Standalone</div>
+          <div class="tool-card__name">XSBI US — Time to be Paid</div>
+        </div>
+        <div class="tool-card__locales">
+          <a class="locale-link" href="prototypes/xero-xsbi-us-ttp.html" target="_blank"><span class="locale-link__flag">🇺🇸</span> Full width</a>
+          <a class="locale-link" href="prototypes/xero-xsbi-us-ttp-half.html" target="_blank">Half width</a>
+        </div>
+        <div class="tool-card__variants">
+          <span class="variant-tag">Days (seasonally adjusted) · Jan 2017–Mar 2026</span>
+        </div>
+      </div>
+
+      <div class="tool-card" data-type="dataviz" data-locales="us">
+        <div class="tool-card__head">
+          <div class="tool-card__type tool-card__type--viz">Data Viz · Standalone</div>
+          <div class="tool-card__name">XSBI US — Late Payments</div>
+        </div>
+        <div class="tool-card__locales">
+          <a class="locale-link" href="prototypes/xero-xsbi-us-late-payments.html" target="_blank"><span class="locale-link__flag">🇺🇸</span> Full width</a>
+          <a class="locale-link" href="prototypes/xero-xsbi-us-late-payments-half.html" target="_blank">Half width</a>
+        </div>
+        <div class="tool-card__variants">
+          <span class="variant-tag">Avg. overdue days (seasonally adjusted) · Jan 2017–Mar 2026</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
 </main>
 
 <script>
   function filter(val) {
-    // Update buttons
     document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
 
-    // Filter cards
     document.querySelectorAll('.tool-card').forEach(card => {
       if (val === 'all') {
         card.classList.remove('hidden');
-      } else if (val === 'calculator' || val === 'generator') {
+      } else if (['calculator', 'generator', 'dataviz'].includes(val)) {
         card.classList.toggle('hidden', card.dataset.type !== val);
       } else {
         card.classList.toggle('hidden', !card.dataset.locales.includes(val));
