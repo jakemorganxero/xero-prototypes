@@ -124,12 +124,12 @@ xero-prototypes/
 - **Repo:** https://github.com/jakemorganxero/xero-prototypes
 - **GitHub Pages:** https://jakemorganxero.github.io/xero-prototypes/
 - **Index page:** https://jakemorganxero.github.io/xero-prototypes/ (filterable by type + locale)
-- All prototype files live in `calcs-generators/` folder
+- Calculators/generators live in `calcs-generators/`; data viz live in `prototypes/`
 - Push with PAT token embedded in remote URL — token stored separately, ask user if expired
 - Work directly on `main` branch — no PR flow needed for this repo
 - After pushing, GitHub Pages rebuilds automatically (takes ~1–2 min to go live)
 
-## Current prototype library (61 files)
+## Current prototype library (70 files)
 
 ### Calculators (Pattern B hero, live calculation)
 | Tool | Locales |
@@ -196,7 +196,40 @@ This prototype library is part of Xero's Q1 FY27 US organic growth programme —
 Three patterns (documented in full in `xero-dataviz-brand-guidelines.md`):
 
 - **Pattern 1 — Full section**: header copy + eyebrow + meta badges + stat selector cards + chart. Default for standalone data index pages.
-- **Pattern 2 — Chart only**: no header, starts at stat cards. Drop into an AEM editorial section alongside existing copy.
-- **Pattern 3 — Compact cards**: single-metric mini-cards, 120px chart, delta badge. For sidebars, dashboards, or AEM column grids.
+- **Pattern 2 — Chart only**: no header, starts at stat cards. Drop into an AEM editorial section alongside existing copy. Also used for single-metric **standalone** embeds (full-width, 960px).
+- **Pattern 3 — Compact cards**: single-metric mini-cards, 150px chart, delta badge, 480px max-width. For sidebars, dashboards, AEM column grids, or **half-width** embeds beside editorial copy.
 
 Uses Chart.js 4.x from cdnjs. Data embedded inline as JS arrays for prototypes; note where the API call goes in production.
+
+### Existing XSBI US data viz files (`prototypes/`)
+
+Data source: Xero Small Business Insights, US national data, March 2026 release (Jan 2017–Mar 2026).
+Three metrics: Sales YoY %, Time to be paid (days, seasonally adjusted), Late payment days (seasonally adjusted).
+
+| File | Pattern | Description |
+|---|---|---|
+| `xero-xsbi-data-us.html` | 1 – Full section | All 3 metrics, stat selector cards, range pills |
+| `xero-xsbi-data-us-chart-only.html` | 2 – Chart only | No header, stat cards + chart — AEM embed |
+| `xero-xsbi-data-us-compact.html` | 3 – Compact | Three side-by-side mini-cards, one per metric |
+| `xero-xsbi-us-sales.html` | 2 – Standalone | Sales YoY only, full-width (960px) |
+| `xero-xsbi-us-sales-half.html` | 3 – Half-width | Sales only, 480px card — for 50% AEM column |
+| `xero-xsbi-us-ttp.html` | 2 – Standalone | Time to be paid only, full-width |
+| `xero-xsbi-us-ttp-half.html` | 3 – Half-width | Time to be paid, 480px card |
+| `xero-xsbi-us-late-payments.html` | 2 – Standalone | Late payments only, full-width |
+| `xero-xsbi-us-late-payments-half.html` | 3 – Half-width | Late payments, 480px card |
+
+All charts: COVID shading band Apr–Dec 2020, hover tooltips, 1Y/3Y/5Y/All range pills.
+Half-width files: x-axis tick labels hidden (too cramped), tooltip still shows month + value on hover.
+
+### When to use standalone vs multi-metric
+
+- **Multi-metric dashboard** (`xero-xsbi-data-us.html` variants): landing pages, XSBI hub, press/media pages
+- **Single-metric standalone** (full-width): embed on a related content page e.g. sales chart on a "growing your revenue" article
+- **Single-metric half-width**: embed beside editorial copy or an image in an AEM two-column layout
+
+### Updating the index page
+
+When adding new data viz prototypes, update `index.html`:
+1. Add a card to the Data Visualisations section (copy existing card structure, `data-type="dataviz"`)
+2. Update the total count in the stats bar
+3. Commit and push — GitHub Pages rebuilds in ~1–2 min
