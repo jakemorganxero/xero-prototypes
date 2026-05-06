@@ -15,8 +15,10 @@ You are helping prototype calculator, template, and data visualisation tools for
 ## Output rules
 
 - Every prototype is a **single self-contained HTML file** — all CSS and JS inline, no build step required
-- Save to the `prototypes/` folder
+- **Calculators / generators** → save to `calcs-generators/`
+- **Data viz** → save to `prototypes/`
 - Filename format: `xero-[tool-name]-[locale].html` e.g. `xero-gst-calculator-au.html`
+- Data viz naming: `xero-xsbi-[locale]-[metric].html`, append `-half` for half-width card variants
 - The tool must work as an **embeddable section**, not a full page — use `max-width: 960px`, no `<html>`/`<body>` styling that assumes full-page ownership
 - Test that calculate and reset both work before considering it done
 
@@ -106,13 +108,88 @@ Add this HTML comment near the top of every prototype, filled in:
 ```
 xero-prototypes/
 ├── CLAUDE.md                              ← this file
+├── index.html                             ← prototype library index (GitHub Pages homepage)
 ├── xero-calculator-brand-guidelines.md    ← calc/generator design system
 ├── xero-calculator-template.html          ← calc/generator starter
 ├── xero-dataviz-brand-guidelines.md       ← chart/data viz design system
 ├── xero-dataviz-template.html             ← chart/data viz starter
+├── calcs-generators/
+│   └── xero-[tool-name]-[locale].html
 └── prototypes/
-    └── xero-[tool-name]-[locale].html
+    └── xero-xsbi-[locale]-[metric].html   ← data viz files
 ```
+
+## GitHub / deployment
+
+- **Repo:** https://github.com/jakemorganxero/xero-prototypes
+- **GitHub Pages:** https://jakemorganxero.github.io/xero-prototypes/
+- **Index page:** https://jakemorganxero.github.io/xero-prototypes/ (filterable by type + locale)
+- All prototype files live in `calcs-generators/` folder
+- Push with PAT token embedded in remote URL — token stored separately, ask user if expired
+- Work directly on `main` branch — no PR flow needed for this repo
+- After pushing, GitHub Pages rebuilds automatically (takes ~1–2 min to go live)
+
+## Current prototype library (61 files)
+
+### Calculators (Pattern B hero, live calculation)
+| Tool | Locales |
+|---|---|
+| GST Calculator | AU, NZ |
+| VAT Calculator | UK |
+| Sales Tax Calculator | US (address-based state detection, Avalara-ready) |
+| Income Tax Calculator | AU, NZ (Pattern A), UK (Pattern B) |
+| Markup Calculator | AU, NZ, US, UK |
+| Net Profit Margin Calculator | AU, NZ, US, UK |
+| Gross Margin Calculator | AU, NZ, US, UK |
+| Business Loan Calculator | AU, NZ, US, UK (PMT formula, frequency options) |
+| Depreciation Calculator | AU, NZ, US, UK (live schedule table, straight-line + declining balance, CSV download) |
+| Timesheet Calculator | AU, NZ, US, UK (inline time-entry table, OT threshold, CSV download) |
+
+### Generators (two-column form + sticky live preview)
+| Tool | Locales |
+|---|---|
+| Invoice Generator | AU, NZ, US (preview variant), UK |
+| Quote Generator | AU, NZ, US, UK |
+| Receipt Generator | AU, NZ, US, UK |
+| Purchase Order Generator | AU, NZ, US, UK |
+| Payslip / Pay Stub Generator | AU, NZ, US, UK |
+| Expense Report Generator | AU, NZ, US, UK |
+| Timesheet Generator | AU, NZ, US, UK |
+
+## Key technical patterns
+
+### Generators
+- `lineItems[]` array as source of truth
+- `renderLineItems()` only on add/remove; `updateItem()` on keystroke
+- `buildDocument()` / `updatePreview()` for live preview
+- Downloads: PDF via `window.print()`, Word via HTML blob `.doc`, Excel via HTML table `.xls`, CSV
+
+### Calculators
+- PMT formula (business loan): `P × r(1+r)^n / ((1+r)^n - 1)`
+- Depreciation: straight-line `(cost-salvage)/life`, declining balance `opening × rate`
+- US state detection: regex on address input field → RATES object with 50 states + DC
+
+### Modified B layout (depreciation / timesheet calculators)
+```css
+.xero-hero__inner {
+  display: grid;
+  grid-template-columns: 480px 1fr; /* 400px 1fr for timesheet */
+  gap: 48px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+@media (max-width: 900px) {
+  .xero-hero__inner { grid-template-columns: 1fr; }
+}
+```
+
+## Strategic context
+
+This prototype library is part of Xero's Q1 FY27 US organic growth programme — closing the gap with QuickBooks on utilitarian content (templates, calculators, generators). Key points:
+- Existing Outgrow-powered calculators are being replaced with these native AEM-compatible prototypes
+- Native prototypes unlock generators as a net-new content type (Outgrow can't produce them)
+- AirOps automates content production at scale; prototypes are the dev-ready specs
+- Each tool concept → up to 4 publishable pages (AU/NZ/US/UK)
 
 ## Data viz layout patterns — ask if not specified
 
