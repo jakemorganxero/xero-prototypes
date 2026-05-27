@@ -129,7 +129,7 @@
     }
 
     .xero-input--plain {
-      border: 1px solid var(--xero-border);
+      border: 1px solid var(--xero-input-border);
       border-radius: var(--radius);
       padding: 8px 12px;
       font-family: var(--font);
@@ -144,7 +144,7 @@
     .xero-input--plain::placeholder { color: #6E7481; }
 
     .xero-select {
-      border: 1px solid var(--xero-border);
+      border: 1px solid var(--xero-input-border);
       border-radius: var(--radius);
       padding: 8px 32px 8px 12px;
       font-family: var(--font);
@@ -162,7 +162,7 @@
     .xero-select:focus { border-color: var(--xero-blue); }
 
     .xero-textarea {
-      border: 1px solid var(--xero-border);
+      border: 1px solid var(--xero-input-border);
       border-radius: var(--radius);
       padding: 8px 12px;
       font-family: var(--font);
@@ -176,6 +176,9 @@
       background: var(--xero-input-bg);
     }
     .xero-textarea:focus { border-color: var(--xero-blue); }
+    .xero-input--plain:hover, .xero-select:hover, .xero-textarea:hover {
+      box-shadow: 0 2px 8px rgba(33,59,85,0.12);
+    }
     .xero-textarea::placeholder { color: #6E7481; }
 
     .xero-logo-upload { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
@@ -293,6 +296,16 @@
       #quote-print-area { display: block !important; }
     }
     #quote-print-area { display: none; }
+
+    @media (max-width: 768px) {
+      .xero-preview { display: none; }
+    }
+
+    @media (max-width: 600px) {
+      .xero-items-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; min-width: 0; }
+    }
+
+    @media (max-width: 540px) { .xero-fields { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>

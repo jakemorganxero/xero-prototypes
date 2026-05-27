@@ -37,6 +37,15 @@
          url('https://www.xero.com/fonts/national2-web-bold.woff') format('woff');
     font-display: swap;
   }
+    @media (max-width: 768px) {
+      .xpog-preview { display: none; }
+    }
+
+    @media (max-width: 600px) {
+      .xpog-items-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; min-width: 0; }
+    }
+
+    @media (max-width: 540px) { .xpog-fields { grid-template-columns: 1fr; } }
 </style>
 
 <style>
@@ -135,7 +144,7 @@
   .xpog-field input,
   .xpog-field select,
   .xpog-field textarea {
-    border: 1px solid var(--xero-border);
+    border: 1px solid var(--xero-input-border);
     border-radius: var(--radius);
     padding: 8px 10px;
     font-size: 0.875rem;
@@ -144,6 +153,12 @@
     width: 100%;
     transition: border-color 0.15s;
     font-family: var(--font);
+  }
+
+  .xpog-field input:hover,
+  .xpog-field select:hover,
+  .xpog-field textarea:hover {
+    box-shadow: 0 2px 8px rgba(33,59,85,0.12);
   }
 
   .xpog-field input:focus,
@@ -155,6 +170,12 @@
   }
 
   .xpog-field textarea { resize: vertical; min-height: 72px; }
+
+  .xpog-field input:hover,
+  .xpog-field select:hover,
+  .xpog-field textarea:hover {
+    box-shadow: 0 2px 8px rgba(33,59,85,0.12);
+  }
 
   /* Logo upload */
   .xpog-logo-upload {
