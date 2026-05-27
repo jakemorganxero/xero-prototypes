@@ -4,17 +4,39 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Xero Prototype Library</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    @font-face {
+      font-family: 'National2';
+      font-weight: 400;
+      src: url('https://www.xero.com/fonts/national2-web-regular.woff2') format('woff2'),
+           url('https://www.xero.com/fonts/national2-web-regular.woff') format('woff');
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'National2';
+      font-weight: 500;
+      src: url('https://www.xero.com/fonts/national2-web-medium.woff2') format('woff2'),
+           url('https://www.xero.com/fonts/national2-web-medium.woff') format('woff');
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'National2';
+      font-weight: 700;
+      src: url('https://www.xero.com/fonts/national2-web-bold.woff2') format('woff2'),
+           url('https://www.xero.com/fonts/national2-web-bold.woff') format('woff');
+      font-display: swap;
+    }
+  </style>
   <style>
     :root {
-      --navy:       #1B3A4B;
+      --navy:       #213B55;
       --blue:       #13B5EA;
       --blue-dark:  #0D8FBD;
-      --panel-bg:   #EBF0F4;
+      --panel-bg:   #ECF2F6;
       --border:     #C2CDD6;
       --text-muted: #4A6070;
-      --green:      #1AB394;
-      --font:       'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --green:      #186241;
+      --font:       'National2', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -309,7 +331,7 @@
   <!-- Stats -->
   <div class="stats">
     <div class="stat">
-      <div class="stat__value">70</div>
+      <div class="stat__value">71</div>
       <div class="stat__label">Total prototypes</div>
     </div>
     <div class="stat">
