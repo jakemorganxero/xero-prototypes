@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Xero Pay Stub Generator — US</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- TODO prod: replace with National 2 woff2 from Xero design team -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
   <!--
     XERO PROTOTYPE
     Tool: Pay Stub Generator (US)
@@ -31,19 +32,20 @@
   -->
   <style>
     :root {
-      --xero-navy:       #1B3A4B;
+      --xero-navy:       #213B55;
       --xero-blue:       #13B5EA;
       --xero-blue-dark:  #0D8FBD;
-      --xero-panel-bg:   #EBF0F4;
+      --xero-panel-bg:   #ECF2F6;
       --xero-border:     #C2CDD6;
+    --xero-input-border: #213B55;
       --xero-bg:         #FFFFFF;
-      --xero-text:       #1B3A4B;
+      --xero-text:       #213B55;
       --xero-text-muted: #4A6070;
       --xero-input-bg:   #FFFFFF;
       --xero-green:      #1AB394;
       --xero-red:        #E05A5A;
-      --radius: 4px;
-      --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --radius: 6px;
+      --font: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -87,17 +89,18 @@
 
     .xero-input--plain { border: 1px solid var(--xero-border); border-radius: var(--radius); padding: 8px 12px; font-family: var(--font); font-size: 0.875rem; color: var(--xero-text); width: 100%; outline: none; transition: border-color 0.15s; background: var(--xero-input-bg); }
     .xero-input--plain:focus { border-color: var(--xero-blue); }
-    .xero-input--plain::placeholder { color: #9EB0BB; }
+    .xero-input--plain::placeholder { color: #6E7481; }
 
     .xero-select { border: 1px solid var(--xero-border); border-radius: var(--radius); padding: 8px 32px 8px 12px; font-family: var(--font); font-size: 0.875rem; color: var(--xero-text); width: 100%; outline: none; background: var(--xero-input-bg); appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234A6070' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; }
     .xero-select:focus { border-color: var(--xero-blue); }
 
-    .xero-input-wrap { display: flex; align-items: stretch; border: 1px solid var(--xero-border); border-radius: var(--radius); background: var(--xero-input-bg); transition: border-color 0.15s; }
+    .xero-input-wrap { display: flex; align-items: stretch; border: 1px solid var(--xero-input-border); border-radius: var(--radius); background: var(--xero-input-bg); transition: border-color 0.15s; }
+    .xero-input-wrap:hover { box-shadow: 0 2px 8px rgba(33,59,85,0.12); }
     .xero-input-wrap:focus-within { border-color: var(--xero-blue); }
     .xero-input-prefix { display: flex; align-items: center; padding: 0 6px 0 12px; color: var(--xero-text-muted); font-size: 0.875rem; font-weight: 500; user-select: none; flex-shrink: 0; }
     .xero-input-suffix { display: flex; align-items: center; padding: 0 12px 0 4px; color: var(--xero-text-muted); font-size: 0.875rem; font-weight: 500; user-select: none; flex-shrink: 0; }
     .xero-input { border: none; outline: none; padding: 8px 8px 8px 4px; font-family: var(--font); font-size: 0.875rem; color: var(--xero-text); background: transparent; width: 100%; min-width: 0; }
-    .xero-input::placeholder { color: #9EB0BB; }
+    .xero-input::placeholder { color: #6E7481; }
 
     .xero-logo-upload { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
     .xero-logo-preview { width: 80px; height: 52px; border: 1px solid var(--xero-border); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; background: var(--xero-panel-bg); overflow: hidden; flex-shrink: 0; }
@@ -500,23 +503,23 @@
       <div class="xero-preview__dl">
         <span class="xero-preview__dl-label">Download as:</span>
         <button class="xero-dl-btn" onclick="downloadPDF()">
-          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><path d="M1 10v2a1 1 0 001 1h9a1 1 0 001-1v-2M6.5 1v7m0 0L4 5.5M6.5 8l2.5-2.5" stroke="#1B3A4B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><path d="M1 10v2a1 1 0 001 1h9a1 1 0 001-1v-2M6.5 1v7m0 0L4 5.5M6.5 8l2.5-2.5" stroke="#213B55" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           PDF
         </button>
         <button class="xero-dl-btn" onclick="downloadWord()">
-          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#1B3A4B" stroke-width="1.5"/><path d="M4 5h5M4 7.5h5M4 10h3" stroke="#1B3A4B" stroke-width="1.3" stroke-linecap="round"/></svg>
+          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#213B55" stroke-width="1.5"/><path d="M4 5h5M4 7.5h5M4 10h3" stroke="#213B55" stroke-width="1.3" stroke-linecap="round"/></svg>
           Word
         </button>
         <button class="xero-dl-btn" onclick="downloadExcel()">
-          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#1B3A4B" stroke-width="1.5"/><path d="M4 5l5 4M9 5l-5 4" stroke="#1AB394" stroke-width="1.3" stroke-linecap="round"/></svg>
+          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#213B55" stroke-width="1.5"/><path d="M4 5l5 4M9 5l-5 4" stroke="#1AB394" stroke-width="1.3" stroke-linecap="round"/></svg>
           Excel
         </button>
         <button class="xero-dl-btn" onclick="openGSheets()">
-          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#1B3A4B" stroke-width="1.5"/><path d="M4 5h5M4 7.5h5M4 10h5" stroke="#0D8FBD" stroke-width="1.3" stroke-linecap="round"/></svg>
+          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#213B55" stroke-width="1.5"/><path d="M4 5h5M4 7.5h5M4 10h5" stroke="#0D8FBD" stroke-width="1.3" stroke-linecap="round"/></svg>
           Google Sheets
         </button>
         <button class="xero-dl-btn" onclick="openGDoc()">
-          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#1B3A4B" stroke-width="1.5"/><path d="M4 5h5M4 7.5h5M4 10h3" stroke="#13B5EA" stroke-width="1.3" stroke-linecap="round"/></svg>
+          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#213B55" stroke-width="1.5"/><path d="M4 5h5M4 7.5h5M4 10h3" stroke="#13B5EA" stroke-width="1.3" stroke-linecap="round"/></svg>
           Google Doc
         </button>
       </div>
@@ -873,11 +876,11 @@
     const stateLabel = gs('state-select') || 'State';
 
     const html = `<!DOCTYPE html><html lang="en-US"><head><meta charset="UTF-8"><title>Pay Stub — ${gs('emp-name')||'Employee'}</title>
-<style>body{font-family:Arial,sans-serif;font-size:12px;color:#1B3A4B;max-width:680px;margin:40px auto;padding:0 20px}
-h1{font-size:20px;font-weight:900}hr{border:none;border-top:2px solid #1B3A4B;margin:12px 0}
-table{width:100%;border-collapse:collapse;margin-bottom:8px}th{background:#1B3A4B;color:#fff;padding:5px 8px;font-size:10px;text-align:left}
+<style>body{font-family:Arial,sans-serif;font-size:12px;color:#213B55;max-width:680px;margin:40px auto;padding:0 20px}
+h1{font-size:20px;font-weight:900}hr{border:none;border-top:2px solid #213B55;margin:12px 0}
+table{width:100%;border-collapse:collapse;margin-bottom:8px}th{background:#213B55;color:#fff;padding:5px 8px;font-size:10px;text-align:left}
 th.r,td.r{text-align:right}td{padding:5px 8px;border-bottom:1px solid #C2CDD6}
-.sub td{font-weight:700;background:#f0f5f8}.net td{font-size:13px;font-weight:900;background:#EBF0F4;border-top:2px solid #1B3A4B}</style></head><body>
+.sub td{font-weight:700;background:#f0f5f8}.net td{font-size:13px;font-weight:900;background:#ECF2F6;border-top:2px solid #213B55}</style></head><body>
 <div style="display:flex;justify-content:space-between"><div>${gs('biz-name')}<br>${gs('biz-address')}${gs('biz-ein')?'<br>EIN: '+gs('biz-ein'):''}</div><h1>PAY STUB</h1></div>
 <hr>
 <table><tr><td><b>Employee:</b> ${gs('emp-name')}</td><td><b>ID:</b> ${gs('emp-id')}</td></tr>

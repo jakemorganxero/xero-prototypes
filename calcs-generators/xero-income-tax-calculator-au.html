@@ -18,24 +18,26 @@
 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- TODO prod: replace with National 2 woff2 from Xero design team -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
 
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --xero-navy:      #1B3A4B;
+    --xero-navy:      #213B55;
     --xero-blue:      #13B5EA;
     --xero-blue-dark: #0D8FBD;
-    --xero-panel-bg:  #EBF0F4;
+    --xero-panel-bg:  #ECF2F6;
     --xero-border:    #C2CDD6;
+    --xero-input-border: #213B55;
     --xero-bg:        #FFFFFF;
-    --xero-text:      #1B3A4B;
+    --xero-text:      #213B55;
     --xero-text-muted:#4A6070;
     --xero-green:     #1AB394;
     --xero-red:       #E05A5A;
-    --radius:         4px;
-    --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --radius:         6px;
+    --font: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
   .xtax-wrap {
@@ -534,10 +536,10 @@
         <!-- Placeholder state -->
         <div class="xtax-placeholder" id="xtaxPlaceholder">
           <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="4" y="8" width="32" height="24" rx="2" stroke="#1B3A4B" stroke-width="2"/>
-            <line x1="4" y1="15" x2="36" y2="15" stroke="#1B3A4B" stroke-width="2"/>
-            <line x1="12" y1="22" x2="28" y2="22" stroke="#1B3A4B" stroke-width="1.5"/>
-            <line x1="12" y1="27" x2="22" y2="27" stroke="#1B3A4B" stroke-width="1.5"/>
+            <rect x="4" y="8" width="32" height="24" rx="2" stroke="#213B55" stroke-width="2"/>
+            <line x1="4" y1="15" x2="36" y2="15" stroke="#213B55" stroke-width="2"/>
+            <line x1="12" y1="22" x2="28" y2="22" stroke="#213B55" stroke-width="1.5"/>
+            <line x1="12" y1="27" x2="22" y2="27" stroke="#213B55" stroke-width="1.5"/>
           </svg>
           Enter your income and click Calculate to see your estimated tax breakdown.
         </div>

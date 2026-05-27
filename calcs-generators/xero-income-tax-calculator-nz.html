@@ -24,23 +24,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>New Zealand Income Tax Calculator 2025–26 | Xero NZ</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- TODO prod: replace with National 2 woff2 from Xero design team -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
   <style>
     /* ─── Xero Brand Tokens ─── */
     :root {
-      --xero-navy:       #1B3A4B;
+      --xero-navy:       #213B55;
       --xero-blue:       #13B5EA;
       --xero-blue-dark:  #0D8FBD;
-      --xero-panel-bg:   #EBF0F4;
+      --xero-panel-bg:   #ECF2F6;
       --xero-border:     #C2CDD6;
+    --xero-input-border: #213B55;
       --xero-bg:         #FFFFFF;
-      --xero-text:       #1B3A4B;
+      --xero-text:       #213B55;
       --xero-text-muted: #4A6070;
       --xero-input-bg:   #FFFFFF;
       --xero-green:      #1AB394;
       --xero-red:        #E05A5A;
-      --radius:          4px;
-      --font:            'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --radius:          6px;
+      --font:            'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -124,12 +126,13 @@
     .xero-input-wrap {
       display: flex;
       align-items: stretch;
-      border: 1px solid var(--xero-border);
+      border: 1px solid var(--xero-input-border);
       border-radius: var(--radius);
       background: var(--xero-input-bg);
       transition: border-color 0.15s;
     }
 
+    .xero-input-wrap:hover { box-shadow: 0 2px 8px rgba(33,59,85,0.12); }
     .xero-input-wrap:focus-within {
       border-color: var(--xero-blue);
       outline: 2px solid rgba(19, 181, 234, 0.2);
@@ -159,7 +162,7 @@
       min-width: 0;
     }
 
-    .xero-input::placeholder { color: #9EB0BB; }
+    .xero-input::placeholder { color: #6E7481; }
 
     /* Remove number input spinners */
     .xero-input::-webkit-outer-spin-button,
@@ -286,7 +289,7 @@
       white-space: nowrap;
     }
 
-    .xero-btn:hover  { background: #244d64; }
+    .xero-btn:hover  { background: #2a4d6e; }
     .xero-btn:active { background: #162e3a; }
     .xero-btn:focus-visible {
       outline: 3px solid var(--xero-blue);
@@ -692,7 +695,7 @@
           <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="8" y="6" width="32" height="36" rx="3" stroke="#C2CDD6" stroke-width="2" fill="none"/>
             <path d="M16 16h16M16 22h16M16 28h10" stroke="#C2CDD6" stroke-width="2" stroke-linecap="round"/>
-            <circle cx="35" cy="34" r="7" fill="#EBF0F4" stroke="#C2CDD6" stroke-width="2"/>
+            <circle cx="35" cy="34" r="7" fill="#ECF2F6" stroke="#C2CDD6" stroke-width="2"/>
             <path d="M32.5 34h5M35 31.5v5" stroke="#C2CDD6" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
         </span>

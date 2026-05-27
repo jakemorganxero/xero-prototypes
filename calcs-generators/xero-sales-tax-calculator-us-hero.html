@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Xero US Sales Tax Calculator</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- TODO prod: replace with National 2 woff2 from Xero design team -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
 
   <!--
     XERO PROTOTYPE
@@ -24,17 +25,18 @@
 
   <style>
     :root {
-      --xero-navy:       #1B3A4B;
+      --xero-navy:       #213B55;
       --xero-blue:       #13B5EA;
       --xero-blue-dark:  #0D8FBD;
-      --xero-panel-bg:   #EBF0F4;
+      --xero-panel-bg:   #ECF2F6;
       --xero-border:     #C2CDD6;
+    --xero-input-border: #213B55;
       --xero-bg:         #FFFFFF;
-      --xero-text:       #1B3A4B;
+      --xero-text:       #213B55;
       --xero-text-muted: #4A6070;
       --xero-green:      #1AB394;
-      --radius:          4px;
-      --font:            'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --radius:          6px;
+      --font:            'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -47,7 +49,7 @@
     }
 
     .xero-hero {
-      background: var(--xero-bg);
+      background: #ECF2F6;
       padding: 72px 5%;
       width: 100%;
     }
@@ -129,7 +131,7 @@
       transition: background 0.15s;
     }
 
-    .xero-hero__btn:hover { background: #244d64; }
+    .xero-hero__btn:hover { background: #2a4d6e; }
 
     .xero-hero__link {
       font-size: 0.9375rem;
@@ -170,13 +172,14 @@
     .xero-input-wrap {
       display: flex;
       align-items: stretch;
-      border: 1px solid var(--xero-border);
+      border: 1px solid var(--xero-input-border);
       border-radius: var(--radius);
       background: var(--xero-bg);
       transition: border-color 0.15s;
       margin-bottom: 16px;
     }
 
+    .xero-input-wrap:hover { box-shadow: 0 2px 8px rgba(33,59,85,0.12); }
     .xero-input-wrap:focus-within { border-color: var(--xero-blue); }
 
     .xero-input-prefix {
@@ -202,7 +205,7 @@
       min-width: 0;
     }
 
-    .xero-input::placeholder { color: #9EB0BB; }
+    .xero-input::placeholder { color: #6E7481; }
 
     /* Address input */
     .xero-address-input {
@@ -221,7 +224,7 @@
     }
 
     .xero-address-input:focus { border-color: var(--xero-blue); }
-    .xero-address-input::placeholder { color: #9EB0BB; }
+    .xero-address-input::placeholder { color: #6E7481; }
 
     /* Detected state pill */
     .xero-state-detected {

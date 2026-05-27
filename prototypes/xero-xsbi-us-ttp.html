@@ -9,11 +9,12 @@
   Notes for devs: Drop into any AEM content column. No metric switcher — single series only.
     GT Walsheim → DM Sans for prototyping.
 -->
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- TODO prod: replace with National 2 woff2 from Xero design team -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  :root{--navy:#1B3A4B;--blue:#13B5EA;--panel:#EBF0F4;--border:#C2CDD6;--muted:#4A6070;--green:#1AB394;--red:#E05A5A;--r:6px}
+  :root{--navy:#213B55;--blue:#13B5EA;--panel:#ECF2F6;--border:#C2CDD6;--muted:#4A6070;--green:#186241;--red:#E05A5A;--r:6px}
   .w{font-family:'DM Sans',-apple-system,sans-serif;color:var(--navy);max-width:960px;margin:0 auto;padding:36px 24px}
   .top{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:24px}
   .eyebrow{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);margin-bottom:8px}
@@ -21,7 +22,7 @@
   .val{font-size:3rem;font-weight:700;line-height:1;color:var(--navy)}
   .delta{font-size:.8125rem;font-weight:600;padding:3px 10px;border-radius:20px}
   .delta.pos{background:rgba(26,179,148,.12);color:var(--green)}
-  .delta.neg{background:rgba(224,90,90,.1);color:var(--red)}
+  .delta.neg{background:rgba(255,196,210,.1);color:var(--red)}
   .period{font-size:.875rem;color:var(--muted);margin-top:6px}
   .range{display:flex;gap:4px}
   .rb{background:none;border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-family:inherit;font-size:.8125rem;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s}
@@ -64,8 +65,8 @@
     </div>
     <div class="chart-wrap"><canvas id="c"></canvas></div>
     <div class="leg">
-      <div class="leg-item"><div class="leg-sw" style="background:#1AB394"></div>Days to be paid (seasonally adjusted)</div>
-      <div class="leg-item"><div class="leg-sw" style="background:rgba(224,90,90,.25);height:10px;border-radius:2px"></div>COVID period (Apr–Dec 2020)</div>
+      <div class="leg-item"><div class="leg-sw" style="background:#186241"></div>Days to be paid (seasonally adjusted)</div>
+      <div class="leg-item"><div class="leg-sw" style="background:rgba(255,196,210,.25);height:10px;border-radius:2px"></div>COVID period (Apr–Dec 2020)</div>
     </div>
   </div>
   <p class="fn">Source: Xero Small Business Insights, US national data, March 2026 release. Seasonally adjusted.</p>
@@ -77,7 +78,7 @@ const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec
 const fmt=l=>{const[m,y]=l.split('/');return MO[+m-1]+' '+y};
 const COVID_S=39,COVID_E=47;
 let rng=0,ch=null;
-const covidPlugin=(s,e,off,len)=>({id:'cv',beforeDatasetsDraw(c){const{ctx,chartArea:a,scales:sc}=c;const sl=s-off,el=e-off;if(el<0||sl>=len)return;const x0=sc.x.getPixelForValue(Math.max(0,sl)),x1=sc.x.getPixelForValue(Math.min(len-1,el));ctx.save();ctx.fillStyle='rgba(224,90,90,.07)';ctx.fillRect(x0,a.top,x1-x0,a.height);ctx.restore()}});
+const covidPlugin=(s,e,off,len)=>({id:'cv',beforeDatasetsDraw(c){const{ctx,chartArea:a,scales:sc}=c;const sl=s-off,el=e-off;if(el<0||sl>=len)return;const x0=sc.x.getPixelForValue(Math.max(0,sl)),x1=sc.x.getPixelForValue(Math.min(len-1,el));ctx.save();ctx.fillStyle='rgba(255,196,210,.07)';ctx.fillRect(x0,a.top,x1-x0,a.height);ctx.restore()}});
 function build(){
   const n=rng===0?L.length:rng*12,off=L.length-n;
   const labels=L.slice(-n).map(fmt),data=D.slice(-n);
@@ -85,7 +86,7 @@ function build(){
   if(ch){ch.destroy();ch=null}
   const grad=canvas.getContext('2d').createLinearGradient(0,0,0,280);
   grad.addColorStop(0,'rgba(26,179,148,.13)');grad.addColorStop(1,'rgba(255,255,255,0)');
-  ch=new Chart(canvas,{type:'line',data:{labels,datasets:[{data,borderColor:'#1AB394',borderWidth:2,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#1AB394',pointHoverBorderColor:'#fff',pointHoverBorderWidth:2,fill:true,backgroundColor:grad,tension:.3}]},
+  ch=new Chart(canvas,{type:'line',data:{labels,datasets:[{data,borderColor:'#186241',borderWidth:2,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#186241',pointHoverBorderColor:'#fff',pointHoverBorderWidth:2,fill:true,backgroundColor:grad,tension:.3}]},
     plugins:[covidPlugin(COVID_S,COVID_E,off,n)],
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(27,58,75,.95)',titleColor:'#fff',bodyColor:'rgba(255,255,255,.8)',padding:12,cornerRadius:6,titleFont:{family:"'DM Sans',sans-serif",weight:'600',size:13},bodyFont:{family:"'DM Sans',sans-serif",size:13},callbacks:{title:i=>i[0].label,label:i=>' '+i.raw.toFixed(1)+' days'}}},

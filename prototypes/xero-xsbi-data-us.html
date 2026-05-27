@@ -10,22 +10,24 @@
     Shaded bands highlight COVID period (Mar–Dec 2020) and a notable data spike in Mar 2024.
     GT Walsheim → DM Sans for prototyping.
 -->
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- TODO prod: replace with National 2 woff2 from Xero design team -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --xero-navy:       #1B3A4B;
+    --xero-navy:       #213B55;
     --xero-blue:       #13B5EA;
     --xero-blue-dark:  #0D8FBD;
-    --xero-panel-bg:   #EBF0F4;
+    --xero-panel-bg:   #ECF2F6;
     --xero-border:     #C2CDD6;
+    --xero-input-border: #213B55;
     --xero-bg:         #FFFFFF;
-    --xero-text:       #1B3A4B;
+    --xero-text:       #213B55;
     --xero-text-muted: #4A6070;
-    --xero-green:      #1AB394;
+    --xero-green:      #186241;
     --xero-red:        #E05A5A;
     --radius:          6px;
   }
@@ -324,7 +326,7 @@
         <span id="legend-metric-label">Sales growth (YoY %)</span>
       </div>
       <div class="xsbi-legend-item">
-        <div class="xsbi-legend-swatch" style="background:rgba(224,90,90,0.25); width:16px; height:12px; border-radius:2px;"></div>
+        <div class="xsbi-legend-swatch" style="background:rgba(255,196,210,0.25); width:16px; height:12px; border-radius:2px;"></div>
         <span>COVID period (Apr–Dec 2020)</span>
       </div>
     </div>
@@ -361,7 +363,7 @@ const METRICS = {
     format: v => (v >= 0 ? '+' : '') + v.toFixed(1) + '%',
     color: '#13B5EA',
     fillPositive: 'rgba(19,181,234,0.12)',
-    fillNegative: 'rgba(224,90,90,0.12)',
+    fillNegative: 'rgba(255,196,210,0.12)',
     zeroLine: true,
   },
   ttp: {
@@ -371,7 +373,7 @@ const METRICS = {
     legendLabel: 'Days to be paid (seasonally adjusted)',
     unit: ' days',
     format: v => v.toFixed(1) + ' days',
-    color: '#1AB394',
+    color: '#186241',
     fillPositive: 'rgba(26,179,148,0.12)',
     fillNegative: 'rgba(26,179,148,0.12)',
     zeroLine: false,
@@ -384,8 +386,8 @@ const METRICS = {
     unit: ' days',
     format: v => v.toFixed(1) + ' days',
     color: '#E05A5A',
-    fillPositive: 'rgba(224,90,90,0.10)',
-    fillNegative: 'rgba(224,90,90,0.10)',
+    fillPositive: 'rgba(255,196,210,0.10)',
+    fillNegative: 'rgba(255,196,210,0.10)',
     zeroLine: false,
   }
 };
@@ -418,7 +420,7 @@ function covidPlugin(startIdx, endIdx) {
       const x1 = scales.x.getPixelForValue(endIdx);
       if (x0 == null || x1 == null) return;
       ctx.save();
-      ctx.fillStyle = 'rgba(224,90,90,0.07)';
+      ctx.fillStyle = 'rgba(255,196,210,0.07)';
       ctx.fillRect(x0, chartArea.top, x1 - x0, chartArea.height);
       ctx.restore();
     }

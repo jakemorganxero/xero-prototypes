@@ -9,11 +9,12 @@
   Notes for devs: Self-contained card — no surrounding layout assumed.
     GT Walsheim → DM Sans for prototyping.
 -->
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- TODO prod: replace with National 2 woff2 from Xero design team -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  :root{--navy:#1B3A4B;--blue:#13B5EA;--border:#C2CDD6;--muted:#4A6070;--green:#1AB394;--red:#E05A5A;--r:6px}
+  :root{--navy:#213B55;--blue:#13B5EA;--border:#C2CDD6;--muted:#4A6070;--green:#186241;--red:#E05A5A;--r:6px}
   .w{font-family:'DM Sans',-apple-system,sans-serif;color:var(--navy);max-width:480px;padding:24px}
   .card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:20px}
   .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:14px}
@@ -22,7 +23,7 @@
   .val{font-size:2rem;font-weight:700;line-height:1;color:var(--navy)}
   .delta{font-size:.6875rem;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap}
   .delta.pos{background:rgba(26,179,148,.12);color:var(--green)}
-  .delta.neg{background:rgba(224,90,90,.1);color:var(--red)}
+  .delta.neg{background:rgba(255,196,210,.1);color:var(--red)}
   .sublabel{font-size:.6875rem;color:var(--muted);margin-top:4px}
   .range{display:flex;gap:3px;flex-shrink:0}
   .rb{background:none;border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-family:inherit;font-size:.6875rem;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s}
@@ -65,14 +66,14 @@ const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec
 const fmt=l=>{const[m,y]=l.split('/');return MO[+m-1]+' '+y};
 const COVID_S=39,COVID_E=47;
 let rng=0,ch=null;
-const cvPlugin=(s,e,off,len)=>({id:'cv',beforeDatasetsDraw(c){const{ctx,chartArea:a,scales:sc}=c;const sl=s-off,el=e-off;if(el<0||sl>=len)return;const x0=sc.x.getPixelForValue(Math.max(0,sl)),x1=sc.x.getPixelForValue(Math.min(len-1,el));ctx.save();ctx.fillStyle='rgba(224,90,90,.07)';ctx.fillRect(x0,a.top,x1-x0,a.height);ctx.restore()}});
+const cvPlugin=(s,e,off,len)=>({id:'cv',beforeDatasetsDraw(c){const{ctx,chartArea:a,scales:sc}=c;const sl=s-off,el=e-off;if(el<0||sl>=len)return;const x0=sc.x.getPixelForValue(Math.max(0,sl)),x1=sc.x.getPixelForValue(Math.min(len-1,el));ctx.save();ctx.fillStyle='rgba(255,196,210,.07)';ctx.fillRect(x0,a.top,x1-x0,a.height);ctx.restore()}});
 function build(){
   const n=rng===0?L.length:rng*12,off=L.length-n;
   const labels=L.slice(-n).map(fmt),data=D.slice(-n);
   const canvas=document.getElementById('c');
   if(ch){ch.destroy();ch=null}
   const grad=canvas.getContext('2d').createLinearGradient(0,0,0,150);
-  grad.addColorStop(0,'rgba(224,90,90,.10)');grad.addColorStop(1,'rgba(255,255,255,0)');
+  grad.addColorStop(0,'rgba(255,196,210,.10)');grad.addColorStop(1,'rgba(255,255,255,0)');
   ch=new Chart(canvas,{type:'line',data:{labels,datasets:[{data,borderColor:'#E05A5A',borderWidth:1.5,pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:'#E05A5A',pointHoverBorderColor:'#fff',pointHoverBorderWidth:2,fill:true,backgroundColor:grad,tension:.3}]},
     plugins:[cvPlugin(COVID_S,COVID_E,off,n)],
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},

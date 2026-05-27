@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Xero Expense Report Generator — NZ</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- TODO prod: replace with National 2 woff2 from Xero design team -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
   <!--
     XERO PROTOTYPE
     Tool: Expense Report Generator (NZ)
@@ -23,19 +24,20 @@
   -->
   <style>
     :root {
-      --xero-navy:       #1B3A4B;
+      --xero-navy:       #213B55;
       --xero-blue:       #13B5EA;
       --xero-blue-dark:  #0D8FBD;
-      --xero-panel-bg:   #EBF0F4;
+      --xero-panel-bg:   #ECF2F6;
       --xero-border:     #C2CDD6;
+    --xero-input-border: #213B55;
       --xero-bg:         #FFFFFF;
-      --xero-text:       #1B3A4B;
+      --xero-text:       #213B55;
       --xero-text-muted: #4A6070;
       --xero-input-bg:   #FFFFFF;
       --xero-green:      #1AB394;
       --xero-red:        #E05A5A;
-      --radius: 4px;
-      --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --radius: 6px;
+      --font: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -116,7 +118,7 @@
       background: var(--xero-input-bg);
     }
     .xero-input--plain:focus { border-color: var(--xero-blue); }
-    .xero-input--plain::placeholder { color: #9EB0BB; }
+    .xero-input--plain::placeholder { color: #6E7481; }
 
     .xero-select {
       border: 1px solid var(--xero-border);
@@ -151,7 +153,7 @@
       background: var(--xero-input-bg);
     }
     .xero-textarea:focus { border-color: var(--xero-blue); }
-    .xero-textarea::placeholder { color: #9EB0BB; }
+    .xero-textarea::placeholder { color: #6E7481; }
 
     .xero-exp-table-wrap { overflow-x: auto; }
 
@@ -515,7 +517,7 @@
     const periodStr = rptStart && rptEnd ? `${fmtDate(rptStart)} – ${fmtDate(rptEnd)}` : (rptStart ? `From ${fmtDate(rptStart)}` : '—');
 
     const submittedByLines = [
-      empName ? `<div class="inv-block__name">${esc(empName)}</div>` : '<div class="inv-block__name" style="color:#9EB0BB">Employee Name</div>',
+      empName ? `<div class="inv-block__name">${esc(empName)}</div>` : '<div class="inv-block__name" style="color:#6E7481">Employee Name</div>',
       empDept ? `<div class="inv-block__line">${esc(empDept)}</div>` : '',
       empPos  ? `<div class="inv-block__line">${esc(empPos)}</div>` : '',
       empId   ? `<div class="inv-block__line">ID: ${esc(empId)}</div>` : '',
@@ -532,7 +534,7 @@
       <tr>
         <td>${esc(fmtDateShort(e.date)) || '—'}</td>
         <td>${esc(truncate(e.category, 22))}</td>
-        <td>${esc(e.description) || '<span style="color:#9EB0BB">—</span>'}</td>
+        <td>${esc(e.description) || '<span style="color:#6E7481">—</span>'}</td>
         <td class="r">${fmt(e.amount)}</td>
         <td class="c">${e.hasReceipt ? '✓' : '—'}</td>
       </tr>`).join('');
@@ -555,7 +557,7 @@
           <th style="width:36px">Date</th><th style="width:80px">Category</th><th>Description</th>
           <th class="r" style="width:60px">Amount</th><th class="c" style="width:28px">Rcpt</th>
         </tr></thead>
-        <tbody>${rows || '<tr><td colspan="5" style="color:#9EB0BB;text-align:center;padding:12px;">No expenses added yet</td></tr>'}</tbody>
+        <tbody>${rows || '<tr><td colspan="5" style="color:#6E7481;text-align:center;padding:12px;">No expenses added yet</td></tr>'}</tbody>
       </table>
       <div class="inv-grand-total">
         <span class="k">TOTAL (${LOCALE.currencyCode}):</span>
@@ -570,16 +572,16 @@
   function prepPrint() {
     $id('exp-print-area').innerHTML = `
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-        *{box-sizing:border-box;margin:0;padding:0}body{font-family:'Plus Jakarta Sans',Arial,sans-serif;color:#1B3A4B;padding:40px;max-width:780px}
-        .inv-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}.inv-title{font-size:22px;font-weight:800;color:#1B3A4B;letter-spacing:-0.01em}
-        .inv-rule{border:none;border-top:2px solid #1B3A4B;margin-bottom:16px}.inv-meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
-        .inv-block__label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#4A6070;margin-bottom:3px}.inv-block__name{font-size:13px;font-weight:700;color:#1B3A4B}.inv-block__line{font-size:11px;color:#4A6070;line-height:1.4}
-        .inv-detail-row{display:flex;gap:6px;font-size:11px;margin-bottom:2px}.inv-detail-row .k{font-weight:700;color:#1B3A4B;white-space:nowrap}.inv-detail-row .v{color:#4A6070}
-        .inv-table{width:100%;border-collapse:collapse;margin-bottom:10px;font-size:11px}.inv-table thead tr{background:#1B3A4B}.inv-table th{padding:6px 8px;color:#fff;font-size:9px;text-transform:uppercase;letter-spacing:0.05em;text-align:left;white-space:nowrap}
+        /* Font loaded via <link> tag */
+        *{box-sizing:border-box;margin:0;padding:0}body{font-family:'DM Sans',Arial,sans-serif;color:#213B55;padding:40px;max-width:780px}
+        .inv-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}.inv-title{font-size:22px;font-weight:800;color:#213B55;letter-spacing:-0.01em}
+        .inv-rule{border:none;border-top:2px solid #213B55;margin-bottom:16px}.inv-meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+        .inv-block__label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#4A6070;margin-bottom:3px}.inv-block__name{font-size:13px;font-weight:700;color:#213B55}.inv-block__line{font-size:11px;color:#4A6070;line-height:1.4}
+        .inv-detail-row{display:flex;gap:6px;font-size:11px;margin-bottom:2px}.inv-detail-row .k{font-weight:700;color:#213B55;white-space:nowrap}.inv-detail-row .v{color:#4A6070}
+        .inv-table{width:100%;border-collapse:collapse;margin-bottom:10px;font-size:11px}.inv-table thead tr{background:#213B55}.inv-table th{padding:6px 8px;color:#fff;font-size:9px;text-transform:uppercase;letter-spacing:0.05em;text-align:left;white-space:nowrap}
         .inv-table th.r,.inv-table td.r{text-align:right}.inv-table th.c,.inv-table td.c{text-align:center}.inv-table td{padding:5px 8px;border-bottom:1px solid #C2CDD6}.inv-table tbody tr:nth-child(even){background:#f8fafb}.inv-table tbody tr:last-child td{border-bottom:none}
-        .inv-grand-total{display:flex;justify-content:flex-end;align-items:center;gap:16px;margin-bottom:14px;padding-top:8px;border-top:1.5px solid #1B3A4B}.inv-grand-total .k{font-size:12px;font-weight:700;color:#1B3A4B}.inv-grand-total .v{font-size:16px;font-weight:800;color:#1B3A4B;min-width:70px;text-align:right}
-        .inv-notes{border-top:1px solid #C2CDD6;padding-top:12px;font-size:11px;color:#4A6070}.inv-notes-heading{font-weight:700;color:#1B3A4B;margin-bottom:2px}
+        .inv-grand-total{display:flex;justify-content:flex-end;align-items:center;gap:16px;margin-bottom:14px;padding-top:8px;border-top:1.5px solid #213B55}.inv-grand-total .k{font-size:12px;font-weight:700;color:#213B55}.inv-grand-total .v{font-size:16px;font-weight:800;color:#213B55;min-width:70px;text-align:right}
+        .inv-notes{border-top:1px solid #C2CDD6;padding-top:12px;font-size:11px;color:#4A6070}.inv-notes-heading{font-weight:700;color:#213B55;margin-bottom:2px}
         .inv-cta{font-size:11px;color:#4A6070;margin-top:12px;padding-top:12px;border-top:1px solid #C2CDD6}.inv-cta a{color:#13B5EA}
       </style>${buildDocument()}`;
   }
