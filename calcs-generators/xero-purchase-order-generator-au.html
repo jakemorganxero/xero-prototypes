@@ -15,10 +15,16 @@
     - GT Walsheim → Plus Jakarta Sans (flag for prod)
     - Signup URL: xero.com/au/signup/
 -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- TODO prod: replace with National 2 woff2 from Xero design team -->
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+    <style>
+  @font-face {
+    font-family: 'National 2';
+    src: url('../fonts/national2-web-regular.woff2') format('woff2');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+  }
+</style>
 
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -36,7 +42,7 @@
     --xero-green: #1AB394;
     --xero-red: #E05A5A;
     --radius: 6px;
-    --font: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font: 'National 2', -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
   .xpog-wrap {
@@ -1102,7 +1108,15 @@
     const d = buildDocument();
     const win = window.open('', '_blank');
     win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Purchase Order ${escHtml(d.order.poNumber)}</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+    <style>
+  @font-face {
+    font-family: 'National 2';
+    src: url('../fonts/national2-web-regular.woff2') format('woff2');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+  }
+</style>
     <style>
       *{box-sizing:border-box;margin:0;padding:0}
       body{font-family:'DM Sans',sans-serif;color:#213B55;padding:40px;max-width:800px;margin:0 auto;font-size:11px}
@@ -1288,7 +1302,15 @@
     const d = buildDocument();
     const doc = document.getElementById('invDoc').innerHTML;
     const fullHTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Purchase Order ${escHtml(d.order.poNumber)}</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+<style>
+  @font-face {
+    font-family: 'National 2';
+    src: url('../fonts/national2-web-regular.woff2') format('woff2');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+  }
+</style>
 <style>
   body{font-family:'DM Sans',sans-serif;color:#213B55;padding:40px;max-width:800px;margin:0 auto}
   .inv-doc{background:#fff;border:1px solid #C2CDD6;border-radius:4px;padding:28px;font-size:0.78rem;color:#213B55;line-height:1.5}

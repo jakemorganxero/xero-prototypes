@@ -10,12 +10,20 @@
     GT Walsheim → DM Sans for prototyping.
 -->
 <!-- TODO prod: replace with National 2 woff2 from Xero design team -->
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+    <style>
+  @font-face {
+    font-family: 'National 2';
+    src: url('../fonts/national2-web-regular.woff2') format('woff2');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+  }
+</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   :root{--navy:#213B55;--blue:#13B5EA;--border:#C2CDD6;--muted:#4A6070;--green:#186241;--red:#E05A5A;--r:6px}
-  .w{font-family:'DM Sans',-apple-system,sans-serif;color:var(--navy);max-width:480px;padding:24px}
+  .w{font-family:'National 2',-apple-system,sans-serif;color:var(--navy);max-width:480px;padding:24px}
   .card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:20px}
   .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:14px}
   .eyebrow{font-size:.6875rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--blue);margin-bottom:6px}
@@ -77,8 +85,8 @@ function build(){
   ch=new Chart(canvas,{type:'line',data:{labels,datasets:[{data,borderColor:'#E05A5A',borderWidth:1.5,pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:'#E05A5A',pointHoverBorderColor:'#fff',pointHoverBorderWidth:2,fill:true,backgroundColor:grad,tension:.3}]},
     plugins:[cvPlugin(COVID_S,COVID_E,off,n)],
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(27,58,75,.95)',titleColor:'#fff',bodyColor:'rgba(255,255,255,.8)',padding:10,cornerRadius:5,titleFont:{family:"'DM Sans',sans-serif",weight:'600',size:12},bodyFont:{family:"'DM Sans',sans-serif",size:12},callbacks:{title:i=>i[0].label,label:i=>' '+i.raw.toFixed(1)+' days'}}},
-      scales:{x:{grid:{display:false},border:{display:false},ticks:{display:false}},y:{grid:{color:'rgba(194,205,214,.4)'},border:{display:false},ticks:{color:'#4A6070',font:{family:"'DM Sans',sans-serif",size:10},maxTicksLimit:4,callback:v=>v+'d'}}}}});
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(27,58,75,.95)',titleColor:'#fff',bodyColor:'rgba(255,255,255,.8)',padding:10,cornerRadius:5,titleFont:{family:"'National 2',sans-serif",weight:'600',size:12},bodyFont:{family:"'National 2',sans-serif",size:12},callbacks:{title:i=>i[0].label,label:i=>' '+i.raw.toFixed(1)+' days'}}},
+      scales:{x:{grid:{display:false},border:{display:false},ticks:{display:false}},y:{grid:{color:'rgba(194,205,214,.4)'},border:{display:false},ticks:{color:'#4A6070',font:{family:"'National 2',sans-serif",size:10},maxTicksLimit:4,callback:v=>v+'d'}}}}});
 }
 function sr(r){rng=r;document.querySelectorAll('.rb').forEach(b=>b.classList.toggle('on',+b.dataset.r===r));build()}
 build();

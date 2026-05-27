@@ -11,7 +11,15 @@
     GT Walsheim → DM Sans for prototyping.
 -->
 <!-- TODO prod: replace with National 2 woff2 from Xero design team -->
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+    <style>
+  @font-face {
+    font-family: 'National 2';
+    src: url('../fonts/national2-web-regular.woff2') format('woff2');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+  }
+</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 
 <style>
@@ -31,7 +39,7 @@
   }
 
   .xsbi-wrap {
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'National 2', -apple-system, BlinkMacSystemFont, sans-serif;
     color: var(--xero-text);
     max-width: 960px;
     margin: 0 auto;
@@ -267,11 +275,11 @@ function buildChart() {
       interaction: { mode:'index', intersect:false },
       plugins: {
         legend: { display:false },
-        tooltip: { backgroundColor:'rgba(27,58,75,0.95)', titleColor:'#fff', bodyColor:'rgba(255,255,255,0.8)', padding:12, cornerRadius:6, titleFont:{family:"'DM Sans',sans-serif",weight:'600',size:13}, bodyFont:{family:"'DM Sans',sans-serif",size:13}, callbacks: { title: i=>i[0].label, label: i=>' '+m.format(i.raw) } }
+        tooltip: { backgroundColor:'rgba(27,58,75,0.95)', titleColor:'#fff', bodyColor:'rgba(255,255,255,0.8)', padding:12, cornerRadius:6, titleFont:{family:"'National 2',sans-serif",weight:'600',size:13}, bodyFont:{family:"'National 2',sans-serif",size:13}, callbacks: { title: i=>i[0].label, label: i=>' '+m.format(i.raw) } }
       },
       scales: {
-        x: { grid:{display:false}, border:{display:false}, ticks:{color:'#4A6070',font:{family:"'DM Sans',sans-serif",size:11},maxTicksLimit:10,maxRotation:0} },
-        y: { grid:{color:'rgba(194,205,214,0.5)'}, border:{display:false}, ticks:{color:'#4A6070',font:{family:"'DM Sans',sans-serif",size:11},callback:v=>v+m.unit} }
+        x: { grid:{display:false}, border:{display:false}, ticks:{color:'#4A6070',font:{family:"'National 2',sans-serif",size:11},maxTicksLimit:10,maxRotation:0} },
+        y: { grid:{color:'rgba(194,205,214,0.5)'}, border:{display:false}, ticks:{color:'#4A6070',font:{family:"'National 2',sans-serif",size:11},callback:v=>v+m.unit} }
       }
     }
   });
