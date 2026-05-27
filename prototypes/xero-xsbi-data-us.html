@@ -10,13 +10,26 @@
     Shaded bands highlight COVID period (Mar–Dec 2020) and a notable data spike in Mar 2024.
     GT Walsheim → DM Sans for prototyping.
 -->
-<!-- TODO prod: replace with National 2 woff2 from Xero design team -->
-    <style>
+<style>
   @font-face {
-    font-family: 'National 2';
-    src: url('../fonts/national2-web-regular.woff2') format('woff2');
-    font-weight: 100 900;
-    font-style: normal;
+    font-family: 'National2';
+    font-weight: 400;
+    src: url('https://www.xero.com/fonts/national2-web-regular.woff2') format('woff2'),
+         url('https://www.xero.com/fonts/national2-web-regular.woff') format('woff');
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'National2';
+    font-weight: 500;
+    src: url('https://www.xero.com/fonts/national2-web-medium.woff2') format('woff2'),
+         url('https://www.xero.com/fonts/national2-web-medium.woff') format('woff');
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'National2';
+    font-weight: 700;
+    src: url('https://www.xero.com/fonts/national2-web-bold.woff2') format('woff2'),
+         url('https://www.xero.com/fonts/national2-web-bold.woff') format('woff');
     font-display: swap;
   }
 </style>
@@ -41,7 +54,7 @@
   }
 
   .xsbi-wrap {
-    font-family: 'National 2', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'National2', -apple-system, BlinkMacSystemFont, sans-serif;
     color: var(--xero-text);
     max-width: 960px;
     margin: 0 auto;
@@ -486,8 +499,8 @@ function buildChart() {
           bodyColor: 'rgba(255,255,255,0.8)',
           padding: 12,
           cornerRadius: 6,
-          titleFont: { family: "'National 2', sans-serif", weight: '600', size: 13 },
-          bodyFont: { family: "'National 2', sans-serif", size: 13 },
+          titleFont: { family: "'National2', sans-serif", weight: '600', size: 13 },
+          bodyFont: { family: "'National2', sans-serif", size: 13 },
           callbacks: {
             title(items) { return items[0].label; },
             label(item) {
@@ -502,7 +515,7 @@ function buildChart() {
           border: { display: false },
           ticks: {
             color: '#4A6070',
-            font: { family: "'National 2', sans-serif", size: 11 },
+            font: { family: "'National2', sans-serif", size: 11 },
             maxTicksLimit: 10,
             maxRotation: 0,
           }
@@ -515,7 +528,7 @@ function buildChart() {
           border: { display: false, dash: [4, 4] },
           ticks: {
             color: '#4A6070',
-            font: { family: "'National 2', sans-serif", size: 11 },
+            font: { family: "'National2', sans-serif", size: 11 },
             callback(v) {
               return m.key === 'sales' ? (v >= 0 ? '+' : '') + v + '%' : v + 'd';
             }

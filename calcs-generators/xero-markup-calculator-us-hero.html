@@ -20,13 +20,26 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Xero's free markup calculator – US</title>
-  <!-- TODO prod: replace with National 2 woff2 from Xero design team -->
-    <style>
+  <style>
   @font-face {
-    font-family: 'National 2';
-    src: url('../fonts/national2-web-regular.woff2') format('woff2');
-    font-weight: 100 900;
-    font-style: normal;
+    font-family: 'National2';
+    font-weight: 400;
+    src: url('https://www.xero.com/fonts/national2-web-regular.woff2') format('woff2'),
+         url('https://www.xero.com/fonts/national2-web-regular.woff') format('woff');
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'National2';
+    font-weight: 500;
+    src: url('https://www.xero.com/fonts/national2-web-medium.woff2') format('woff2'),
+         url('https://www.xero.com/fonts/national2-web-medium.woff') format('woff');
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'National2';
+    font-weight: 700;
+    src: url('https://www.xero.com/fonts/national2-web-bold.woff2') format('woff2'),
+         url('https://www.xero.com/fonts/national2-web-bold.woff') format('woff');
     font-display: swap;
   }
 </style>
@@ -44,7 +57,7 @@
       --xero-text-muted: #4A6070;
       --xero-green:      #1AB394;
       --radius:          6px;
-      --font: 'National 2', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font: 'National2', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

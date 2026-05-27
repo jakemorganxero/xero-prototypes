@@ -9,13 +9,26 @@
   Notes for devs: Drop into any AEM content column. No metric switcher — single series only.
     GT Walsheim → DM Sans for prototyping.
 -->
-<!-- TODO prod: replace with National 2 woff2 from Xero design team -->
-    <style>
+<style>
   @font-face {
-    font-family: 'National 2';
-    src: url('../fonts/national2-web-regular.woff2') format('woff2');
-    font-weight: 100 900;
-    font-style: normal;
+    font-family: 'National2';
+    font-weight: 400;
+    src: url('https://www.xero.com/fonts/national2-web-regular.woff2') format('woff2'),
+         url('https://www.xero.com/fonts/national2-web-regular.woff') format('woff');
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'National2';
+    font-weight: 500;
+    src: url('https://www.xero.com/fonts/national2-web-medium.woff2') format('woff2'),
+         url('https://www.xero.com/fonts/national2-web-medium.woff') format('woff');
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'National2';
+    font-weight: 700;
+    src: url('https://www.xero.com/fonts/national2-web-bold.woff2') format('woff2'),
+         url('https://www.xero.com/fonts/national2-web-bold.woff') format('woff');
     font-display: swap;
   }
 </style>
@@ -26,7 +39,7 @@
     --navy:#213B55;--blue:#13B5EA;--panel:#ECF2F6;--border:#C2CDD6;
     --muted:#4A6070;--green:#186241;--red:#E05A5A;--r:6px;
   }
-  .w{font-family:'National 2',-apple-system,sans-serif;color:var(--navy);max-width:960px;margin:0 auto;padding:36px 24px}
+  .w{font-family:'National2',-apple-system,sans-serif;color:var(--navy);max-width:960px;margin:0 auto;padding:36px 24px}
   .top{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:24px}
   .top-left{}
   .eyebrow{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);margin-bottom:8px}
@@ -101,8 +114,8 @@ function build(){
   ch=new Chart(canvas,{type:'line',data:{labels,datasets:[{data,borderColor:'#13B5EA',borderWidth:2,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#13B5EA',pointHoverBorderColor:'#fff',pointHoverBorderWidth:2,fill:true,backgroundColor:grad,tension:.3}]},
     plugins:[covidPlugin(COVID_S,COVID_E,off,n)],
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(27,58,75,.95)',titleColor:'#fff',bodyColor:'rgba(255,255,255,.8)',padding:12,cornerRadius:6,titleFont:{family:"'National 2',sans-serif",weight:'600',size:13},bodyFont:{family:"'National 2',sans-serif",size:13},callbacks:{title:i=>i[0].label,label:i=>' '+(i.raw>=0?'+':'')+i.raw.toFixed(1)+'%'}}},
-      scales:{x:{grid:{display:false},border:{display:false},ticks:{color:'#4A6070',font:{family:"'National 2',sans-serif",size:11},maxTicksLimit:10,maxRotation:0}},y:{grid:{color:'rgba(194,205,214,.5)'},border:{display:false},ticks:{color:'#4A6070',font:{family:"'National 2',sans-serif",size:11},callback:v=>(v>=0?'+':'')+v+'%'}}}}});
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(27,58,75,.95)',titleColor:'#fff',bodyColor:'rgba(255,255,255,.8)',padding:12,cornerRadius:6,titleFont:{family:"'National2',sans-serif",weight:'600',size:13},bodyFont:{family:"'National2',sans-serif",size:13},callbacks:{title:i=>i[0].label,label:i=>' '+(i.raw>=0?'+':'')+i.raw.toFixed(1)+'%'}}},
+      scales:{x:{grid:{display:false},border:{display:false},ticks:{color:'#4A6070',font:{family:"'National2',sans-serif",size:11},maxTicksLimit:10,maxRotation:0}},y:{grid:{color:'rgba(194,205,214,.5)'},border:{display:false},ticks:{color:'#4A6070',font:{family:"'National2',sans-serif",size:11},callback:v=>(v>=0?'+':'')+v+'%'}}}}});
 }
 function sr(r){rng=r;document.querySelectorAll('.rb').forEach(b=>b.classList.toggle('on',+b.dataset.r===r));build()}
 build();

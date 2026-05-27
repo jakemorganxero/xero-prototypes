@@ -10,13 +10,26 @@
     into AEM columns. Each card is self-contained and independently switchable via range pills.
     GT Walsheim → DM Sans for prototyping.
 -->
-<!-- TODO prod: replace with National 2 woff2 from Xero design team -->
-    <style>
+<style>
   @font-face {
-    font-family: 'National 2';
-    src: url('../fonts/national2-web-regular.woff2') format('woff2');
-    font-weight: 100 900;
-    font-style: normal;
+    font-family: 'National2';
+    font-weight: 400;
+    src: url('https://www.xero.com/fonts/national2-web-regular.woff2') format('woff2'),
+         url('https://www.xero.com/fonts/national2-web-regular.woff') format('woff');
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'National2';
+    font-weight: 500;
+    src: url('https://www.xero.com/fonts/national2-web-medium.woff2') format('woff2'),
+         url('https://www.xero.com/fonts/national2-web-medium.woff') format('woff');
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'National2';
+    font-weight: 700;
+    src: url('https://www.xero.com/fonts/national2-web-bold.woff2') format('woff2'),
+         url('https://www.xero.com/fonts/national2-web-bold.woff') format('woff');
     font-display: swap;
   }
 </style>
@@ -39,7 +52,7 @@
   }
 
   .xsbi-compact-wrap {
-    font-family: 'National 2', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'National2', -apple-system, BlinkMacSystemFont, sans-serif;
     color: var(--xero-text);
     padding: 32px 24px;
     /* Outer grid — shows three cards side by side for demo purposes.
@@ -295,8 +308,8 @@ function buildCard(key) {
           bodyColor: 'rgba(255,255,255,0.8)',
           padding: 10,
           cornerRadius: 5,
-          titleFont: { family:"'National 2',sans-serif", weight:'600', size:12 },
-          bodyFont: { family:"'National 2',sans-serif", size:12 },
+          titleFont: { family:"'National2',sans-serif", weight:'600', size:12 },
+          bodyFont: { family:"'National2',sans-serif", size:12 },
           callbacks: { title: i=>i[0].label, label: i=>' '+c.fmt(i.raw) }
         }
       },
@@ -311,7 +324,7 @@ function buildCard(key) {
           border: { display: false },
           ticks: {
             color: '#4A6070',
-            font: { family:"'National 2',sans-serif", size:10 },
+            font: { family:"'National2',sans-serif", size:10 },
             maxTicksLimit: 4,
             callback: v => v + c.unit,
           }
