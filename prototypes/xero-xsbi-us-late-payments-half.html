@@ -47,21 +47,21 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  :root{--navy:#000856;--blue:#13B5EA;--border:#C2CDD6;--muted:#4A6070;--green:#186241;--red:#E05A5A;--r:6px}
-  .w{font-family:'National2',-apple-system,sans-serif;color:var(--navy);max-width:480px;width:100%;padding:24px}
-  .card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:20px}
+  :root{--xero-navy:#000856;--blue:#13B5EA;--border:#C2CDD6;--muted:#4A6070;--green:#186241;--red:#E05A5A;--radius:6px;--font-heading:'National2Condensed',-apple-system,BlinkMacSystemFont,sans-serif}
+  .w{font-family:'National2',-apple-system,sans-serif;color:var(--xero-navy);max-width:480px;width:100%;padding:24px}
+  .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:20px}
   .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:14px}
   .eyebrow{font-size:.6875rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--blue);margin-bottom:6px}
   .val-row{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
-  .val{font-size:2rem;font-weight:700;line-height:1;color:var(--navy)}
+  .val{font-size:2rem;font-weight:700;line-height:1;color:var(--xero-navy)}
   .delta{font-size:.6875rem;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap}
   .delta.pos{background:rgba(26,179,148,.12);color:var(--green)}
   .delta.neg{background:rgba(255,196,210,0.5);color:var(--red)}
   .sublabel{font-size:.6875rem;color:var(--muted);margin-top:4px}
   .range{display:flex;gap:3px;flex-shrink:0}
   .rb{background:none;border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-family:inherit;font-size:.6875rem;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s}
-  .rb:hover{border-color:var(--navy);color:var(--navy)}
-  .rb.on{background:var(--navy);border-color:var(--navy);color:#fff}
+  .rb:hover{border-color:var(--xero-navy);color:var(--xero-navy)}
+  .rb.on{background:var(--xero-navy);border-color:var(--xero-navy);color:#fff}
   .chart-wrap{height:150px;margin-bottom:12px}
   .footer{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border);gap:8px;flex-wrap:wrap}
   .leg{display:flex;align-items:center;gap:6px;font-size:.6875rem;color:var(--muted)}
