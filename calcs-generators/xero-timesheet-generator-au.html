@@ -445,7 +445,7 @@
     .xero-preview__doc {
       background: #fff;
       border: 1px solid var(--xero-border);
-      border-radius: var(--radius) var(--radius) 0 0;
+      border-radius: var(--radius);
       padding: 28px 28px 20px;
       font-size: 0.75rem;
       color: var(--xero-navy);
@@ -609,10 +609,10 @@
 
 /* ── Download strip ── */
     .xero-preview__dl {
+      margin-top: 12px;
       background: var(--xero-panel-bg);
       border: 1px solid var(--xero-border);
-      border-top: none;
-      border-radius: 0 0 var(--radius) var(--radius);
+      border-radius: var(--radius);
       padding: 12px 16px;
       display: flex;
       align-items: center;
@@ -981,6 +981,7 @@
       </div><!-- /xero-preview__doc -->
 
       <!-- Download strip -->
+      <p class="xero-cta">Track team hours and manage timesheets with Xero. Start a 30 day <a href="https://www.xero.com/au/signup/" target="_blank">free trial</a>.</p>
       <div class="xero-preview__dl">
         <span class="xero-preview__dl-label">Download as:</span>
         <button class="xero-dl-btn" onclick="downloadPDF()">
@@ -1004,7 +1005,6 @@
           HTML
         </button>
       </div>
-      <p class="xero-cta">Track team hours and manage timesheets with Xero. Start a 30 day <a href="https://www.xero.com/au/signup/" target="_blank">free trial</a>.</p>
       <p class="xero-disclaimer">*This tool generates timesheet documents only and is not financial or tax advice.</p>
 
     </div><!-- /xero-preview -->

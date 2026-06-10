@@ -232,7 +232,7 @@
     .xero-preview { position: sticky; top: 24px; }
     .xero-preview__label { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--xero-text-muted); margin-bottom: 10px; }
 
-    .xero-preview__doc { background: #fff; border: 1px solid var(--xero-border); border-radius: var(--radius) var(--radius) 0 0; padding: 28px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); font-size: 0.8125rem; line-height: 1.5; }
+    .xero-preview__doc { background: #fff; border: 1px solid var(--xero-border); border-radius: var(--radius); padding: 28px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); font-size: 0.8125rem; line-height: 1.5; }
 
     .xero-preview__doc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
     .xero-preview__doc-logo-placeholder { width: 80px; height: 36px; border: 1px dashed var(--xero-border); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 0.5625rem; color: var(--xero-text-muted); }
@@ -258,10 +258,10 @@
 
     /* ── Download strip ── */
     .xero-preview__dl {
+      margin-top: 12px;
       background: var(--xero-panel-bg);
       border: 1px solid var(--xero-border);
-      border-top: none;
-      border-radius: 0 0 var(--radius) var(--radius);
+      border-radius: var(--radius);
       padding: 12px 16px;
       display: flex;
       align-items: center;
@@ -578,6 +578,7 @@
       </div><!-- /xero-preview__doc -->
 
       <!-- Download strip -->
+      <p class="xero-cta">Pay your team and manage payroll with Xero. Start a 30 day <a href="https://www.xero.com/uk/signup/" target="_blank">free trial</a>.</p>
       <div class="xero-preview__dl">
         <span class="xero-preview__dl-label">Download as:</span>
         <button class="xero-dl-btn" onclick="downloadPDF()">
@@ -601,7 +602,6 @@
           HTML
         </button>
       </div>
-      <p class="xero-cta">Pay your team and manage payroll with Xero. Start a 30 day <a href="https://www.xero.com/uk/signup/" target="_blank">free trial</a>.</p>
       <p class="xero-disclaimer">*This tool generates payslip documents only. Tax figures must be verified against official HMRC tax tables. Not financial or tax advice.</p>
     </div>
 

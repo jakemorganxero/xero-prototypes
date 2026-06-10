@@ -107,10 +107,10 @@
 
 /* ── Download strip ── */
     .xero-preview__dl {
+      margin-top: 12px;
       background: var(--xero-panel-bg);
       border: 1px solid var(--xero-border);
-      border-top: none;
-      border-radius: 0 0 var(--radius) var(--radius);
+      border-radius: var(--radius);
       padding: 12px 16px;
       display: flex;
       align-items: center;
@@ -488,10 +488,10 @@
 
     /* ─── Download strip below preview ─── */
     .xero-preview__dl {
+      margin-top: 12px;
       background: var(--xero-panel-bg);
       border: 1px solid var(--xero-border);
-      border-top: none;
-      border-radius: 0 0 var(--radius) var(--radius);
+      border-radius: var(--radius);
       padding: 12px 16px;
       display: flex;
       align-items: center;
@@ -523,7 +523,7 @@
     }
 
     /* Round only top corners on preview card when paired with dl strip */
-    .xero-preview__doc { border-radius: var(--radius) var(--radius) 0 0; }
+    .xero-preview__doc { border-radius: var(--radius); }
 
     /* ─── Print ─── */
     @media print {
@@ -709,13 +709,14 @@
         </div>
       </div>
 
-      <p style="font-size:0.875rem;color:var(--xero-text-muted);margin-top:24px;">Get a real time view of your invoicing with Xero. Start a 30 day <a href="https://www.xero.com/us/signup/" style="color:var(--xero-blue);text-decoration:none;font-weight:600;">free trial</a>.</p>
+      <p style="font-size:0.875rem;color:var(--xero-text-muted);margin-top:24px;">Get a real time view of your invoicing with Xero. <a href="https://www.xero.com/us/signup/" style="color:var(--xero-blue);text-decoration:none;font-weight:600;">Get one month free</a>.</p>
     </div>
 
     <!-- ── RIGHT: Invoice preview ── -->
     <div class="xero-preview">
       <p class="xero-preview__label">Invoice preview</p>
       <div class="xero-preview__doc" id="invoice-preview"></div>
+      <p class="xero-cta">Create and send professional invoices with Xero. <a href="https://www.xero.com/us/signup/" target="_blank">Get one month free</a>.</p>
       <div class="xero-preview__dl">
         <span class="xero-preview__dl-label">Download as:</span>
         <button class="xero-dl-btn" onclick="downloadPDF()">
@@ -739,7 +740,6 @@
           HTML
         </button>
       </div>
-      <p class="xero-cta">Create and send professional invoices with Xero. Start a 30 day <a href="https://www.xero.com/us/signup/" target="_blank">free trial</a>.</p>
       <p class="xero-disclaimer">*This tool generates invoice documents only and is not financial or tax advice.</p>
     </div>
 

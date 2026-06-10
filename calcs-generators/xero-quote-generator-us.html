@@ -299,7 +299,7 @@
     .xero-preview__doc {
       background: #fff;
       border: 1px solid var(--xero-border);
-      border-radius: var(--radius) var(--radius) 0 0;
+      border-radius: var(--radius);
       padding: 32px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.06);
       font-family: Arial, sans-serif;
@@ -310,10 +310,10 @@
 
     /* ── Download strip ── */
     .xero-preview__dl {
+      margin-top: 12px;
       background: var(--xero-panel-bg);
       border: 1px solid var(--xero-border);
-      border-top: none;
-      border-radius: 0 0 var(--radius) var(--radius);
+      border-radius: var(--radius);
       padding: 12px 16px;
       display: flex;
       align-items: center;
@@ -532,6 +532,7 @@
     <div class="xero-preview-col">
       <p class="xero-preview__label">Quote preview</p>
       <div class="xero-preview__doc" id="quote-preview"></div>
+      <p class="xero-cta">Create professional quotes and convert them to invoices with Xero. <a href="https://www.xero.com/us/signup/" target="_blank">Get one month free</a>.</p>
       <div class="xero-preview__dl">
         <span class="xero-preview__dl-label">Download as:</span>
         <button class="xero-dl-btn" onclick="downloadPDF()">
@@ -555,7 +556,6 @@
           HTML
         </button>
       </div>
-      <p class="xero-cta">Create professional quotes and convert them to invoices with Xero. Start a 30 day <a href="https://www.xero.com/us/signup/" target="_blank">free trial</a>.</p>
       <p class="xero-disclaimer">*This tool generates quote documents only and is not financial or tax advice.</p>
     </div>
 

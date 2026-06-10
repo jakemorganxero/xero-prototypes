@@ -277,7 +277,7 @@
     }
 
     .xero-preview__doc {
-      background: #fff; border: 1px solid var(--xero-border); border-radius: var(--radius) var(--radius) 0 0;
+      background: #fff; border: 1px solid var(--xero-border); border-radius: var(--radius);
       padding: 28px; box-shadow: 0 4px 20px rgba(0,8,86,0.06); font-size: 0.8125rem; line-height: 1.5;
     }
     .xero-preview__doc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
@@ -306,10 +306,10 @@
 
     /* ── Download strip ── */
     .xero-preview__dl {
+      margin-top: 12px;
       background: var(--xero-panel-bg);
       border: 1px solid var(--xero-border);
-      border-top: none;
-      border-radius: 0 0 var(--radius) var(--radius);
+      border-radius: var(--radius);
       padding: 12px 16px;
       display: flex;
       align-items: center;
@@ -463,6 +463,7 @@
     <div class="xero-preview">
       <p class="xero-preview__label">Expense report preview</p>
       <div class="xero-preview__doc" id="exp-preview"></div>
+      <p class="xero-cta">Track and manage expenses automatically with Xero. <a href="https://www.xero.com/us/signup/" target="_blank">Get one month free</a>.</p>
       <div class="xero-preview__dl">
         <span class="xero-preview__dl-label">Download as:</span>
         <button class="xero-dl-btn" onclick="downloadPDF()">
@@ -486,7 +487,6 @@
           HTML
         </button>
       </div>
-      <p class="xero-cta">Track and manage expenses automatically with Xero. Start a 30 day <a href="https://www.xero.com/us/signup/" target="_blank">free trial</a>.</p>
       <p class="xero-disclaimer">*This tool generates expense report documents only and is not financial or tax advice.</p>
     </div>
 
@@ -660,7 +660,7 @@
         <span class="v">${fmt(total)}</span>
       </div>
       ${notes ? `<div class="xero-preview__doc-notes"><div class="xero-preview__doc-notes-heading">Notes</div><div>${esc(notes)}</div></div>` : ''}
-      <div class="xero-preview__doc-cta">Track and manage expenses automatically with Xero. Start a 30 day <a href="${LOCALE.signupUrl}" target="_blank">free trial</a>.</div>`;
+      <div class="xero-preview__doc-cta">Track and manage expenses automatically with Xero. <a href="${LOCALE.signupUrl}" target="_blank">Get one month free</a>.</div>`;
   }
 
   function updatePreview() { $id('exp-preview').innerHTML = buildDocument(); }
