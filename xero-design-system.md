@@ -97,7 +97,7 @@ National2 (400/500/700) from `https://www.xero.com/fonts/…woff2`; National2Con
 | **Data viz full** | xsbi full/standalone | `960px` | — | 768px |
 | **Data viz half** | xsbi `-half` | `480px` card | — | n/a |
 
-The outer hero band is full-width and Warm Grey (`--xero-panel-bg`); the inner is centred at the width above.
+**Background rule (important):** the outer hero band / page wrapper is **WHITE** (`--xero-bg`) and full-width; the inner is centred at the width above. Only the **calculator card / form panel** is Warm Grey (`--xero-panel-bg`) so it stands out against the white page. Never make the whole page Warm Grey. For table calculators (depreciation, timesheet-calc) the page wrapper is white, the input/form card is Warm Grey, and the schedule/result table is white.
 
 ---
 
