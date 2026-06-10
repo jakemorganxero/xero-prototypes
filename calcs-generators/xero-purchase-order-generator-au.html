@@ -75,8 +75,8 @@
   .xpog-wrap {
     font-family: var(--font);
     color: var(--xero-text);
-    background: #F5F7F9;
-    max-width: 1300px;
+    background: #ffffff;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 40px 5% 56px;
   }
@@ -100,31 +100,34 @@
   .xpog-form-col { min-width: 0; }
 
   .xpog-form-title {
-    font-size: 1.375rem;
+    font-family: var(--font-heading);
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
     font-weight: 800;
     color: var(--xero-navy);
     margin-bottom: 28px;
   }
 
   .xpog-section {
-    background: var(--xero-bg);
-    border: 1px solid var(--xero-border);
-    border-radius: var(--radius);
-    margin-bottom: 20px;
-    overflow: hidden;
+    background: none;
+    border: none;
+    border-radius: 0;
+    margin-bottom: 28px;
+    overflow: visible;
   }
 
   .xpog-section-header {
-    background: var(--xero-navy);
-    color: #fff;
-    font-size: 0.75rem;
+    background: none;
+    color: var(--xero-text-muted);
+    font-size: 0.6875rem;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    padding: 10px 16px;
+    padding: 0 0 8px 0;
+    border-bottom: 1px solid var(--xero-border);
+    margin-bottom: 16px;
   }
 
-  .xpog-section-body { padding: 20px 16px; }
+  .xpog-section-body { padding: 16px 0 0 0; }
 
   .xpog-row {
     display: grid;
@@ -139,11 +142,12 @@
   .xpog-field { display: flex; flex-direction: column; gap: 4px; }
 
   .xpog-field label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--xero-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--xero-navy);
+    text-transform: none;
+    letter-spacing: 0;
+    margin-bottom: 4px;
   }
 
   .xpog-field input,
