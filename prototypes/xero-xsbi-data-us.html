@@ -32,6 +32,18 @@
          url('https://www.xero.com/fonts/national2-web-bold.woff') format('woff');
     font-display: swap;
   }
+@font-face {
+  font-family: 'National2Condensed';
+  font-weight: 700;
+  src: url('../fonts/national2-condensed-bold.otf') format('opentype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'National2Condensed';
+  font-weight: 800;
+  src: url('../fonts/national2-condensed-extrabold.otf') format('opentype');
+  font-display: swap;
+}
   @media (max-width: 600px) {
     .xsbi-wrap { padding: 32px 5%; }
     .xsbi-chart-wrap { width: 100%; }
@@ -43,14 +55,15 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --xero-navy:       #213B55;
+    --xero-navy:       #000856;
     --xero-blue:       #13B5EA;
     --xero-blue-dark:  #0D8FBD;
-    --xero-panel-bg:   #ECF2F6;
+    --xero-panel-bg:   #F2F1EE;
     --xero-border:     #C2CDD6;
-    --xero-input-border: #213B55;
+    --xero-input-border: #000856;
+      --xero-input-border-grey: #CBCAC9;
     --xero-bg:         #FFFFFF;
-    --xero-text:       #213B55;
+    --xero-text:       #000856;
     --xero-text-muted: #4A6070;
     --xero-green:      #186241;
     --xero-red:        #E05A5A;
@@ -78,6 +91,7 @@
     margin-bottom: 10px;
   }
   .xsbi-title {
+      font-family: var(--font-heading);
     font-size: clamp(1.6rem, 3vw, 2.25rem);
     font-weight: 700;
     color: var(--xero-navy);
@@ -180,6 +194,7 @@
     margin-bottom: 24px;
   }
   .xsbi-chart-title {
+      font-family: var(--font-heading);
     font-size: 1.1rem;
     font-weight: 700;
     color: var(--xero-navy);
@@ -279,7 +294,8 @@
     .xsbi-stats { grid-template-columns: 1fr; }
     .xsbi-chart-top { flex-direction: column; align-items: flex-start; }
     .xsbi-chart-wrap { height: 240px; }
-    .xsbi-title { font-size: 1.5rem; }
+    .xsbi-title {
+      font-family: var(--font-heading); font-size: 1.5rem; }
   }
 </style>
 
@@ -351,7 +367,7 @@
         <span id="legend-metric-label">Sales growth (YoY %)</span>
       </div>
       <div class="xsbi-legend-item">
-        <div class="xsbi-legend-swatch" style="background:rgba(255,196,210,0.25); width:16px; height:12px; border-radius:2px;"></div>
+        <div class="xsbi-legend-swatch" style="background:rgba(255,196,210,0.5); width:16px; height:12px; border-radius:2px;"></div>
         <span>COVID period (Apr–Dec 2020)</span>
       </div>
     </div>
@@ -388,7 +404,7 @@ const METRICS = {
     format: v => (v >= 0 ? '+' : '') + v.toFixed(1) + '%',
     color: '#13B5EA',
     fillPositive: 'rgba(19,181,234,0.12)',
-    fillNegative: 'rgba(255,196,210,0.12)',
+    fillNegative: 'rgba(255,196,210,0.4)',
     zeroLine: true,
   },
   ttp: {
@@ -411,8 +427,8 @@ const METRICS = {
     unit: ' days',
     format: v => v.toFixed(1) + ' days',
     color: '#E05A5A',
-    fillPositive: 'rgba(255,196,210,0.10)',
-    fillNegative: 'rgba(255,196,210,0.10)',
+    fillPositive: 'rgba(255,196,210,0.35)',
+    fillNegative: 'rgba(255,196,210,0.35)',
     zeroLine: false,
   }
 };
@@ -445,7 +461,7 @@ function covidPlugin(startIdx, endIdx) {
       const x1 = scales.x.getPixelForValue(endIdx);
       if (x0 == null || x1 == null) return;
       ctx.save();
-      ctx.fillStyle = 'rgba(255,196,210,0.07)';
+      ctx.fillStyle = 'rgba(255,196,210,0.35)';
       ctx.fillRect(x0, chartArea.top, x1 - x0, chartArea.height);
       ctx.restore();
     }

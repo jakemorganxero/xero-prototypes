@@ -31,11 +31,23 @@
          url('https://www.xero.com/fonts/national2-web-bold.woff') format('woff');
     font-display: swap;
   }
+@font-face {
+  font-family: 'National2Condensed';
+  font-weight: 700;
+  src: url('../fonts/national2-condensed-bold.otf') format('opentype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'National2Condensed';
+  font-weight: 800;
+  src: url('../fonts/national2-condensed-extrabold.otf') format('opentype');
+  font-display: swap;
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  :root{--navy:#213B55;--blue:#13B5EA;--border:#C2CDD6;--muted:#4A6070;--green:#186241;--red:#E05A5A;--r:6px}
+  :root{--navy:#000856;--blue:#13B5EA;--border:#C2CDD6;--muted:#4A6070;--green:#186241;--red:#E05A5A;--r:6px}
   .w{font-family:'National2',-apple-system,sans-serif;color:var(--navy);max-width:480px;width:100%;padding:24px}
   .card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:20px}
   .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:14px}
@@ -44,7 +56,7 @@
   .val{font-size:2rem;font-weight:700;line-height:1;color:var(--navy)}
   .delta{font-size:.6875rem;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap}
   .delta.pos{background:rgba(26,179,148,.12);color:var(--green)}
-  .delta.neg{background:rgba(255,196,210,.1);color:var(--red)}
+  .delta.neg{background:rgba(255,196,210,0.35);color:var(--red)}
   .sublabel{font-size:.6875rem;color:var(--muted);margin-top:4px}
   .range{display:flex;gap:3px;flex-shrink:0}
   .rb{background:none;border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-family:inherit;font-size:.6875rem;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s}
@@ -87,7 +99,7 @@ const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec
 const fmt=l=>{const[m,y]=l.split('/');return MO[+m-1]+' '+y};
 const COVID_S=39,COVID_E=47;
 let rng=0,ch=null;
-const cvPlugin=(s,e,off,len)=>({id:'cv',beforeDatasetsDraw(c){const{ctx,chartArea:a,scales:sc}=c;const sl=s-off,el=e-off;if(el<0||sl>=len)return;const x0=sc.x.getPixelForValue(Math.max(0,sl)),x1=sc.x.getPixelForValue(Math.min(len-1,el));ctx.save();ctx.fillStyle='rgba(255,196,210,.07)';ctx.fillRect(x0,a.top,x1-x0,a.height);ctx.restore()}});
+const cvPlugin=(s,e,off,len)=>({id:'cv',beforeDatasetsDraw(c){const{ctx,chartArea:a,scales:sc}=c;const sl=s-off,el=e-off;if(el<0||sl>=len)return;const x0=sc.x.getPixelForValue(Math.max(0,sl)),x1=sc.x.getPixelForValue(Math.min(len-1,el));ctx.save();ctx.fillStyle='rgba(255,196,210,0.35)';ctx.fillRect(x0,a.top,x1-x0,a.height);ctx.restore()}});
 function build(){
   const n=rng===0?L.length:rng*12,off=L.length-n;
   const labels=L.slice(-n).map(fmt),data=D.slice(-n);

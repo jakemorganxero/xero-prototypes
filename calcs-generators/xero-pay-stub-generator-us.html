@@ -26,6 +26,18 @@
          url('https://www.xero.com/fonts/national2-web-bold.woff') format('woff');
     font-display: swap;
   }
+@font-face {
+  font-family: 'National2Condensed';
+  font-weight: 700;
+  src: url('../fonts/national2-condensed-bold.otf') format('opentype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'National2Condensed';
+  font-weight: 800;
+  src: url('../fonts/national2-condensed-extrabold.otf') format('opentype');
+  font-display: swap;
+}
 </style>
   <!--
     XERO PROTOTYPE
@@ -53,20 +65,22 @@
   -->
   <style>
     :root {
-      --xero-navy:       #213B55;
+      --xero-navy:       #000856;
       --xero-blue:       #13B5EA;
       --xero-blue-dark:  #0D8FBD;
-      --xero-panel-bg:   #ECF2F6;
+      --xero-panel-bg:   #F2F1EE;
       --xero-border:     #C2CDD6;
-    --xero-input-border: #213B55;
+    --xero-input-border: #000856;
+      --xero-input-border-grey: #CBCAC9;
       --xero-bg:         #FFFFFF;
-      --xero-text:       #213B55;
+      --xero-text:       #000856;
       --xero-text-muted: #4A6070;
       --xero-input-bg:   #FFFFFF;
       --xero-green:      #1AB394;
       --xero-red:        #E05A5A;
       --radius: 6px;
       --font: 'National2', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-heading: 'National2Condensed', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -91,7 +105,8 @@
 
     @media (max-width: 1000px) { .xero-tool__layout { grid-template-columns: 1fr; } }
 
-    .xero-form__title { font-size: 1.375rem; font-weight: 800; color: var(--xero-navy); letter-spacing: -0.02em; margin-bottom: 28px; }
+    .xero-form__title {
+      font-family: var(--font-heading); font-size: 1.375rem; font-weight: 800; color: var(--xero-navy); letter-spacing: -0.02em; margin-bottom: 28px; }
 
     .xero-section { padding-bottom: 24px; border-bottom: 1px solid var(--xero-border); margin-bottom: 24px; }
     .xero-section:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
@@ -527,23 +542,23 @@
       <div class="xero-preview__dl">
         <span class="xero-preview__dl-label">Download as:</span>
         <button class="xero-dl-btn" onclick="downloadPDF()">
-          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><path d="M1 10v2a1 1 0 001 1h9a1 1 0 001-1v-2M6.5 1v7m0 0L4 5.5M6.5 8l2.5-2.5" stroke="#213B55" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><path d="M1 10v2a1 1 0 001 1h9a1 1 0 001-1v-2M6.5 1v7m0 0L4 5.5M6.5 8l2.5-2.5" stroke="#000856" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           PDF
         </button>
         <button class="xero-dl-btn" onclick="downloadWord()">
-          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#213B55" stroke-width="1.5"/><path d="M4 5h5M4 7.5h5M4 10h3" stroke="#213B55" stroke-width="1.3" stroke-linecap="round"/></svg>
+          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#000856" stroke-width="1.5"/><path d="M4 5h5M4 7.5h5M4 10h3" stroke="#000856" stroke-width="1.3" stroke-linecap="round"/></svg>
           Word
         </button>
         <button class="xero-dl-btn" onclick="downloadExcel()">
-          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#213B55" stroke-width="1.5"/><path d="M4 5l5 4M9 5l-5 4" stroke="#1AB394" stroke-width="1.3" stroke-linecap="round"/></svg>
+          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#000856" stroke-width="1.5"/><path d="M4 5l5 4M9 5l-5 4" stroke="#1AB394" stroke-width="1.3" stroke-linecap="round"/></svg>
           Excel
         </button>
         <button class="xero-dl-btn" onclick="openGSheets()">
-          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#213B55" stroke-width="1.5"/><path d="M4 5h5M4 7.5h5M4 10h5" stroke="#0D8FBD" stroke-width="1.3" stroke-linecap="round"/></svg>
+          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#000856" stroke-width="1.5"/><path d="M4 5h5M4 7.5h5M4 10h5" stroke="#0D8FBD" stroke-width="1.3" stroke-linecap="round"/></svg>
           Google Sheets
         </button>
         <button class="xero-dl-btn" onclick="openGDoc()">
-          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#213B55" stroke-width="1.5"/><path d="M4 5h5M4 7.5h5M4 10h3" stroke="#13B5EA" stroke-width="1.3" stroke-linecap="round"/></svg>
+          <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1" y="1" width="11" height="12" rx="1.5" stroke="#000856" stroke-width="1.5"/><path d="M4 5h5M4 7.5h5M4 10h3" stroke="#13B5EA" stroke-width="1.3" stroke-linecap="round"/></svg>
           Google Doc
         </button>
       </div>
@@ -900,11 +915,11 @@
     const stateLabel = gs('state-select') || 'State';
 
     const html = `<!DOCTYPE html><html lang="en-US"><head><meta charset="UTF-8"><title>Pay Stub — ${gs('emp-name')||'Employee'}</title>
-<style>body{font-family:Arial,sans-serif;font-size:12px;color:#213B55;max-width:680px;margin:40px auto;padding:0 20px}
-h1{font-size:20px;font-weight:900}hr{border:none;border-top:2px solid #213B55;margin:12px 0}
-table{width:100%;border-collapse:collapse;margin-bottom:8px}th{background:#213B55;color:#fff;padding:5px 8px;font-size:10px;text-align:left}
+<style>body{font-family:Arial,sans-serif;font-size:12px;color:#000856;max-width:680px;margin:40px auto;padding:0 20px}
+h1{font-size:20px;font-weight:900}hr{border:none;border-top:2px solid #000856;margin:12px 0}
+table{width:100%;border-collapse:collapse;margin-bottom:8px}th{background:#000856;color:#fff;padding:5px 8px;font-size:10px;text-align:left}
 th.r,td.r{text-align:right}td{padding:5px 8px;border-bottom:1px solid #C2CDD6}
-.sub td{font-weight:700;background:#f0f5f8}.net td{font-size:13px;font-weight:900;background:#ECF2F6;border-top:2px solid #213B55}</style></head><body>
+.sub td{font-weight:700;background:#f0f5f8}.net td{font-size:13px;font-weight:900;background:#F2F1EE;border-top:2px solid #000856}</style></head><body>
 <div style="display:flex;justify-content:space-between"><div>${gs('biz-name')}<br>${gs('biz-address')}${gs('biz-ein')?'<br>EIN: '+gs('biz-ein'):''}</div><h1>PAY STUB</h1></div>
 <hr>
 <table><tr><td><b>Employee:</b> ${gs('emp-name')}</td><td><b>ID:</b> ${gs('emp-id')}</td></tr>

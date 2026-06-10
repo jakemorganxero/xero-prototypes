@@ -26,6 +26,18 @@
          url('https://www.xero.com/fonts/national2-web-bold.woff') format('woff');
     font-display: swap;
   }
+@font-face {
+  font-family: 'National2Condensed';
+  font-weight: 700;
+  src: url('../fonts/national2-condensed-bold.otf') format('opentype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'National2Condensed';
+  font-weight: 800;
+  src: url('../fonts/national2-condensed-extrabold.otf') format('opentype');
+  font-display: swap;
+}
 </style>
   <!--
     XERO PROTOTYPE
@@ -46,20 +58,22 @@
   -->
   <style>
     :root {
-      --xero-navy:       #213B55;
+      --xero-navy:       #000856;
       --xero-blue:       #13B5EA;
       --xero-blue-dark:  #0D8FBD;
-      --xero-panel-bg:   #ECF2F6;
+      --xero-panel-bg:   #F2F1EE;
       --xero-border:     #C2CDD6;
-    --xero-input-border: #213B55;
+    --xero-input-border: #000856;
+      --xero-input-border-grey: #CBCAC9;
       --xero-bg:         #FFFFFF;
-      --xero-text:       #213B55;
+      --xero-text:       #000856;
       --xero-text-muted: #4A6070;
       --xero-input-bg:   #FFFFFF;
       --xero-green:      #1AB394;
       --xero-red:        #E05A5A;
       --radius: 6px;
       --font: 'National2', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-heading: 'National2Condensed', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -90,6 +104,7 @@
 
     /* ─── Form ─── */
     .xero-form__title {
+      font-family: var(--font-heading);
       font-size: 1.375rem;
       font-weight: 800;
       color: var(--xero-navy);
@@ -1281,24 +1296,24 @@ function getFilenameBase() {
 function downloadPDF() {
   // Trigger browser print dialog targeting the preview doc
   const style = `<style>
-    body { font-family: Arial, sans-serif; font-size: 11px; color: #213B55; margin: 20px; }
+    body { font-family: Arial, sans-serif; font-size: 11px; color: #000856; margin: 20px; }
     h1 { font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
-    hr { border: none; border-top: 2px solid #213B55; margin: 10px 0; }
+    hr { border: none; border-top: 2px solid #000856; margin: 10px 0; }
     .meta { display: flex; justify-content: space-between; margin-bottom: 12px; }
     table { width: 100%; border-collapse: collapse; font-size: 10px; }
-    thead tr { background: #213B55; color: white; }
+    thead tr { background: #000856; color: white; }
     thead th { padding: 5px 6px; text-align: left; font-size: 9px; text-transform: uppercase; }
     thead th.r { text-align: right; }
     tbody tr:nth-child(even) { background: #f7f9fb; }
     tbody td { padding: 3px 6px; border-bottom: 1px solid #e8edf1; }
     tbody td.r { text-align: right; font-weight: 600; }
-    tfoot tr { border-top: 2px solid #213B55; }
+    tfoot tr { border-top: 2px solid #000856; }
     tfoot td { padding: 5px 6px; font-weight: 800; }
     tfoot td.r { text-align: right; }
     .pay-row { display: flex; justify-content: space-between; padding: 2px 0; font-size: 10px; }
-    .pay-grand { font-weight: 800; font-size: 12px; border-top: 1px solid #213B55; padding-top: 5px; margin-top: 4px; }
+    .pay-grand { font-weight: 800; font-size: 12px; border-top: 1px solid #000856; padding-top: 5px; margin-top: 4px; }
     .sigs { display: flex; gap: 40px; margin-top: 20px; }
-    .sig-line { border-bottom: 1px solid #213B55; width: 160px; height: 18px; margin-bottom: 3px; }
+    .sig-line { border-bottom: 1px solid #000856; width: 160px; height: 18px; margin-bottom: 3px; }
     .sig-lbl { font-size: 8px; text-transform: uppercase; color: #4A6070; }
     @media print { @page { margin: 15mm; } }
   </style>`;
@@ -1494,33 +1509,33 @@ function downloadHTML() {
   const html = `<!DOCTYPE html><html lang="en-NZ"><head>
     <meta charset="UTF-8"><title>Timesheet</title>
     <style>
-      body { font-family: Arial, sans-serif; padding: 40px; color: #213B55; max-width: 900px; margin: 0 auto; }
+      body { font-family: Arial, sans-serif; padding: 40px; color: #000856; max-width: 900px; margin: 0 auto; }
       .inv-doc { border: 1px solid #C2CDD6; border-radius: 4px; padding: 28px; }
       .inv-doc__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
       .inv-doc__title { font-size: 1.2rem; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; }
-      .inv-doc__divider { border: none; border-top: 2px solid #213B55; margin: 12px 0; }
+      .inv-doc__divider { border: none; border-top: 2px solid #000856; margin: 12px 0; }
       .inv-doc__meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
       .inv-meta__block .meta-lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #4A6070; margin-bottom: 3px; }
       .inv-meta__block .meta-val { font-size: 12px; font-weight: 600; line-height: 1.4; }
       .inv-meta__block .meta-val.muted { font-weight: 400; color: #4A6070; }
       .prev-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-      .prev-table thead tr { background: #213B55; color: white; }
+      .prev-table thead tr { background: #000856; color: white; }
       .prev-table thead th { padding: 6px; text-transform: uppercase; font-size: 9px; text-align: left; }
       .prev-table thead th.right { text-align: right; }
       .prev-table tbody tr:nth-child(even) { background: #f7f9fb; }
       .prev-table tbody td { padding: 4px 6px; border-bottom: 1px solid #e8edf1; }
       .prev-table tbody td.right { text-align: right; font-weight: 600; }
       .prev-table tbody td.muted { color: #4A6070; }
-      .prev-table tfoot tr { border-top: 2px solid #213B55; }
+      .prev-table tfoot tr { border-top: 2px solid #000856; }
       .prev-table tfoot td { padding: 6px; font-weight: 800; }
       .prev-table tfoot td.right { text-align: right; }
       .prev-pay { margin-top: 12px; border-top: 1px solid #C2CDD6; padding-top: 10px; }
       .prev-pay__row { display: flex; justify-content: space-between; padding: 2px 0; font-size: 11px; }
-      .prev-pay__row.grand { font-weight: 800; font-size: 13px; border-top: 1px solid #213B55; padding-top: 6px; margin-top: 4px; }
+      .prev-pay__row.grand { font-weight: 800; font-size: 13px; border-top: 1px solid #000856; padding-top: 6px; margin-top: 4px; }
       .prev-sigs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; padding-top: 12px; border-top: 1px solid #C2CDD6; }
-      .prev-sig__line { border-bottom: 1px solid #213B55; height: 20px; margin-bottom: 4px; }
+      .prev-sig__line { border-bottom: 1px solid #000856; height: 20px; margin-bottom: 4px; }
       .prev-sig__label { font-size: 9px; color: #4A6070; text-transform: uppercase; letter-spacing: 1px; }
-      .inv-doc__logo { width: 80px; height: 40px; background: #ECF2F6; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #4A6070; font-weight: 600; }
+      .inv-doc__logo { width: 80px; height: 40px; background: #F2F1EE; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #4A6070; font-weight: 600; }
     </style>
   </head><body>${content}</body></html>`;
 

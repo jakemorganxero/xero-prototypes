@@ -26,6 +26,18 @@
          url('https://www.xero.com/fonts/national2-web-bold.woff') format('woff');
     font-display: swap;
   }
+@font-face {
+  font-family: 'National2Condensed';
+  font-weight: 700;
+  src: url('../fonts/national2-condensed-bold.otf') format('opentype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'National2Condensed';
+  font-weight: 800;
+  src: url('../fonts/national2-condensed-extrabold.otf') format('opentype');
+  font-display: swap;
+}
 </style>
   <!--
     XERO PROTOTYPE
@@ -44,19 +56,21 @@
   -->
   <style>
     :root {
-      --xero-navy:       #213B55;
+      --xero-navy:       #000856;
       --xero-blue:       #13B5EA;
       --xero-blue-dark:  #0D8FBD;
-      --xero-panel-bg:   #ECF2F6;
+      --xero-panel-bg:   #F2F1EE;
       --xero-border:     #C2CDD6;
-    --xero-input-border: #213B55;
+    --xero-input-border: #000856;
+      --xero-input-border-grey: #CBCAC9;
       --xero-bg:         #FFFFFF;
-      --xero-text:       #213B55;
+      --xero-text:       #000856;
       --xero-text-muted: #4A6070;
       --xero-green:      #1AB394;
       --xero-red:        #E05A5A;
       --radius: 6px;
       --font: 'National2', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-heading: 'National2Condensed', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -89,6 +103,7 @@
 
     /* ─── Form column ─── */
     .xero-form__title {
+      font-family: var(--font-heading);
       font-size: 1.375rem;
       font-weight: 800;
       color: var(--xero-navy);
@@ -854,7 +869,7 @@
     const soldToHTML = (custName || custEmail) ? `
       <div style="margin-bottom:14px;">
         <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#4A6070;margin-bottom:3px;">Sold To</div>
-        ${custName  ? `<div style="font-size:12px;font-weight:700;color:#213B55;">${esc(custName)}</div>` : ''}
+        ${custName  ? `<div style="font-size:12px;font-weight:700;color:#000856;">${esc(custName)}</div>` : ''}
         ${custEmail ? `<div style="font-size:11px;color:#4A6070;">${esc(custEmail)}</div>` : ''}
       </div>` : '';
 
@@ -880,13 +895,13 @@
     return `
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
         ${logoHTML}
-        <div style="font-size:20px;font-weight:800;letter-spacing:0.06em;color:#213B55;">RECEIPT</div>
+        <div style="font-size:20px;font-weight:800;letter-spacing:0.06em;color:#000856;">RECEIPT</div>
       </div>
-      <hr style="border:none;border-top:2px solid #213B55;margin:0 0 14px;">
+      <hr style="border:none;border-top:2px solid #000856;margin:0 0 14px;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px;">
         <div style="text-align:center;">
           <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#4A6070;margin-bottom:3px;">From</div>
-          <div style="font-size:13px;font-weight:700;color:#213B55;margin-bottom:2px;">${esc(gv('biz-name')) || 'Your Business'}</div>
+          <div style="font-size:13px;font-weight:700;color:#000856;margin-bottom:2px;">${esc(gv('biz-name')) || 'Your Business'}</div>
           ${gv('biz-address') ? `<div style="font-size:11px;color:#4A6070;">${esc(gv('biz-address'))}</div>` : ''}
           ${bizCityLine       ? `<div style="font-size:11px;color:#4A6070;">${esc(bizCityLine)}</div>` : ''}
           ${gv('biz-email')   ? `<div style="font-size:11px;color:#4A6070;">${esc(gv('biz-email'))}</div>` : ''}
@@ -894,14 +909,14 @@
         </div>
         <div>
           <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#4A6070;margin-bottom:4px;">Receipt Details</div>
-          <div style="display:flex;gap:6px;font-size:11px;margin-bottom:2px;"><b style="color:#213B55;">Receipt #</b><span style="color:#4A6070;">${esc(gv('rec-number') || 'REC-001')}</span></div>
-          ${gv('rec-date') ? `<div style="display:flex;gap:6px;font-size:11px;margin-bottom:2px;"><b style="color:#213B55;">Date</b><span style="color:#4A6070;">${fmtDate(gv('rec-date'))}</span></div>` : ''}
-          <div style="display:flex;gap:6px;font-size:11px;"><b style="color:#213B55;">Payment</b><span style="color:#4A6070;">${paymentLabel(gv('pay-method'))}</span></div>
+          <div style="display:flex;gap:6px;font-size:11px;margin-bottom:2px;"><b style="color:#000856;">Receipt #</b><span style="color:#4A6070;">${esc(gv('rec-number') || 'REC-001')}</span></div>
+          ${gv('rec-date') ? `<div style="display:flex;gap:6px;font-size:11px;margin-bottom:2px;"><b style="color:#000856;">Date</b><span style="color:#4A6070;">${fmtDate(gv('rec-date'))}</span></div>` : ''}
+          <div style="display:flex;gap:6px;font-size:11px;"><b style="color:#000856;">Payment</b><span style="color:#4A6070;">${paymentLabel(gv('pay-method'))}</span></div>
         </div>
       </div>
       ${soldToHTML}
       <table style="width:100%;border-collapse:collapse;margin-bottom:10px;">
-        <thead><tr style="background:#213B55;">
+        <thead><tr style="background:#000856;">
           <th style="padding:6px 8px;color:#fff;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;text-align:left;">Description</th>
           <th style="padding:6px 8px;color:#fff;font-size:9px;font-weight:700;text-transform:uppercase;text-align:right;width:36px;">Qty</th>
           <th style="padding:6px 8px;color:#fff;font-size:9px;font-weight:700;text-transform:uppercase;text-align:right;width:72px;">Price</th>
@@ -912,10 +927,10 @@
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-bottom:14px;">
         <div style="display:flex;gap:16px;font-size:11px;"><span style="color:#4A6070;min-width:100px;text-align:right;">Subtotal</span><span style="font-weight:600;min-width:64px;text-align:right;">${fmt(subtotal)}</span></div>
         <div style="display:flex;gap:16px;font-size:11px;"><span style="color:#4A6070;min-width:100px;text-align:right;">${TAX_LABEL} (${taxRate}%)</span><span style="font-weight:600;min-width:64px;text-align:right;">${fmt(tax)}</span></div>
-        <div style="display:flex;gap:16px;font-size:13px;border-top:1.5px solid #213B55;padding-top:4px;margin-top:2px;"><span style="font-weight:800;color:#213B55;min-width:100px;text-align:right;">Total (${CURRENCY})</span><span style="font-weight:800;color:#213B55;min-width:64px;text-align:right;">${fmt(total)}</span></div>
+        <div style="display:flex;gap:16px;font-size:13px;border-top:1.5px solid #000856;padding-top:4px;margin-top:2px;"><span style="font-weight:800;color:#000856;min-width:100px;text-align:right;">Total (${CURRENCY})</span><span style="font-weight:800;color:#000856;min-width:64px;text-align:right;">${fmt(total)}</span></div>
         ${cashRows}
       </div>
-      ${notes ? `<div style="border-top:1px solid #C2CDD6;padding-top:10px;font-size:10px;color:#4A6070;"><b style="font-size:9px;text-transform:uppercase;letter-spacing:0.05em;color:#213B55;">Notes</b><br>${esc(notes)}</div>` : ''}`;
+      ${notes ? `<div style="border-top:1px solid #C2CDD6;padding-top:10px;font-size:10px;color:#4A6070;"><b style="font-size:9px;text-transform:uppercase;letter-spacing:0.05em;color:#000856;">Notes</b><br>${esc(notes)}</div>` : ''}`;
   }
 
   /* ── Update live preview ── */
@@ -928,7 +943,7 @@
     $('receipt-print-area').innerHTML = `
       <style>
         * { box-sizing:border-box; margin:0; padding:0; }
-        body { font-family:Arial,sans-serif; padding:40px; max-width:680px; color:#213B55; }
+        body { font-family:Arial,sans-serif; padding:40px; max-width:680px; color:#000856; }
         table td { padding:6px 8px; border-bottom:1px solid #C2CDD6; font-size:11px; }
         table tbody tr:nth-child(even) { background:#f8fafb; }
         table tbody tr:last-child td { border-bottom:none; }

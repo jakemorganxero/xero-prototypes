@@ -46,24 +46,38 @@
          url('https://www.xero.com/fonts/national2-web-bold.woff') format('woff');
     font-display: swap;
   }
+@font-face {
+  font-family: 'National2Condensed';
+  font-weight: 700;
+  src: url('../fonts/national2-condensed-bold.otf') format('opentype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'National2Condensed';
+  font-weight: 800;
+  src: url('../fonts/national2-condensed-extrabold.otf') format('opentype');
+  font-display: swap;
+}
 </style>
   <style>
     /* ─── Xero Brand Tokens ─── */
     :root {
-      --xero-navy:       #213B55;
+      --xero-navy:       #000856;
       --xero-blue:       #13B5EA;
       --xero-blue-dark:  #0D8FBD;
-      --xero-panel-bg:   #ECF2F6;
+      --xero-panel-bg:   #F2F1EE;
       --xero-border:     #C2CDD6;
-    --xero-input-border: #213B55;
+    --xero-input-border: #000856;
+      --xero-input-border-grey: #CBCAC9;
       --xero-bg:         #FFFFFF;
-      --xero-text:       #213B55;
+      --xero-text:       #000856;
       --xero-text-muted: #4A6070;
       --xero-input-bg:   #FFFFFF;
       --xero-green:      #1AB394;
       --xero-red:        #E05A5A;
       --radius:          6px;
       --font: 'National2', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-heading: 'National2Condensed', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -83,6 +97,7 @@
     }
 
     .xero-tool__heading {
+      font-family: var(--font-heading);
       font-size: 1.75rem;
       font-weight: 800;
       color: var(--xero-navy);
@@ -127,6 +142,7 @@
     }
 
     .xero-section__title {
+      font-family: var(--font-heading);
       font-size: 1.0625rem;
       font-weight: 700;
       color: var(--xero-navy);
@@ -147,7 +163,7 @@
     .xero-input-wrap {
       display: flex;
       align-items: stretch;
-      border: 1px solid var(--xero-input-border);
+      border: 1px solid var(--xero-input-border-grey);
       border-radius: var(--radius);
       background: var(--xero-input-bg);
       transition: border-color 0.15s;
@@ -237,7 +253,7 @@
     .xero-radio__box {
       width: 18px;
       height: 18px;
-      border: 2px solid var(--xero-border);
+      border: 2px solid var(--xero-input-border-grey);
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -310,7 +326,7 @@
       white-space: nowrap;
     }
 
-    .xero-btn:hover  { background: #2a4d6e; }
+    .xero-btn:hover  { background: #00063d; }
     .xero-btn:active { background: #162e3a; }
     .xero-btn:focus-visible {
       outline: 3px solid var(--xero-blue);
@@ -719,7 +735,7 @@
           <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="8" y="6" width="32" height="36" rx="3" stroke="#C2CDD6" stroke-width="2" fill="none"/>
             <path d="M16 16h16M16 22h16M16 28h10" stroke="#C2CDD6" stroke-width="2" stroke-linecap="round"/>
-            <circle cx="35" cy="34" r="7" fill="#ECF2F6" stroke="#C2CDD6" stroke-width="2"/>
+            <circle cx="35" cy="34" r="7" fill="#F2F1EE" stroke="#C2CDD6" stroke-width="2"/>
             <path d="M32.5 34h5M35 31.5v5" stroke="#C2CDD6" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
         </span>

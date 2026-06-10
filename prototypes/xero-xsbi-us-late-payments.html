@@ -31,11 +31,23 @@
          url('https://www.xero.com/fonts/national2-web-bold.woff') format('woff');
     font-display: swap;
   }
+@font-face {
+  font-family: 'National2Condensed';
+  font-weight: 700;
+  src: url('../fonts/national2-condensed-bold.otf') format('opentype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'National2Condensed';
+  font-weight: 800;
+  src: url('../fonts/national2-condensed-extrabold.otf') format('opentype');
+  font-display: swap;
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  :root{--navy:#213B55;--blue:#13B5EA;--panel:#ECF2F6;--border:#C2CDD6;--muted:#4A6070;--green:#186241;--red:#E05A5A;--r:6px}
+  :root{--navy:#000856;--blue:#13B5EA;--panel:#F2F1EE;--border:#C2CDD6;--muted:#4A6070;--green:#186241;--red:#E05A5A;--r:6px}
   .w{font-family:'National2',-apple-system,sans-serif;color:var(--navy);max-width:960px;margin:0 auto;padding:36px 24px}
   .top{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:24px}
   .eyebrow{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);margin-bottom:8px}
@@ -43,7 +55,7 @@
   .val{font-size:3rem;font-weight:700;line-height:1;color:var(--navy)}
   .delta{font-size:.8125rem;font-weight:600;padding:3px 10px;border-radius:20px}
   .delta.pos{background:rgba(26,179,148,.12);color:var(--green)}
-  .delta.neg{background:rgba(255,196,210,.1);color:var(--red)}
+  .delta.neg{background:rgba(255,196,210,0.35);color:var(--red)}
   .period{font-size:.875rem;color:var(--muted);margin-top:6px}
   .range{display:flex;gap:4px}
   .rb{background:none;border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-family:inherit;font-size:.8125rem;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s}
@@ -82,7 +94,7 @@
     <div class="chart-wrap"><canvas id="c"></canvas></div>
     <div class="leg">
       <div class="leg-item"><div class="leg-sw" style="background:#E05A5A"></div>Avg. late payment days (seasonally adjusted)</div>
-      <div class="leg-item"><div class="leg-sw" style="background:rgba(255,196,210,.25);height:10px;border-radius:2px"></div>COVID period (Apr–Dec 2020)</div>
+      <div class="leg-item"><div class="leg-sw" style="background:rgba(255,196,210,0.5);height:10px;border-radius:2px"></div>COVID period (Apr–Dec 2020)</div>
     </div>
   </div>
   <p class="fn">Source: Xero Small Business Insights, US national data, March 2026 release. Seasonally adjusted.</p>
@@ -94,14 +106,14 @@ const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec
 const fmt=l=>{const[m,y]=l.split('/');return MO[+m-1]+' '+y};
 const COVID_S=39,COVID_E=47;
 let rng=0,ch=null;
-const covidPlugin=(s,e,off,len)=>({id:'cv',beforeDatasetsDraw(c){const{ctx,chartArea:a,scales:sc}=c;const sl=s-off,el=e-off;if(el<0||sl>=len)return;const x0=sc.x.getPixelForValue(Math.max(0,sl)),x1=sc.x.getPixelForValue(Math.min(len-1,el));ctx.save();ctx.fillStyle='rgba(255,196,210,.07)';ctx.fillRect(x0,a.top,x1-x0,a.height);ctx.restore()}});
+const covidPlugin=(s,e,off,len)=>({id:'cv',beforeDatasetsDraw(c){const{ctx,chartArea:a,scales:sc}=c;const sl=s-off,el=e-off;if(el<0||sl>=len)return;const x0=sc.x.getPixelForValue(Math.max(0,sl)),x1=sc.x.getPixelForValue(Math.min(len-1,el));ctx.save();ctx.fillStyle='rgba(255,196,210,0.35)';ctx.fillRect(x0,a.top,x1-x0,a.height);ctx.restore()}});
 function build(){
   const n=rng===0?L.length:rng*12,off=L.length-n;
   const labels=L.slice(-n).map(fmt),data=D.slice(-n);
   const canvas=document.getElementById('c');
   if(ch){ch.destroy();ch=null}
   const grad=canvas.getContext('2d').createLinearGradient(0,0,0,280);
-  grad.addColorStop(0,'rgba(255,196,210,.10)');grad.addColorStop(1,'rgba(255,255,255,0)');
+  grad.addColorStop(0,'rgba(255,196,210,0.35)');grad.addColorStop(1,'rgba(255,255,255,0)');
   ch=new Chart(canvas,{type:'line',data:{labels,datasets:[{data,borderColor:'#E05A5A',borderWidth:2,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#E05A5A',pointHoverBorderColor:'#fff',pointHoverBorderWidth:2,fill:true,backgroundColor:grad,tension:.3}]},
     plugins:[covidPlugin(COVID_S,COVID_E,off,n)],
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},

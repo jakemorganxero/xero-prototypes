@@ -32,6 +32,18 @@
          url('https://www.xero.com/fonts/national2-web-bold.woff') format('woff');
     font-display: swap;
   }
+@font-face {
+  font-family: 'National2Condensed';
+  font-weight: 700;
+  src: url('../fonts/national2-condensed-bold.otf') format('opentype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'National2Condensed';
+  font-weight: 800;
+  src: url('../fonts/national2-condensed-extrabold.otf') format('opentype');
+  font-display: swap;
+}
   @media (max-width: 600px) {
     .xsbi-wrap { padding: 24px 5%; }
     .xsbi-chart-wrap { width: 100%; }
@@ -43,12 +55,13 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --xero-navy:       #213B55;
+    --xero-navy:       #000856;
     --xero-blue:       #13B5EA;
-    --xero-panel-bg:   #ECF2F6;
+    --xero-panel-bg:   #F2F1EE;
     --xero-border:     #C2CDD6;
-    --xero-input-border: #213B55;
-    --xero-text:       #213B55;
+    --xero-input-border: #000856;
+      --xero-input-border-grey: #CBCAC9;
+    --xero-text:       #000856;
     --xero-text-muted: #4A6070;
     --xero-green:      #186241;
     --xero-red:        #E05A5A;
@@ -128,7 +141,8 @@
     gap: 12px;
     margin-bottom: 20px;
   }
-  .xsbi-chart-title { font-size: 1rem; font-weight: 700; color: var(--xero-navy); }
+  .xsbi-chart-title {
+      font-family: var(--font-heading); font-size: 1rem; font-weight: 700; color: var(--xero-navy); }
   .xsbi-chart-desc { font-size: 0.8125rem; color: var(--xero-text-muted); margin-top: 3px; }
 
   .xsbi-range { display: flex; gap: 4px; }
@@ -225,7 +239,7 @@
         <span id="legend-label">Sales growth (YoY %)</span>
       </div>
       <div class="xsbi-legend-item">
-        <div class="xsbi-legend-swatch" style="background:rgba(255,196,210,0.25); width:14px; height:10px; border-radius:2px;"></div>
+        <div class="xsbi-legend-swatch" style="background:rgba(255,196,210,0.5); width:14px; height:10px; border-radius:2px;"></div>
         <span>COVID period (Apr–Dec 2020)</span>
       </div>
     </div>
@@ -248,7 +262,7 @@ const COVID_START = 39, COVID_END = 47;
 const METRICS = {
   sales: { label: 'Sales growth — year-over-year %', desc: 'Monthly change in sales revenue compared with the same month last year.', legendLabel: 'Sales growth (YoY %)', unit: '%', format: v => (v>=0?'+':'')+v.toFixed(1)+'%', color: '#13B5EA', fill: 'rgba(19,181,234,0.13)', zeroLine: true },
   ttp:   { label: 'Time to be paid — days', desc: 'Average days to receive payment after issuing an invoice, seasonally adjusted.', legendLabel: 'Days to be paid', unit: 'd', format: v => v.toFixed(1)+' days', color: '#186241', fill: 'rgba(26,179,148,0.12)', zeroLine: false },
-  late:  { label: 'Late payment days — average overdue', desc: 'Average days invoices are paid beyond agreed terms, seasonally adjusted.', legendLabel: 'Avg. late days', unit: 'd', format: v => v.toFixed(1)+' days', color: '#E05A5A', fill: 'rgba(255,196,210,0.10)', zeroLine: false },
+  late:  { label: 'Late payment days — average overdue', desc: 'Average days invoices are paid beyond agreed terms, seasonally adjusted.', legendLabel: 'Avg. late days', unit: 'd', format: v => v.toFixed(1)+' days', color: '#E05A5A', fill: 'rgba(255,196,210,0.35)', zeroLine: false },
 };
 
 let currentMetric = 'sales', currentRange = 0, chart = null;
@@ -270,7 +284,7 @@ const covidPlugin = (s, e, offset, len) => ({
     if (el < 0 || sl >= len) return;
     const x0 = scales.x.getPixelForValue(Math.max(0,sl));
     const x1 = scales.x.getPixelForValue(Math.min(len-1,el));
-    ctx.save(); ctx.fillStyle='rgba(255,196,210,0.07)';
+    ctx.save(); ctx.fillStyle='rgba(255,196,210,0.35)';
     ctx.fillRect(x0,chartArea.top,x1-x0,chartArea.height); ctx.restore();
   }
 });

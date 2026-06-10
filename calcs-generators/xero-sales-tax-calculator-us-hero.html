@@ -26,6 +26,18 @@
          url('https://www.xero.com/fonts/national2-web-bold.woff') format('woff');
     font-display: swap;
   }
+@font-face {
+  font-family: 'National2Condensed';
+  font-weight: 700;
+  src: url('../fonts/national2-condensed-bold.otf') format('opentype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'National2Condensed';
+  font-weight: 800;
+  src: url('../fonts/national2-condensed-extrabold.otf') format('opentype');
+  font-display: swap;
+}
 </style>
 
   <!--
@@ -46,18 +58,20 @@
 
   <style>
     :root {
-      --xero-navy:       #213B55;
+      --xero-navy:       #000856;
       --xero-blue:       #13B5EA;
       --xero-blue-dark:  #0D8FBD;
-      --xero-panel-bg:   #ECF2F6;
+      --xero-panel-bg:   #F2F1EE;
       --xero-border:     #C2CDD6;
-    --xero-input-border: #213B55;
+    --xero-input-border: #000856;
+      --xero-input-border-grey: #CBCAC9;
       --xero-bg:         #FFFFFF;
-      --xero-text:       #213B55;
+      --xero-text:       #000856;
       --xero-text-muted: #4A6070;
       --xero-green:      #1AB394;
       --radius:          6px;
       --font: 'National2', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-heading: 'National2Condensed', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -70,7 +84,7 @@
     }
 
     .xero-hero {
-      background: var(--xero-bg);
+      background: #F2F1EE;
       padding: 72px 5%;
       width: 100%;
     }
@@ -90,6 +104,7 @@
 
     /* ─── Left copy ─── */
     .xero-hero__title {
+      font-family: var(--font-heading);
       font-size: clamp(2rem, 4vw, 3rem);
       font-weight: 800;
       color: var(--xero-navy);
@@ -152,7 +167,7 @@
       transition: background 0.15s;
     }
 
-    .xero-hero__btn:hover { background: #2a4d6e; }
+    .xero-hero__btn:hover { background: #00063d; }
 
     .xero-hero__link {
       font-size: 0.9375rem;
@@ -175,6 +190,7 @@
     }
 
     .xero-hero__card-title {
+      font-family: var(--font-heading);
       font-size: 1.125rem;
       font-weight: 700;
       color: var(--xero-navy);
@@ -193,7 +209,7 @@
     .xero-input-wrap {
       display: flex;
       align-items: stretch;
-      border: 1px solid var(--xero-input-border);
+      border: 1px solid var(--xero-input-border-grey);
       border-radius: var(--radius);
       background: var(--xero-bg);
       transition: border-color 0.15s;

@@ -32,6 +32,18 @@
          url('https://www.xero.com/fonts/national2-web-bold.woff') format('woff');
     font-display: swap;
   }
+@font-face {
+  font-family: 'National2Condensed';
+  font-weight: 700;
+  src: url('../fonts/national2-condensed-bold.otf') format('opentype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'National2Condensed';
+  font-weight: 800;
+  src: url('../fonts/national2-condensed-extrabold.otf') format('opentype');
+  font-display: swap;
+}
   @media (max-width: 600px) {
     .xero-hero { padding: 40px 5%; }
   }
@@ -45,24 +57,26 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --xero-navy: #213B55;
+    --xero-navy: #000856;
     --xero-blue: #13B5EA;
     --xero-blue-dark: #0D8FBD;
-    --xero-panel-bg: #ECF2F6;
+    --xero-panel-bg: #F2F1EE;
     --xero-border: #C2CDD6;
-    --xero-input-border: #213B55;
+    --xero-input-border: #000856;
+      --xero-input-border-grey: #CBCAC9;
     --xero-bg: #FFFFFF;
-    --xero-text: #213B55;
+    --xero-text: #000856;
     --xero-text-muted: #4A6070;
     --xero-green: #1AB394;
     --xero-red: #E05A5A;
     --radius: 6px;
     --font: 'National2', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-heading: 'National2Condensed', -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
   .xero-hero {
     font-family: var(--font);
-    background: #ECF2F6;
+    background: #F2F1EE;
     color: var(--xero-text);
     width: 100%;
   }
