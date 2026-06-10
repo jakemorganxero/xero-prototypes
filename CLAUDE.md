@@ -4,12 +4,14 @@ You are helping prototype calculator, template, and data visualisation tools for
 
 ## Before you build anything
 
+**⭐ `xero-design-system.md` is the CANONICAL source of truth** (tokens, document scaffold, every shared component, the background rule, per-family constraints). Read it first and follow it exactly — it supersedes any conflicting value in the older brand-guideline docs (which remain useful for layout patterns, copy, and tone only). All 71 prototypes were conformed to it in the June 2026 convergence.
+
 **Calculators / generators:**
-1. Read `xero-calculator-brand-guidelines.md` — exact colours, fonts, layout patterns, and component CSS
-2. Use `xero-calculator-template.html` as your starting point
+1. Read `xero-design-system.md` (canonical) — then `xero-calculator-brand-guidelines.md` for patterns/copy/tone
+2. Use `xero-calculator-template.html` as your starting point (already on the canonical system)
 
 **Data visualisations / charts:**
-1. Read `xero-dataviz-brand-guidelines.md` — chart colours, Chart.js config, stat card/range pill components, all three layout patterns
+1. Read `xero-design-system.md` (canonical) + `xero-dataviz-brand-guidelines.md` — Chart.js config, stat card/range pill components, all three layout patterns
 2. Use `xero-dataviz-template.html` as your starting point
 
 ## Output rules
@@ -19,7 +21,7 @@ You are helping prototype calculator, template, and data visualisation tools for
 - **Data viz** → save to `prototypes/`
 - Filename format: `xero-[tool-name]-[locale].html` e.g. `xero-gst-calculator-au.html`
 - Data viz naming: `xero-xsbi-[locale]-[metric].html`, append `-half` for half-width card variants
-- The tool must work as an **embeddable section**, not a full page — use `max-width: 960px`, no `<html>`/`<body>` styling that assumes full-page ownership
+- Each file is a **valid standalone page** (DOCTYPE/`<html lang>`/`<head>` with charset+viewport+title) **and** lifts cleanly as an **embeddable section** — never *style* `<html>`/`<body>` (no full-page-ownership assumptions); scope everything to a wrapper section. Inner widths: calculators & generators `1200px`, data viz `960px` (half-width cards `480px`).
 - Test that calculate and reset both work before considering it done
 
 ## Locale handling
@@ -101,18 +103,19 @@ Add this HTML comment near the top of every prototype, filled in:
 - xero.com runs on Adobe Experience Manager (AEM) — server-rendered HTML
 - These prototypes are vanilla JS widgets, matching how the existing cash flow calculator is built
 - The single HTML file is the spec — devs adapt it to AEM, they don't need a framework handoff
-- GT Walsheim is Xero's actual font (licensed); prototypes use DM Sans from Google Fonts as a stand-in — flag this in the handoff comment
+- GT Walsheim is Xero's licensed production body font; prototypes stand in with **National 2** (body, loaded from the xero.com font CDN) and **National 2 Condensed** (H1/display, inlined as base64) — flag this in the handoff comment
 
 ## Folder structure
 
 ```
 xero-prototypes/
 ├── CLAUDE.md                              ← this file
+├── xero-design-system.md                  ← ⭐ CANONICAL source of truth (tokens/components/scaffold)
 ├── index.html                             ← prototype library index (GitHub Pages homepage)
-├── xero-calculator-brand-guidelines.md    ← calc/generator design system
-├── xero-calculator-template.html          ← calc/generator starter
-├── xero-dataviz-brand-guidelines.md       ← chart/data viz design system
-├── xero-dataviz-template.html             ← chart/data viz starter
+├── xero-calculator-brand-guidelines.md    ← calc/generator patterns, copy, tone (defers to design-system.md)
+├── xero-calculator-template.html          ← calc/generator starter (on canonical system)
+├── xero-dataviz-brand-guidelines.md       ← chart/data viz patterns (defers to design-system.md)
+├── xero-dataviz-template.html             ← chart/data viz starter (on canonical system)
 ├── calcs-generators/
 │   └── xero-[tool-name]-[locale].html
 └── prototypes/
@@ -129,7 +132,23 @@ xero-prototypes/
 - Work directly on `main` branch — no PR flow needed for this repo
 - After pushing, GitHub Pages rebuilds automatically (takes ~1–2 min to go live)
 
-## Current prototype library (70 files)
+## Design system state (June 2026 convergence)
+
+All 71 prototypes share one canonical system (full detail in `xero-design-system.md`):
+- **Tokens:** Midnight navy `#000856` (text/headings/buttons), Warm Grey `#F2F1EE` (calc card / download strip), Pine `#186241` (accessible positive — NOT the old `#1AB394`), accent blue `#13B5EA`, `--radius: 6px`.
+- **Fonts:** National 2 (body, from xero.com CDN) + National 2 Condensed (H1/page-title ONLY, inlined as base64). DM Sans / Plus Jakarta are gone.
+- **Background rule:** page/hero band = **white**; only the calculator **card/form** is Warm Grey; result band inside the card flips to **white**. Never make the whole page grey. Table calcs (depreciation, timesheet) = white page + grey form card + white schedule.
+- **Input borders (context-aware):** `#000856` on white, `#CBCAC9` on a warm-grey card; 1px; hover drop-shadow; placeholder `#6E7481`.
+- **Scaffold:** every file is a valid standalone page (DOCTYPE/`<html lang>`/charset/viewport/single `<h1>`) AND embeddable.
+- **Shared components only** — no bespoke prefixes (`xpog`/`xts`/`xtax`/`inv`/`ps`/`exp` were all renamed to `xero-`).
+
+**Generator conventions:**
+- One canonical download bar `.xero-preview__dl`: **Download as: PDF · Word · Excel · CSV · HTML** (Excel emits real `.xls`).
+- Order in preview column: **doc → CTA → download bar → disclaimer** (CTA sits ABOVE the download bar; download strip is a standalone box).
+- Canonical logo upload `.xero-logo-upload` on every generator (button style + preview box).
+- Locale CTA offer wording: AU/NZ/UK = "Start a 30 day **free trial**"; **US = "Get one month free"** (link on whole phrase). Signup URLs are locale-specific (`/au//nz//uk//us/`).
+
+## Current prototype library (71 files)
 
 ### Calculators (Pattern B hero, live calculation)
 | Tool | Locales |
@@ -148,7 +167,7 @@ xero-prototypes/
 ### Generators (two-column form + sticky live preview)
 | Tool | Locales |
 |---|---|
-| Invoice Generator | AU, NZ, US (preview variant), UK |
+| Invoice Generator | AU, NZ, US, UK (all the two-column live-preview build; the old no-preview US file was removed in the June 2026 consolidation) |
 | Quote Generator | AU, NZ, US, UK |
 | Receipt Generator | AU, NZ, US, UK |
 | Purchase Order Generator | AU, NZ, US, UK |
@@ -162,7 +181,8 @@ xero-prototypes/
 - `lineItems[]` array as source of truth
 - `renderLineItems()` only on add/remove; `updateItem()` on keystroke
 - `buildDocument()` / `updatePreview()` for live preview
-- Downloads: PDF via `window.print()`, Word via HTML blob `.doc`, Excel via HTML table `.xls`, CSV
+- Downloads (canonical 5, in order): **PDF** via `window.print()`, **Word** via HTML blob `.doc`, **Excel** via HTML table `.xls`, **CSV**, **HTML** — in the `.xero-preview__dl` strip labelled "Download as:"
+- Logo upload: canonical `.xero-logo-upload` (file input → `handleLogo` → `logoDataURL` → renders into `#logo-preview-box` and the preview document)
 
 ### Calculators
 - PMT formula (business loan): `P × r(1+r)^n / ((1+r)^n - 1)`
