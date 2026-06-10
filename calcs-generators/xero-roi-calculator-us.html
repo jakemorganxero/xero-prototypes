@@ -64,16 +64,16 @@
   <style>
     /* ─── Design tokens ─── */
     :root {
-      --navy:       #000856;
-      --blue:       #13B5EA;
-      --blue-dark:  #0D8FBD;
-      --panel-bg:   #F2F1EE;
-      --border:     #C2CDD6;
-      --bg:         #FFFFFF;
-      --text:       #000856;
-      --text-muted: #4A6070;
-      --input-bg:   #FFFFFF;
-      --green:      #1AB394;
+      --xero-navy:       #000856;
+      --xero-blue:       #13B5EA;
+      --xero-blue-dark:  #0D8FBD;
+      --xero-panel-bg:   #F2F1EE;
+      --xero-border:     #C2CDD6;
+      --xero-bg:         #FFFFFF;
+      --xero-text:       #000856;
+      --xero-text-muted: #4A6070;
+      --xero-input-bg:   #FFFFFF;
+      --xero-green:      #1AB394;
       --radius:     6px;
       --shadow:     0 4px 24px rgba(0,0,0,0.08);
       --font:       'National2', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -88,7 +88,7 @@
     body {
       font-family: var(--font);
       background: #F5F7FA;
-      color: var(--text);
+      color: var(--xero-text);
       font-size: 0.9375rem;
       line-height: 1.5;
       min-height: 100vh;
@@ -96,7 +96,7 @@
 
     /* ─── Page header ─── */
     .page-header {
-      background: var(--navy);
+      background: var(--xero-navy);
       padding: 0 32px;
       height: 60px;
       display: flex;
@@ -129,7 +129,7 @@
 
     /* ─── Hero band ─── */
     .hero-band {
-      background: var(--bg);
+      background: var(--xero-bg);
       padding: 40px 32px 48px;
     }
     .hero-band__inner {
@@ -140,11 +140,11 @@
       font-size: clamp(1.75rem, 3vw, 2.5rem);
       font-weight: 700;
       font-family: var(--font-heading);
-      color: var(--navy);
+      color: var(--xero-navy);
       margin-bottom: 8px;
     }
     .hero-band p {
-      color: var(--text-muted);
+      color: var(--xero-text-muted);
       font-size: 1rem;
       max-width: 560px;
     }
@@ -175,13 +175,13 @@
       gap: 12px;
       margin-bottom: 20px;
       padding-bottom: 16px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--xero-border);
     }
     .section-number {
       width: 28px;
       height: 28px;
       border-radius: 50%;
-      background: var(--blue);
+      background: var(--xero-blue);
       color: #fff;
       font-size: 0.8125rem;
       font-weight: 700;
@@ -194,7 +194,7 @@
       font-size: 1rem;
       font-weight: 700;
       font-family: var(--font-heading);
-      color: var(--navy);
+      color: var(--xero-navy);
     }
 
     .fields-grid {
@@ -208,12 +208,12 @@
     .field label {
       font-size: 0.8125rem;
       font-weight: 600;
-      color: var(--navy);
+      color: var(--xero-navy);
       letter-spacing: 0.01em;
     }
     .field .helper {
       font-size: 0.75rem;
-      color: var(--text-muted);
+      color: var(--xero-text-muted);
       margin-top: 2px;
     }
 
@@ -223,15 +223,15 @@
       align-items: center;
       border: 1px solid var(--xero-input-border-grey);
       border-radius: var(--radius);
-      background: var(--input-bg);
+      background: var(--xero-input-bg);
       overflow: hidden;
       transition: border-color 0.15s;
     }
     .input-wrap:hover { box-shadow: 0 2px 8px rgba(0,8,86,0.12); }
-    .input-wrap:focus-within { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(19,181,234,0.12); }
+    .input-wrap:focus-within { border-color: var(--xero-blue); box-shadow: 0 0 0 3px rgba(19,181,234,0.12); }
     .input-prefix {
       padding: 10px 8px 10px 14px;
-      color: var(--text-muted);
+      color: var(--xero-text-muted);
       font-weight: 600;
       font-size: 0.9375rem;
       user-select: none;
@@ -245,7 +245,7 @@
       font-size: 0.9375rem;
       width: 100%;
       background: transparent;
-      color: var(--text);
+      color: var(--xero-text);
       -moz-appearance: textfield;
     }
     input[type="number"]::placeholder { color: #6E7481; }
@@ -260,7 +260,7 @@
       gap: 12px;
     }
     .slider-value-badge {
-      background: var(--navy);
+      background: var(--xero-navy);
       color: #fff;
       font-size: 0.875rem;
       font-weight: 700;
@@ -275,7 +275,7 @@
       -webkit-appearance: none;
       height: 4px;
       border-radius: 2px;
-      background: var(--border);
+      background: var(--xero-border);
       outline: none;
       cursor: pointer;
     }
@@ -284,7 +284,7 @@
       width: 20px;
       height: 20px;
       border-radius: 50%;
-      background: var(--navy);
+      background: var(--xero-navy);
       border: 3px solid #fff;
       box-shadow: 0 1px 4px rgba(0,0,0,0.25);
       cursor: pointer;
@@ -293,7 +293,7 @@
       width: 20px;
       height: 20px;
       border-radius: 50%;
-      background: var(--navy);
+      background: var(--xero-navy);
       border: 3px solid #fff;
       box-shadow: 0 1px 4px rgba(0,0,0,0.25);
       cursor: pointer;
@@ -309,7 +309,7 @@
       overflow: hidden;
     }
     .results-panel__header {
-      background: var(--navy);
+      background: var(--xero-navy);
       padding: 20px 24px 18px;
     }
     .results-panel__header h2 {
@@ -327,7 +327,7 @@
 
     .results-hero {
       padding: 24px 24px 20px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--xero-border);
       text-align: center;
     }
     .results-hero__label {
@@ -335,13 +335,13 @@
       font-weight: 600;
       letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: var(--text-muted);
+      color: var(--xero-text-muted);
       margin-bottom: 6px;
     }
     .results-hero__value {
       font-size: 2.5rem;
       font-weight: 700;
-      color: var(--green);
+      color: var(--xero-green);
       line-height: 1.1;
       letter-spacing: -0.02em;
     }
@@ -350,7 +350,7 @@
       align-items: center;
       gap: 6px;
       background: #E8F9F5;
-      color: var(--green);
+      color: var(--xero-green);
       border-radius: 20px;
       padding: 4px 14px;
       font-size: 0.875rem;
@@ -366,39 +366,39 @@
       justify-content: space-between;
       align-items: baseline;
       padding: 10px 0;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--xero-border);
       gap: 8px;
     }
     .result-line:last-child { border-bottom: none; }
     .result-line__label {
       font-size: 0.8125rem;
-      color: var(--text-muted);
+      color: var(--xero-text-muted);
       font-weight: 500;
       flex: 1;
     }
     .result-line__value {
       font-size: 0.9375rem;
       font-weight: 700;
-      color: var(--navy);
+      color: var(--xero-navy);
       white-space: nowrap;
     }
-    .result-line__value.positive { color: var(--green); }
+    .result-line__value.positive { color: var(--xero-green); }
 
     .results-cta {
       padding: 20px 24px 24px;
-      background: var(--panel-bg);
-      border-top: 1px solid var(--border);
+      background: var(--xero-panel-bg);
+      border-top: 1px solid var(--xero-border);
     }
     .results-cta p {
       font-size: 0.8125rem;
-      color: var(--text-muted);
+      color: var(--xero-text-muted);
       margin-bottom: 12px;
       line-height: 1.5;
     }
     .btn-primary {
       display: block;
       width: 100%;
-      background: var(--blue);
+      background: var(--xero-blue);
       color: #fff;
       border: none;
       border-radius: var(--radius);
@@ -411,13 +411,13 @@
       transition: background 0.15s;
       text-decoration: none;
     }
-    .btn-primary:hover { background: var(--blue-dark); }
+    .btn-primary:hover { background: var(--xero-blue-dark); }
     .btn-pdf {
       display: block;
       width: 100%;
       background: transparent;
-      color: var(--navy);
-      border: 1.5px solid var(--border);
+      color: var(--xero-navy);
+      border: 1.5px solid var(--xero-border);
       border-radius: var(--radius);
       padding: 11px 20px;
       font-family: inherit;
@@ -428,7 +428,7 @@
       margin-top: 8px;
       transition: border-color 0.15s, background 0.15s;
     }
-    .btn-pdf:hover { border-color: var(--navy); background: #F5F7FA; }
+    .btn-pdf:hover { border-color: var(--xero-navy); background: #F5F7FA; }
 
     /* ─── Disclaimer ─── */
     .disclaimer {
@@ -436,7 +436,7 @@
       margin: 0 auto;
       padding: 0 32px 48px;
       font-size: 0.8125rem;
-      color: var(--text-muted);
+      color: var(--xero-text-muted);
     }
 
     /* ─── Responsive ─── */
@@ -493,7 +493,7 @@
       align-items: center;
       justify-content: space-between;
       padding-bottom: 16px;
-      border-bottom: 2px solid var(--navy);
+      border-bottom: 2px solid var(--xero-navy);
       margin-bottom: 24px;
     }
     .pdf-report__logo {
@@ -508,29 +508,29 @@
     .pdf-report__logo-text {
       font-size: 1.125rem;
       font-weight: 700;
-      color: var(--navy);
+      color: var(--xero-navy);
     }
     .pdf-report__title {
       font-size: 0.875rem;
-      color: var(--text-muted);
+      color: var(--xero-text-muted);
       text-align: right;
     }
     .pdf-report__date {
       font-size: 0.75rem;
-      color: var(--text-muted);
+      color: var(--xero-text-muted);
     }
 
     .pdf-section {
       margin-bottom: 20px;
       padding-bottom: 16px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--xero-border);
     }
     .pdf-section__title {
       font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: var(--text-muted);
+      color: var(--xero-text-muted);
       margin-bottom: 10px;
     }
     .pdf-table {
@@ -540,12 +540,12 @@
     }
     .pdf-table td {
       padding: 5px 0;
-      color: var(--text);
+      color: var(--xero-text);
     }
     .pdf-table td:last-child {
       text-align: right;
       font-weight: 600;
-      color: var(--navy);
+      color: var(--xero-navy);
     }
 
     .pdf-results {
@@ -558,25 +558,25 @@
       text-align: center;
       padding-bottom: 12px;
       margin-bottom: 12px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--xero-border);
     }
     .pdf-results__hero-label {
       font-size: 0.75rem;
       font-weight: 600;
       letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: var(--text-muted);
+      color: var(--xero-text-muted);
     }
     .pdf-results__hero-value {
       font-size: 2rem;
       font-weight: 700;
-      color: var(--green);
+      color: var(--xero-green);
       line-height: 1.2;
     }
     .pdf-results__roi {
       font-size: 1rem;
       font-weight: 700;
-      color: var(--green);
+      color: var(--xero-green);
     }
 
     .pdf-line {
@@ -587,15 +587,15 @@
       border-bottom: 1px solid #e4e8ec;
     }
     .pdf-line:last-child { border-bottom: none; }
-    .pdf-line__label { color: var(--text-muted); }
-    .pdf-line__value { font-weight: 700; color: var(--navy); }
+    .pdf-line__label { color: var(--xero-text-muted); }
+    .pdf-line__value { font-weight: 700; color: var(--xero-navy); }
 
     .pdf-footer {
       margin-top: 24px;
       padding-top: 12px;
-      border-top: 1px solid var(--border);
+      border-top: 1px solid var(--xero-border);
       font-size: 0.75rem;
-      color: var(--text-muted);
+      color: var(--xero-text-muted);
       display: flex;
       justify-content: space-between;
     }
@@ -890,7 +890,7 @@
         </div>
 
         <div class="results-cta">
-          <p>Get a real time view of your ROI with Xero. Start a 30 day <a href="https://www.xero.com/us/signup/" style="color:var(--blue);text-decoration:none;font-weight:600;">free trial</a>.</p>
+          <p>Get a real time view of your ROI with Xero. Start a 30 day <a href="https://www.xero.com/us/signup/" style="color:var(--xero-blue);text-decoration:none;font-weight:600;">free trial</a>.</p>
           <button class="btn-primary" onclick="downloadPDF()">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="vertical-align:-2px;margin-right:6px"><path d="M2 10v2.5h10V10h-1.5v1H3.5v-1H2zm5-8.5v7l-2-2-1 1 3.5 3.5L11 7.5l-1-1-2 2v-7H7z" fill="currentColor"/></svg>
             Download ROI Report (PDF)
@@ -938,7 +938,7 @@
       const el = document.getElementById(id);
       const min = +el.min, max = +el.max, v = +el.value;
       const pct = ((v - min) / (max - min)) * 100;
-      el.style.background = `linear-gradient(to right, var(--navy) ${pct}%, var(--border) ${pct}%)`;
+      el.style.background = `linear-gradient(to right, var(--xero-navy) ${pct}%, var(--xero-border) ${pct}%)`;
     }
 
     // ─── Main calculation ────────────────────────────────────
@@ -978,7 +978,7 @@
         const el = document.getElementById(id);
         el.classList.toggle('positive', parseFloat(el.textContent.replace(/[^0-9.-]/g,'')) > 0);
         el.style.color = parseFloat(el.textContent.replace(/[^0-9.-]/g,'')) >= 0
-          ? 'var(--green)' : 'var(--red, #E05A5A)';
+          ? 'var(--xero-green)' : 'var(--red, #E05A5A)';
       });
 
       // Update PDF inputs
