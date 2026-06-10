@@ -404,7 +404,7 @@ const METRICS = {
     format: v => (v >= 0 ? '+' : '') + v.toFixed(1) + '%',
     color: '#13B5EA',
     fillPositive: 'rgba(19,181,234,0.12)',
-    fillNegative: 'rgba(255,196,210,0.4)',
+    fillNegative: 'rgba(255,196,210,0.5)',
     zeroLine: true,
   },
   ttp: {
@@ -427,8 +427,8 @@ const METRICS = {
     unit: ' days',
     format: v => v.toFixed(1) + ' days',
     color: '#E05A5A',
-    fillPositive: 'rgba(255,196,210,0.35)',
-    fillNegative: 'rgba(255,196,210,0.35)',
+    fillPositive: 'rgba(255,196,210,0.5)',
+    fillNegative: 'rgba(255,196,210,0.5)',
     zeroLine: false,
   }
 };
@@ -461,7 +461,7 @@ function covidPlugin(startIdx, endIdx) {
       const x1 = scales.x.getPixelForValue(endIdx);
       if (x0 == null || x1 == null) return;
       ctx.save();
-      ctx.fillStyle = 'rgba(255,196,210,0.35)';
+      ctx.fillStyle = 'rgba(255,196,210,0.5)';
       ctx.fillRect(x0, chartArea.top, x1 - x0, chartArea.height);
       ctx.restore();
     }
