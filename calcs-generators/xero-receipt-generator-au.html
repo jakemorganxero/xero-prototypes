@@ -48,6 +48,23 @@
         max-width: 100%;
       }
     }
+  
+    .xero-cta {
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      margin-top: 14px;
+      line-height: 1.5;
+    }
+    .xero-cta a {
+      color: var(--xero-blue);
+      text-decoration: underline;
+      font-weight: 600;
+    }
+    .xero-disclaimer {
+      font-size: 0.75rem;
+      color: var(--xero-text-muted);
+      margin-top: 6px;
+    }
   </style>
   <!--
     XERO PROTOTYPE
@@ -94,7 +111,7 @@
 
     /* ─── Outer wrapper ─── */
     .xero-tool {
-      max-width: 1300px;
+      max-width: 1200px;
       margin: 0 auto;
       padding: 40px 5% 56px;
     }
@@ -512,23 +529,6 @@
       box-shadow: 0 2px 6px rgba(0,8,86,0.1);
     }
 
-    /* ─── CTA ─── */
-    .xero-cta {
-      margin-top: 20px;
-      font-size: 0.8125rem;
-      color: var(--xero-text-muted);
-      line-height: 1.55;
-    }
-
-    .xero-cta a { color: var(--xero-blue); text-decoration: none; font-weight: 600; }
-    .xero-cta a:hover { color: var(--xero-blue-dark); text-decoration: underline; }
-
-    .xero-disclaimer {
-      font-size: 0.75rem;
-      color: var(--xero-text-muted);
-      margin-top: 8px;
-    }
-
     /* ─── Print ─── */
     @media print {
       body > * { display: none !important; }
@@ -687,8 +687,6 @@
         <p class="xero-section__title">Notes <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></p>
         <textarea class="xero-textarea" id="rec-notes" placeholder="Thank you for your purchase." oninput="updatePreview()"></textarea>
       </div>
-
-      <p class="xero-disclaimer">*This tool generates receipt documents only and is not financial or tax advice.</p>
     </div>
 
     <!-- ═══════════════════════════ RIGHT: PREVIEW ═══════════════════════════ -->
@@ -722,8 +720,7 @@
           HTML
         </button>
       </div>
-
-      <p class="xero-cta">Manage all your receipts in one place with Xero. Start a 30 day <a href="https://www.xero.com/au/signup/">free trial</a>.</p>
+      <p class="xero-cta">Manage all your receipts in one place with Xero. Start a 30 day <a href="https://www.xero.com/signup/" target="_blank">free trial</a>.</p>
       <p class="xero-disclaimer">*This tool generates receipt documents only and is not financial or tax advice.</p>
     </div>
 

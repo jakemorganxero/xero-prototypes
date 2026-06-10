@@ -48,6 +48,23 @@
         max-width: 100%;
       }
     }
+  
+    .xero-cta {
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      margin-top: 14px;
+      line-height: 1.5;
+    }
+    .xero-cta a {
+      color: var(--xero-blue);
+      text-decoration: underline;
+      font-weight: 600;
+    }
+    .xero-disclaimer {
+      font-size: 0.75rem;
+      color: var(--xero-text-muted);
+      margin-top: 6px;
+    }
   </style>
   <!--
     XERO PROTOTYPE
@@ -106,7 +123,7 @@
       grid-template-columns: 1fr 420px;
       gap: 48px;
       align-items: start;
-      max-width: 1300px;
+      max-width: 1200px;
       margin: 0 auto;
     }
 
@@ -331,14 +348,6 @@
       border-top: none; padding: 8px 10px; line-height: 1.4;
     }
 
-    .inv-cta {
-      font-size: 0.75rem; color: var(--xero-text-muted);
-      margin-top: 12px; padding-top: 12px;
-      border-top: 1px solid var(--xero-border); line-height: 1.5;
-    }
-    .inv-cta a { color: var(--xero-blue); text-decoration: none; font-weight: 600; }
-    .inv-cta a:hover { color: var(--xero-blue-dark); }
-
     /* ── Download strip ── */
     .xero-preview__dl {
       background: var(--xero-panel-bg);
@@ -381,7 +390,7 @@
 
     .xero-tool__disclaimer {
       font-size: 0.75rem; color: var(--xero-text-muted);
-      margin-top: 28px; max-width: 1300px;
+      margin-top: 28px; max-width: 1200px;
       margin-left: auto; margin-right: auto; line-height: 1.5;
     }
 
@@ -654,10 +663,6 @@
           Your employer also contributes 3% to your KiwiSaver: <strong>$0.00</strong>
         </div>
 
-        <div class="inv-cta">
-          Manage payroll with ease using Xero. Start a 30 day <a href="https://www.xero.com/nz/signup/" target="_blank">free trial</a>.
-        </div>
-
       </div><!-- /inv-doc -->
 
       <!-- Download strip -->
@@ -684,6 +689,8 @@
           HTML
         </button>
       </div>
+      <p class="xero-cta">Pay your team and manage payroll with Xero. Start a 30 day <a href="https://www.xero.com/signup/" target="_blank">free trial</a>.</p>
+      <p class="xero-disclaimer">*This tool generates payslip documents only and is not financial or tax advice.</p>
     </div><!-- /preview -->
 
   </div><!-- /layout -->

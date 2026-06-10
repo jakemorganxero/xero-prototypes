@@ -48,6 +48,23 @@
         max-width: 100%;
       }
     }
+  
+    .xero-cta {
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      margin-top: 14px;
+      line-height: 1.5;
+    }
+    .xero-cta a {
+      color: var(--xero-blue);
+      text-decoration: underline;
+      font-weight: 600;
+    }
+    .xero-disclaimer {
+      font-size: 0.75rem;
+      color: var(--xero-text-muted);
+      margin-top: 6px;
+    }
   </style>
   <!--
     XERO PROTOTYPE
@@ -105,7 +122,7 @@
       grid-template-columns: 1fr 420px;
       gap: 48px;
       align-items: start;
-      max-width: 1300px;
+      max-width: 1200px;
       margin: 0 auto;
     }
 
@@ -478,17 +495,6 @@
       margin-bottom: 2px;
     }
 
-    .inv-cta {
-      font-size: 0.6875rem;
-      color: var(--xero-text-muted);
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid var(--xero-border);
-      line-height: 1.5;
-    }
-    .inv-cta a { color: var(--xero-blue); text-decoration: none; font-weight: 600; }
-    .inv-cta a:hover { color: var(--xero-blue-dark); }
-
 /* ── Download strip ── */
     .xero-preview__dl {
       background: var(--xero-panel-bg);
@@ -646,8 +652,6 @@
           </div>
         </div>
       </div>
-
-      <p style="font-size:0.75rem;color:var(--xero-text-muted);margin-top:16px;">*This tool generates expense report documents only and is not financial or tax advice.</p>
     </div>
 
     <!-- ── RIGHT: Preview ── -->
@@ -677,6 +681,8 @@
           HTML
         </button>
       </div>
+      <p class="xero-cta">Track and manage expenses automatically with Xero. Start a 30 day <a href="https://www.xero.com/signup/" target="_blank">free trial</a>.</p>
+      <p class="xero-disclaimer">*This tool generates expense report documents only and is not financial or tax advice.</p>
     </div>
 
   </div>

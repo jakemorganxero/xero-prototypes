@@ -49,6 +49,23 @@
         max-width: 100%;
       }
     }
+  
+    .xero-cta {
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      margin-top: 14px;
+      line-height: 1.5;
+    }
+    .xero-cta a {
+      color: var(--xero-blue);
+      text-decoration: underline;
+      font-weight: 600;
+    }
+    .xero-disclaimer {
+      font-size: 0.75rem;
+      color: var(--xero-text-muted);
+      margin-top: 6px;
+    }
   </style>
 
 <style>
@@ -606,31 +623,6 @@
       box-shadow: 0 2px 6px rgba(0,8,86,0.1);
     }
 
-
-  /* CTA + disclaimer */
-  .xpog-cta {
-    background: var(--xero-panel-bg);
-    border: 1px solid var(--xero-border);
-    border-radius: var(--radius);
-    padding: 16px 20px;
-    margin-top: 16px;
-    font-size: 0.85rem;
-    color: var(--xero-text-muted);
-    text-align: center;
-    line-height: 1.5;
-  }
-
-  .xpog-cta a { color: var(--xero-blue); font-weight: 600; text-decoration: none; }
-  .xpog-cta a:hover { text-decoration: underline; }
-
-  .xpog-disclaimer {
-    font-size: 0.72rem;
-    color: var(--xero-text-muted);
-    margin-top: 10px;
-    text-align: center;
-    line-height: 1.4;
-  }
-
   /* Two-col delivery address */
   #deliveryFields { margin-top: 4px; }
 </style>
@@ -803,8 +795,6 @@
           </div>
         </div>
       </div>
-
-      <p class="xpog-disclaimer">*This tool generates purchase order documents only and is not legal or financial advice.</p>
     </div>
 
     <!-- ════════════════ PREVIEW COLUMN ════════════════ -->
@@ -840,10 +830,8 @@
           HTML
         </button>
       </div>
-
-      <div class="xpog-cta">
-        Manage your purchase orders and supplier payments with Xero. Start a 30 day <a href="https://www.xero.com/au/signup/" target="_blank">free trial</a>.
-      </div>
+      <p class="xero-cta">Manage purchase orders and supplier payments with Xero. Start a 30 day <a href="https://www.xero.com/signup/" target="_blank">free trial</a>.</p>
+      <p class="xero-disclaimer">*This tool generates purchase order documents only and is not financial or tax advice.</p>
     </div>
 
   </div>

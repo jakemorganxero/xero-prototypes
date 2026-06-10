@@ -48,6 +48,23 @@
         max-width: 100%;
       }
     }
+  
+    .xero-cta {
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      margin-top: 14px;
+      line-height: 1.5;
+    }
+    .xero-cta a {
+      color: var(--xero-blue);
+      text-decoration: underline;
+      font-weight: 600;
+    }
+    .xero-disclaimer {
+      font-size: 0.75rem;
+      color: var(--xero-text-muted);
+      margin-top: 6px;
+    }
   </style>
   <!--
     XERO PROTOTYPE
@@ -109,7 +126,7 @@
       grid-template-columns: 1fr 460px;
       gap: 48px;
       align-items: start;
-      max-width: 1300px;
+      max-width: 1200px;
       margin: 0 auto;
     }
 
@@ -204,10 +221,6 @@
     .ps-subtotal-row td { font-weight: 700; color: var(--xero-navy); border-top: 1px solid var(--xero-border); background: #fafbfc; }
     .ps-net-row td { font-size: 0.875rem; font-weight: 800; color: var(--xero-navy); border-top: 2px solid var(--xero-navy); background: var(--xero-panel-bg); }
 
-    .inv-cta { font-size: 0.6875rem; color: var(--xero-text-muted); margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--xero-border); line-height: 1.5; }
-    .inv-cta a { color: var(--xero-blue); text-decoration: none; font-weight: 600; }
-    .inv-cta a:hover { color: var(--xero-blue-dark); }
-
     /* ── Download strip ── */
     .xero-preview__dl {
       background: var(--xero-panel-bg);
@@ -248,7 +261,7 @@
       box-shadow: 0 2px 6px rgba(0,8,86,0.1);
     }
 
-    .xero-tool__disclaimer { font-size: 0.75rem; color: var(--xero-text-muted); margin-top: 28px; max-width: 1300px; margin-left: auto; margin-right: auto; line-height: 1.5; }
+    .xero-tool__disclaimer { font-size: 0.75rem; color: var(--xero-text-muted); margin-top: 28px; max-width: 1200px; margin-left: auto; margin-right: auto; line-height: 1.5; }
 
     @media print { body > * { display: none !important; } #payslip-print-area { display: block !important; } }
     #payslip-print-area { display: none; }
@@ -578,10 +591,6 @@
           </tbody>
         </table>
 
-        <div class="inv-cta">
-          Manage payroll with ease using Xero. Start a 30 day <a href="https://www.xero.com/us/signup/" target="_blank">free trial</a>.
-        </div>
-
       </div><!-- /inv-doc -->
 
       <!-- Download strip -->
@@ -608,6 +617,8 @@
           HTML
         </button>
       </div>
+      <p class="xero-cta">Pay your team and manage payroll with Xero. Start a 30 day <a href="https://www.xero.com/signup/" target="_blank">free trial</a>.</p>
+      <p class="xero-disclaimer">*This tool generates payslip documents only and is not financial or tax advice.</p>
     </div><!-- /preview -->
 
   </div><!-- /layout -->

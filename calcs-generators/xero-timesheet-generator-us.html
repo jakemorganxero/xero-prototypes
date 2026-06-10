@@ -48,6 +48,23 @@
         max-width: 100%;
       }
     }
+  
+    .xero-cta {
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      margin-top: 14px;
+      line-height: 1.5;
+    }
+    .xero-cta a {
+      color: var(--xero-blue);
+      text-decoration: underline;
+      font-weight: 600;
+    }
+    .xero-disclaimer {
+      font-size: 0.75rem;
+      color: var(--xero-text-muted);
+      margin-top: 6px;
+    }
   </style>
   <!--
     XERO PROTOTYPE
@@ -104,7 +121,7 @@
       grid-template-columns: 55fr 45fr;
       gap: 48px;
       align-items: start;
-      max-width: 1300px;
+      max-width: 1200px;
       margin: 0 auto;
     }
 
@@ -654,19 +671,10 @@
     }
 
     /* ─── CTA ─── */
-    .xero-cta {
-      margin-top: 16px;
-      font-size: 0.8125rem;
-      color: var(--xero-text-muted);
-      line-height: 1.5;
-    }
-
-    .xero-cta a { color: var(--xero-blue); font-weight: 600; text-decoration: none; }
-    .xero-cta a:hover { color: var(--xero-blue-dark); text-decoration: underline; }
 
     /* ─── Footnote ─── */
     .xero-footnote {
-      max-width: 1300px;
+      max-width: 1200px;
       margin: 32px auto 0;
       font-size: 0.75rem;
       color: var(--xero-text-muted);
@@ -1012,11 +1020,10 @@
           HTML
         </button>
       </div>
+      <p class="xero-cta">Track team hours and manage timesheets with Xero. Start a 30 day <a href="https://www.xero.com/signup/" target="_blank">free trial</a>.</p>
+      <p class="xero-disclaimer">*This tool generates timesheet documents only and is not financial or tax advice.</p>
 
       <!-- CTA -->
-      <p class="xero-cta">
-        Track employee time automatically with Xero. Start a 30 day <a href="https://www.xero.com/us/signup/" target="_blank">free trial</a>.
-      </p>
 
     </div><!-- /xero-preview -->
 
