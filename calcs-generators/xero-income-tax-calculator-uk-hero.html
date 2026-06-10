@@ -59,28 +59,38 @@
       - Full-width band; inner content max-width 1200px, grid 1fr 480px, gap 64px
       - Mobile stacks at 900px breakpoint
       - Expenses row shown/hidden based on employment type radio
-      - GT Walsheim → Plus Jakarta Sans substitution (flag for prod)
+      - National2 / National2Condensed are stand-ins (xero.com CDN + inline base64); GT Walsheim is the licensed production font
   -->
 
   <style>
     /* ─── Xero Brand Tokens ─── */
     :root {
-      --xero-navy:       #000856;
-      --xero-blue:       #13B5EA;
-      --xero-blue-dark:  #0D8FBD;
-      --xero-panel-bg:   #F2F1EE;
-      --xero-border:     #C2CDD6;
-    --xero-input-border: #000856;
+      /* Brand */
+      --xero-navy:        #000856;
+      --xero-text:        #000856;
+      --xero-blue:        #13B5EA;
+      --xero-blue-dark:   #0D8FBD;
+      --xero-green:       #186241;
+      --xero-red:         #E05A5A;
+
+      /* Surfaces */
+      --xero-panel-bg:    #F2F1EE;
+      --xero-bg:          #FFFFFF;
+      --xero-input-bg:    #FFFFFF;
+
+      /* Lines */
+      --xero-input-border:      #000856;
       --xero-input-border-grey: #CBCAC9;
-      --xero-bg:         #FFFFFF;
-      --xero-text:       #000856;
-      --xero-text-muted: #4A6070;
-      --xero-input-bg:   #FFFFFF;
-      --xero-green:      #186241;
-      --xero-red:        #E05A5A;
-      --radius:          6px;
-      --font: 'National2', -apple-system, BlinkMacSystemFont, sans-serif;
-      --font-heading: 'National2Condensed', -apple-system, BlinkMacSystemFont, sans-serif;
+      --xero-border:            #C2CDD6;
+
+      /* Text */
+      --xero-text-muted:  #4A6070;
+      --xero-placeholder: #6E7481;
+
+      /* Geometry + type */
+      --radius:        6px;
+      --font:          'National2', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-heading:  'National2Condensed', var(--font);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -164,11 +174,11 @@
       flex-wrap: wrap;
     }
 
-    .btn-primary {
+    .xero-btn-primary {
       display: inline-block;
       background: var(--xero-navy);
       color: #fff;
-      border-radius: 6px;
+      border-radius: var(--radius);
       padding: 12px 24px;
       font-weight: 700;
       font-size: 0.9375rem;
@@ -179,9 +189,9 @@
       transition: background 0.15s;
       white-space: nowrap;
     }
-    .btn-primary:hover { background: #122d3b; }
+    .xero-btn-primary:hover { background: #000640; }
 
-    .btn-secondary {
+    .xero-btn-secondary {
       display: inline-block;
       color: var(--xero-navy);
       font-weight: 700;
@@ -193,13 +203,13 @@
       transition: text-decoration-color 0.15s;
       white-space: nowrap;
     }
-    .btn-secondary:hover { text-decoration-color: var(--xero-blue-dark); }
+    .xero-btn-secondary:hover { text-decoration-color: var(--xero-blue-dark); }
 
     /* ─── Calculator card ─── */
     .xero-hero__card {
       background: var(--xero-panel-bg);
-      border-radius: 8px;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 24px rgba(0,8,86,.08);
       padding: 32px;
     }
 
@@ -238,7 +248,7 @@
       overflow: hidden;
       transition: border-color 0.15s;
     }
-    .xero-input-wrap:hover { box-shadow: 0 2px 8px rgba(33,59,85,0.12); }
+    .xero-input-wrap:hover { box-shadow: 0 2px 8px rgba(0,8,86,.12); }
     .xero-input-wrap:focus-within { border-color: var(--xero-blue); }
 
     .xero-input-prefix {
@@ -260,7 +270,7 @@
       width: 100%;
       background: transparent;
     }
-    .xero-input::placeholder { color: #9BAEBB; }
+    .xero-input::placeholder { color: var(--xero-placeholder); }
 
     /* Remove number input spinners */
     .xero-input::-webkit-outer-spin-button,
@@ -292,7 +302,7 @@
       cursor: pointer;
       transition: border-color 0.15s;
     }
-    .xero-radio:has(input:checked) { border-color: var(--xero-navy); }
+    .xero-radio:has(input:checked) { border-color: var(--xero-blue); }
 
     .xero-radio input {
       position: absolute;
@@ -304,7 +314,7 @@
     .xero-radio__box {
       width: 18px;
       height: 18px;
-      border: 2px solid var(--xero-input-border-grey);
+      border: 2px solid var(--xero-input-border);
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -312,13 +322,13 @@
       flex-shrink: 0;
       transition: border-color 0.15s;
     }
-    .xero-radio:has(input:checked) .xero-radio__box { border-color: var(--xero-navy); }
+    .xero-radio:has(input:checked) .xero-radio__box { border-color: var(--xero-blue); }
 
     .xero-radio__dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: var(--xero-navy);
+      background: var(--xero-blue);
       opacity: 0;
       transition: opacity 0.15s;
     }
@@ -468,8 +478,8 @@
           <li>Calculate your monthly and annual take-home pay</li>
         </ul>
         <div class="xero-hero__ctas">
-          <a href="https://www.xero.com/uk/signup/" class="btn-primary">Try Xero for free</a>
-          <a href="https://www.xero.com/uk/pricing/" class="btn-secondary">Compare plans and pricing</a>
+          <a href="https://www.xero.com/uk/signup/" class="xero-btn-primary">Try Xero for free</a>
+          <a href="https://www.xero.com/uk/pricing/" class="xero-btn-secondary">Compare plans and pricing</a>
         </div>
       </div>
 

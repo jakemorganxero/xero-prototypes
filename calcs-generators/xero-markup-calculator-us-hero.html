@@ -11,7 +11,7 @@
   Notes for devs:
     - Two-mode card: find markup % vs find selling price
     - Live calculation — no submit button
-    - GT Walsheim → Plus Jakarta Sans substitution (flag for prod)
+    - National2 / National2Condensed are stand-ins loaded from xero.com CDN + inline base64; GT Walsheim is the licensed production font.
     - Hero band bg is white (#FFFFFF) per spec; inner card has box-shadow for lift
 -->
 <!DOCTYPE html>
@@ -58,20 +58,32 @@
   <style>
     /* ── Brand tokens ── */
     :root {
-      --xero-navy:       #000856;
-      --xero-blue:       #13B5EA;
-      --xero-blue-dark:  #0D8FBD;
-      --xero-panel-bg:   #F2F1EE;
-      --xero-border:     #C2CDD6;
-    --xero-input-border: #000856;
+      /* Brand */
+      --xero-navy:        #000856;
+      --xero-text:        #000856;
+      --xero-blue:        #13B5EA;
+      --xero-blue-dark:   #0D8FBD;
+      --xero-green:       #186241;
+      --xero-red:         #E05A5A;
+
+      /* Surfaces */
+      --xero-panel-bg:    #F2F1EE;
+      --xero-bg:          #FFFFFF;
+      --xero-input-bg:    #FFFFFF;
+
+      /* Lines */
+      --xero-input-border:      #000856;
       --xero-input-border-grey: #CBCAC9;
-      --xero-bg:         #FFFFFF;
-      --xero-text:       #000856;
-      --xero-text-muted: #4A6070;
-      --xero-green:      #186241;
-      --radius:          6px;
-      --font: 'National2', -apple-system, BlinkMacSystemFont, sans-serif;
-      --font-heading: 'National2Condensed', -apple-system, BlinkMacSystemFont, sans-serif;
+      --xero-border:            #C2CDD6;
+
+      /* Text */
+      --xero-text-muted:  #4A6070;
+      --xero-placeholder: #6E7481;
+
+      /* Geometry + type */
+      --radius:        6px;
+      --font:          'National2', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-heading:  'National2Condensed', var(--font);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -146,7 +158,7 @@
       background: var(--xero-navy);
       color: #fff;
       border: none;
-      border-radius: 6px;
+      border-radius: var(--radius);
       padding: 12px 24px;
       font-family: var(--font);
       font-size: 0.9375rem;
@@ -156,7 +168,7 @@
       display: inline-block;
       transition: background 0.15s;
     }
-    .xero-btn-primary:hover { background: #00063d; }
+    .xero-btn-primary:hover { background: #000640; }
 
     .xero-btn-secondary {
       color: var(--xero-navy);
@@ -176,8 +188,8 @@
 
     .xero-hero__card {
       background: var(--xero-panel-bg);
-      border-radius: 8px;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 24px rgba(0, 8, 86, 0.08);
       padding: 32px;
     }
 
@@ -212,7 +224,7 @@
     .xero-radio__box {
       width: 18px;
       height: 18px;
-      border: 2px solid var(--xero-input-border-grey);
+      border: 2px solid var(--xero-input-border);
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -258,11 +270,11 @@
       background: #fff;
       transition: border-color 0.15s;
     }
-    .xero-input-wrap:hover { box-shadow: 0 2px 8px rgba(33,59,85,0.12); }
+    .xero-input-wrap:hover { box-shadow: 0 2px 8px rgba(0,8,86,0.12); }
     .xero-input-wrap:focus-within { border-color: var(--xero-blue); }
 
-    .xero-input-prefix,
-    .xero-input-suffix {
+    .xero-input-wrap__prefix,
+    .xero-input-wrap__suffix {
       display: flex;
       align-items: center;
       padding: 0 8px 0 14px;
@@ -273,7 +285,7 @@
       flex-shrink: 0;
       font-family: var(--font);
     }
-    .xero-input-suffix {
+    .xero-input-wrap__suffix {
       padding: 0 14px 0 8px;
     }
 
@@ -288,7 +300,7 @@
       width: 100%;
       min-width: 0;
     }
-    .xero-input::placeholder { color: #6E7481; }
+    .xero-input::placeholder { color: var(--xero-placeholder); }
 
     .xero-result-band {
       background: #ffffff;
@@ -410,14 +422,14 @@
         <div class="xero-field">
           <label class="xero-field__label" for="cost-price">Cost price (USD)</label>
           <div class="xero-input-wrap">
-            <span class="xero-input-prefix">$</span>
+            <span class="xero-input-wrap__prefix">$</span>
             <input class="xero-input" type="number" id="cost-price" min="0" step="0.01" placeholder="0.00" oninput="calculate()" autocomplete="off">
           </div>
         </div>
         <div class="xero-field">
           <label class="xero-field__label" for="sell-price">Selling price (USD)</label>
           <div class="xero-input-wrap">
-            <span class="xero-input-prefix">$</span>
+            <span class="xero-input-wrap__prefix">$</span>
             <input class="xero-input" type="number" id="sell-price" min="0" step="0.01" placeholder="0.00" oninput="calculate()" autocomplete="off">
           </div>
         </div>
@@ -443,7 +455,7 @@
         <div class="xero-field">
           <label class="xero-field__label" for="cost-price2">Cost price (USD)</label>
           <div class="xero-input-wrap">
-            <span class="xero-input-prefix">$</span>
+            <span class="xero-input-wrap__prefix">$</span>
             <input class="xero-input" type="number" id="cost-price2" min="0" step="0.01" placeholder="0.00" oninput="calculate()" autocomplete="off">
           </div>
         </div>
@@ -451,7 +463,7 @@
           <label class="xero-field__label" for="markup-pct-input">Markup (%)</label>
           <div class="xero-input-wrap">
             <input class="xero-input" type="number" id="markup-pct-input" min="0" step="0.01" placeholder="0.00" oninput="calculate()" autocomplete="off" style="padding-left:14px;">
-            <span class="xero-input-suffix">%</span>
+            <span class="xero-input-wrap__suffix">%</span>
           </div>
         </div>
 

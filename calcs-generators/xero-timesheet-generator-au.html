@@ -1,9 +1,26 @@
+<!--
+  XERO PROTOTYPE
+  Tool: Timesheet Generator (AU)
+  Locale: AU
+  Pattern: Two-column generator with live preview
+  Built: 2026-04-16
+  Inputs: Employee/company details, pay period, time entries (start/end/break per day), pay rate
+  Output: Styled timesheet — download PDF/Word/Excel/CSV/HTML
+  Notes for devs:
+    - days[] array drives the table; rebuilt on period change, updated in-place on keystroke
+    - Regular/OT hours auto-calculated per day from start/end/break
+    - OT threshold configurable (default 8hrs/day)
+    - Pay totals section is optional (toggle)
+    - Currency: AUD ($), locale string en-AU, date format DD/MM/YYYY
+    - Week starts Monday
+    - National2 / National2Condensed are stand-ins loaded from xero.com CDN + inline base64; GT Walsheim is the licensed production font.
+  -->
 <!DOCTYPE html>
 <html lang="en-AU">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Xero Timesheet Generator — AU</title>
+  <title>Xero's free timesheet generator – AU</title>
   <style>
   @font-face {
     font-family: 'National2';
@@ -39,68 +56,24 @@
   font-display: swap;
 }
 
-    @media (max-width: 768px) {
-      .xero-hero__inner {
-        grid-template-columns: 1fr;
-        gap: 40px;
-      }
-      .xero-hero__card {
-        max-width: 100%;
-      }
-    }
-  
-    .xero-cta {
-      font-size: 0.8125rem;
-      color: var(--xero-text-muted);
-      margin-top: 14px;
-      line-height: 1.5;
-    }
-    .xero-cta a {
-      color: var(--xero-blue);
-      text-decoration: underline;
-      font-weight: 600;
-    }
-    .xero-disclaimer {
-      font-size: 0.75rem;
-      color: var(--xero-text-muted);
-      margin-top: 6px;
-    }
-  </style>
-  <!--
-    XERO PROTOTYPE
-    Tool: Timesheet Generator (AU)
-    Locale: AU
-    Pattern: Two-column generator with live preview
-    Built: 2026-04-16
-    Inputs: Employee/company details, pay period, time entries (start/end/break per day), pay rate
-    Output: Styled timesheet — download PDF/Word/Excel/CSV/HTML
-    Notes for devs:
-      - days[] array drives the table; rebuilt on period change, updated in-place on keystroke
-      - Regular/OT hours auto-calculated per day from start/end/break
-      - OT threshold configurable (default 8hrs/day)
-      - Pay totals section is optional (toggle)
-      - Currency: AUD ($), locale string en-AU, date format DD/MM/YYYY
-      - Week starts Monday
-      - GT Walsheim → Plus Jakarta Sans (flag for prod)
-  -->
-  <style>
     :root {
-      --xero-navy:       #000856;
-      --xero-blue:       #13B5EA;
-      --xero-blue-dark:  #0D8FBD;
-      --xero-panel-bg:   #F2F1EE;
-      --xero-border:     #C2CDD6;
-    --xero-input-border: #000856;
+      --xero-navy:        #000856;
+      --xero-text:        #000856;
+      --xero-blue:        #13B5EA;
+      --xero-blue-dark:   #0D8FBD;
+      --xero-green:       #186241;
+      --xero-red:         #E05A5A;
+      --xero-panel-bg:    #F2F1EE;
+      --xero-bg:          #FFFFFF;
+      --xero-input-bg:    #FFFFFF;
+      --xero-input-border:      #000856;
       --xero-input-border-grey: #CBCAC9;
-      --xero-bg:         #FFFFFF;
-      --xero-text:       #000856;
-      --xero-text-muted: #4A6070;
-      --xero-input-bg:   #FFFFFF;
-      --xero-green:      #186241;
-      --xero-red:        #E05A5A;
+      --xero-border:            #C2CDD6;
+      --xero-text-muted:  #4A6070;
+      --xero-placeholder: #6E7481;
       --radius: 6px;
       --font: 'National2', -apple-system, BlinkMacSystemFont, sans-serif;
-      --font-heading: 'National2Condensed', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-heading: 'National2Condensed', var(--font);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -126,17 +99,18 @@
     }
 
     @media (max-width: 1000px) {
-      .xero-preview, .xero-preview-col { position: static; }
+      .xero-preview { position: static; }
       .xero-tool__layout { grid-template-columns: 1fr; }
     }
 
     /* ─── Form ─── */
-    .xero-form__title {
-      font-family: var(--font);
-      font-size: 1.375rem;
+    .xero-tool__title {
+      font-family: var(--font-heading);
+      font-size: 2rem;
       font-weight: 800;
       color: var(--xero-navy);
-      letter-spacing: -0.02em;
+      letter-spacing: -0.01em;
+      line-height: 1.1;
       margin-bottom: 28px;
     }
 
@@ -195,7 +169,7 @@
     }
 
     .xero-input--plain:focus { border-color: var(--xero-blue); }
-    .xero-input--plain::placeholder { color: #6E7481; }
+    .xero-input--plain::placeholder { color: var(--xero-placeholder); }
 
     .xero-select {
       border: 1px solid var(--xero-input-border);
@@ -216,11 +190,11 @@
 
     .xero-select:focus { border-color: var(--xero-blue); }
     .xero-input--plain:hover, .xero-select:hover, .xero-textarea:hover {
-      box-shadow: 0 2px 8px rgba(33,59,85,0.12);
+      box-shadow: 0 2px 8px rgba(0,8,86,0.12);
     }
 
     /* ─── Period type tabs ─── */
-    .period-tabs {
+    .xero-period-tabs {
       display: flex;
       gap: 0;
       border: 1px solid var(--xero-border);
@@ -230,7 +204,7 @@
       margin-bottom: 12px;
     }
 
-    .period-tab {
+    .xero-period-tab {
       padding: 7px 16px;
       font-family: var(--font);
       font-size: 0.8125rem;
@@ -243,9 +217,9 @@
       border-right: 1px solid var(--xero-border);
     }
 
-    .period-tab:last-child { border-right: none; }
+    .xero-period-tab:last-child { border-right: none; }
 
-    .period-tab.active {
+    .xero-period-tab.active {
       background: var(--xero-navy);
       color: #fff;
     }
@@ -264,16 +238,16 @@
       cursor: pointer;
     }
 
-    .toggle-switch {
+    .xero-toggle {
       position: relative;
       width: 36px;
       height: 20px;
       flex-shrink: 0;
     }
 
-    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .xero-toggle input { opacity: 0; width: 0; height: 0; }
 
-    .toggle-slider {
+    .xero-toggle__slider {
       position: absolute;
       inset: 0;
       background: var(--xero-border);
@@ -282,7 +256,7 @@
       transition: background 0.2s;
     }
 
-    .toggle-slider::before {
+    .xero-toggle__slider::before {
       content: '';
       position: absolute;
       width: 14px;
@@ -294,19 +268,19 @@
       transition: transform 0.2s;
     }
 
-    .toggle-switch input:checked + .toggle-slider { background: var(--xero-blue); }
-    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); }
+    .xero-toggle input:checked + .xero-toggle__slider { background: var(--xero-blue); }
+    .xero-toggle input:checked + .xero-toggle__slider::before { transform: translateX(16px); }
 
     /* ─── Timesheet table ─── */
-    .ts-table-wrap { overflow-x: auto; margin-top: 12px; }
+    .xero-table-scroll { overflow-x: auto; margin-top: 12px; }
 
-    .ts-table {
+    .xero-ts-table {
       width: 100%;
       border-collapse: collapse;
       min-width: 600px;
     }
 
-    .ts-table th {
+    .xero-ts-table th {
       font-size: 0.625rem;
       font-weight: 700;
       text-transform: uppercase;
@@ -318,28 +292,28 @@
       white-space: nowrap;
     }
 
-    .ts-table th.right,
-    .ts-table td.right { text-align: right; }
+    .xero-ts-table th.right,
+    .xero-ts-table td.right { text-align: right; }
 
-    .ts-table td { padding: 4px 4px; vertical-align: middle; }
+    .xero-ts-table td { padding: 4px 4px; vertical-align: middle; }
 
-    .ts-table tr:nth-child(even) td { background: #f7f9fb; }
+    .xero-ts-table tr:nth-child(even) td { background: var(--xero-panel-bg); }
 
-    .ts-day-label {
+    .xero-ts-day-label {
       font-size: 0.75rem;
       font-weight: 700;
       color: var(--xero-navy);
       white-space: nowrap;
     }
 
-    .ts-date-label {
+    .xero-ts-date-label {
       font-size: 0.75rem;
       color: var(--xero-text-muted);
       white-space: nowrap;
     }
 
-    .ts-time-input {
-      border: 1px solid var(--xero-border);
+    .xero-ts-time-input {
+      border: 1px solid var(--xero-input-border);
       border-radius: var(--radius);
       padding: 5px 6px;
       font-family: var(--font);
@@ -347,14 +321,15 @@
       color: var(--xero-text);
       width: 78px;
       outline: none;
-      transition: border-color 0.15s;
+      transition: border-color 0.15s, box-shadow 0.15s;
       background: var(--xero-input-bg);
     }
 
-    .ts-time-input:focus { border-color: var(--xero-blue); }
+    .xero-ts-time-input:hover { box-shadow: 0 2px 8px rgba(0,8,86,0.12); }
+    .xero-ts-time-input:focus { border-color: var(--xero-blue); }
 
-    .ts-break-input {
-      border: 1px solid var(--xero-border);
+    .xero-ts-break-input {
+      border: 1px solid var(--xero-input-border);
       border-radius: var(--radius);
       padding: 5px 6px;
       font-family: var(--font);
@@ -362,15 +337,16 @@
       color: var(--xero-text);
       width: 56px;
       outline: none;
-      transition: border-color 0.15s;
+      transition: border-color 0.15s, box-shadow 0.15s;
       background: var(--xero-input-bg);
       text-align: right;
     }
 
-    .ts-break-input:focus { border-color: var(--xero-blue); }
+    .xero-ts-break-input:hover { box-shadow: 0 2px 8px rgba(0,8,86,0.12); }
+    .xero-ts-break-input:focus { border-color: var(--xero-blue); }
 
-    .ts-notes-input {
-      border: 1px solid var(--xero-border);
+    .xero-ts-notes-input {
+      border: 1px solid var(--xero-input-border);
       border-radius: var(--radius);
       padding: 5px 8px;
       font-family: var(--font);
@@ -379,14 +355,15 @@
       width: 100%;
       min-width: 90px;
       outline: none;
-      transition: border-color 0.15s;
+      transition: border-color 0.15s, box-shadow 0.15s;
       background: var(--xero-input-bg);
     }
 
-    .ts-notes-input:focus { border-color: var(--xero-blue); }
-    .ts-notes-input::placeholder { color: #6E7481; }
+    .xero-ts-notes-input:hover { box-shadow: 0 2px 8px rgba(0,8,86,0.12); }
+    .xero-ts-notes-input:focus { border-color: var(--xero-blue); }
+    .xero-ts-notes-input::placeholder { color: var(--xero-placeholder); }
 
-    .ts-calc-val {
+    .xero-ts-calc-val {
       font-size: 0.8125rem;
       font-weight: 600;
       color: var(--xero-navy);
@@ -395,10 +372,10 @@
       padding: 0 4px;
     }
 
-    .ts-calc-val.zero { color: var(--xero-text-muted); font-weight: 400; }
+    .xero-ts-calc-val.zero { color: var(--xero-text-muted); font-weight: 400; }
 
     /* ─── Totals summary ─── */
-    .ts-totals {
+    .xero-ts-totals {
       display: flex;
       gap: 24px;
       flex-wrap: wrap;
@@ -407,9 +384,9 @@
       border-top: 2px solid var(--xero-navy);
     }
 
-    .ts-total-item { display: flex; flex-direction: column; gap: 2px; }
+    .xero-ts-total-item { display: flex; flex-direction: column; gap: 2px; }
 
-    .ts-total-item .lbl {
+    .xero-ts-total-item .lbl {
       font-size: 0.6875rem;
       font-weight: 700;
       text-transform: uppercase;
@@ -417,21 +394,21 @@
       color: var(--xero-text-muted);
     }
 
-    .ts-total-item .val {
+    .xero-ts-total-item .val {
       font-size: 1rem;
       font-weight: 700;
       color: var(--xero-navy);
     }
 
     /* ─── Pay totals ─── */
-    .pay-totals {
+    .xero-ts-pay {
       background: var(--xero-panel-bg);
       border-radius: var(--radius);
       padding: 16px;
       margin-top: 16px;
     }
 
-    .pay-totals__row {
+    .xero-ts-pay__row {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -441,9 +418,9 @@
       border-bottom: 1px solid var(--xero-border);
     }
 
-    .pay-totals__row:last-child { border-bottom: none; }
+    .xero-ts-pay__row:last-child { border-bottom: none; }
 
-    .pay-totals__row.grand {
+    .xero-ts-pay__row.grand {
       font-weight: 800;
       font-size: 1rem;
       color: var(--xero-navy);
@@ -465,27 +442,27 @@
     }
 
     /* ─── Timesheet document ─── */
-    .inv-doc {
+    .xero-preview__doc {
       background: #fff;
       border: 1px solid var(--xero-border);
-      border-radius: 4px 4px 0 0;
+      border-radius: var(--radius) var(--radius) 0 0;
       padding: 28px 28px 20px;
       font-size: 0.75rem;
       color: var(--xero-navy);
     }
 
-    .inv-doc__header {
+    .xero-preview__doc-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       margin-bottom: 16px;
     }
 
-    .inv-doc__logo {
+    .xero-preview__doc-logo {
       width: 80px;
       height: 40px;
       background: var(--xero-panel-bg);
-      border-radius: 3px;
+      border-radius: var(--radius);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -495,9 +472,9 @@
       overflow: hidden;
     }
 
-    .inv-doc__logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .xero-preview__doc-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-    .inv-doc__title {
+    .xero-preview__doc-title {
       font-size: 1.125rem;
       font-weight: 800;
       color: var(--xero-navy);
@@ -505,20 +482,20 @@
       text-transform: uppercase;
     }
 
-    .inv-doc__divider {
+    .xero-preview__doc-divider {
       border: none;
       border-top: 2px solid var(--xero-navy);
       margin: 12px 0;
     }
 
-    .inv-doc__meta {
+    .xero-preview__doc-meta {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
       margin-bottom: 16px;
     }
 
-    .inv-meta__block .meta-lbl {
+    .xero-preview__doc-meta-block .meta-lbl {
       font-size: 0.5625rem;
       font-weight: 700;
       text-transform: uppercase;
@@ -527,31 +504,31 @@
       margin-bottom: 3px;
     }
 
-    .inv-meta__block .meta-val {
+    .xero-preview__doc-meta-block .meta-val {
       font-size: 0.75rem;
       font-weight: 600;
       color: var(--xero-navy);
       line-height: 1.4;
     }
 
-    .inv-meta__block .meta-val.muted {
+    .xero-preview__doc-meta-block .meta-val.muted {
       font-weight: 400;
       color: var(--xero-text-muted);
     }
 
     /* ─── Preview table ─── */
-    .prev-table {
+    .xero-preview__doc-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 0.6875rem;
     }
 
-    .prev-table thead tr {
+    .xero-preview__doc-table thead tr {
       background: var(--xero-navy);
       color: #fff;
     }
 
-    .prev-table thead th {
+    .xero-preview__doc-table thead th {
       padding: 6px 6px;
       font-weight: 700;
       text-transform: uppercase;
@@ -560,45 +537,45 @@
       text-align: left;
     }
 
-    .prev-table thead th.right { text-align: right; }
+    .xero-preview__doc-table thead th.right { text-align: right; }
 
-    .prev-table tbody tr:nth-child(even) { background: #f7f9fb; }
+    .xero-preview__doc-table tbody tr:nth-child(even) { background: var(--xero-panel-bg); }
 
-    .prev-table tbody td {
+    .xero-preview__doc-table tbody td {
       padding: 4px 6px;
-      border-bottom: 1px solid #e8edf1;
+      border-bottom: 1px solid var(--xero-border);
       color: var(--xero-text);
     }
 
-    .prev-table tbody td.right { text-align: right; font-weight: 600; }
-    .prev-table tbody td.muted { color: var(--xero-text-muted); }
+    .xero-preview__doc-table tbody td.right { text-align: right; font-weight: 600; }
+    .xero-preview__doc-table tbody td.muted { color: var(--xero-text-muted); }
 
-    .prev-table tfoot tr { border-top: 2px solid var(--xero-navy); }
+    .xero-preview__doc-table tfoot tr { border-top: 2px solid var(--xero-navy); }
 
-    .prev-table tfoot td {
+    .xero-preview__doc-table tfoot td {
       padding: 6px 6px;
       font-weight: 800;
       font-size: 0.6875rem;
       color: var(--xero-navy);
     }
 
-    .prev-table tfoot td.right { text-align: right; }
+    .xero-preview__doc-table tfoot td.right { text-align: right; }
 
     /* ─── Preview pay totals ─── */
-    .prev-pay {
+    .xero-preview__doc-pay {
       margin-top: 12px;
       border-top: 1px solid var(--xero-border);
       padding-top: 10px;
     }
 
-    .prev-pay__row {
+    .xero-preview__doc-pay-row {
       display: flex;
       justify-content: space-between;
       padding: 2px 0;
       font-size: 0.6875rem;
     }
 
-    .prev-pay__row.grand {
+    .xero-preview__doc-pay-row.grand {
       font-weight: 800;
       font-size: 0.75rem;
       color: var(--xero-navy);
@@ -608,7 +585,7 @@
     }
 
     /* ─── Preview signatures ─── */
-    .prev-sigs {
+    .xero-preview__doc-sigs {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 16px;
@@ -617,13 +594,13 @@
       border-top: 1px solid var(--xero-border);
     }
 
-    .prev-sig__line {
+    .xero-preview__doc-sig-line {
       border-bottom: 1px solid var(--xero-navy);
       height: 20px;
       margin-bottom: 4px;
     }
 
-    .prev-sig__label {
+    .xero-preview__doc-sig-label {
       font-size: 0.5625rem;
       color: var(--xero-text-muted);
       text-transform: uppercase;
@@ -635,7 +612,7 @@
       background: var(--xero-panel-bg);
       border: 1px solid var(--xero-border);
       border-top: none;
-      border-radius: 0 0 4px 4px;
+      border-radius: 0 0 var(--radius) var(--radius);
       padding: 12px 16px;
       display: flex;
       align-items: center;
@@ -660,7 +637,7 @@
       color: var(--xero-navy);
       background: #fff;
       border: 1px solid var(--xero-border);
-      border-radius: 4px;
+      border-radius: var(--radius);
       cursor: pointer;
       transition: border-color 0.15s, box-shadow 0.15s;
       white-space: nowrap;
@@ -670,33 +647,21 @@
       box-shadow: 0 2px 6px rgba(0,8,86,0.1);
     }
 
-    /* ─── CTA ─── */
-
-    /* ─── Footnote ─── */
-    .xero-footnote {
-      max-width: 1200px;
-      margin: 32px auto 0;
-      font-size: 0.75rem;
-      color: var(--xero-text-muted);
-      border-top: 1px solid var(--xero-border);
-      padding-top: 16px;
-    }
-
     /* ─── OT threshold row ─── */
-    .ot-config {
+    .xero-ts-ot-config {
       display: flex;
       align-items: center;
       gap: 8px;
       flex-wrap: wrap;
     }
 
-    .ot-config label {
+    .xero-ts-ot-config label {
       font-size: 0.8125rem;
       color: var(--xero-text);
     }
 
-    .ot-num-input {
-      border: 1px solid var(--xero-border);
+    .xero-ts-ot-input {
+      border: 1px solid var(--xero-input-border);
       border-radius: var(--radius);
       padding: 5px 8px;
       font-family: var(--font);
@@ -704,20 +669,22 @@
       color: var(--xero-text);
       width: 60px;
       outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
       text-align: right;
     }
 
-    .ot-num-input:focus { border-color: var(--xero-blue); }
+    .xero-ts-ot-input:hover { box-shadow: 0 2px 8px rgba(0,8,86,0.12); }
+    .xero-ts-ot-input:focus { border-color: var(--xero-blue); }
 
-    .rate-input-wrap {
+    .xero-rate-input {
       display: flex;
       align-items: center;
       gap: 0;
     }
 
-    .rate-prefix {
+    .xero-rate-input__prefix {
       background: var(--xero-panel-bg);
-      border: 1px solid var(--xero-border);
+      border: 1px solid var(--xero-input-border);
       border-right: none;
       border-radius: var(--radius) 0 0 var(--radius);
       padding: 8px 10px;
@@ -727,8 +694,25 @@
       line-height: 1;
     }
 
-    .rate-input-wrap .xero-input--plain {
+    .xero-rate-input .xero-input--plain {
       border-radius: 0 var(--radius) var(--radius) 0;
+    }
+
+    .xero-cta {
+      font-size: 0.8125rem;
+      color: var(--xero-text-muted);
+      margin-top: 14px;
+      line-height: 1.5;
+    }
+    .xero-cta a {
+      color: var(--xero-blue);
+      text-decoration: underline;
+      font-weight: 600;
+    }
+    .xero-disclaimer {
+      font-size: 0.75rem;
+      color: var(--xero-text-muted);
+      margin-top: 6px;
     }
   </style>
 </head>
@@ -741,7 +725,7 @@
          LEFT: FORM
     ═══════════════════════════════════════════════ -->
     <div class="xero-form">
-      <h2 class="xero-form__title">Create timesheet</h2>
+      <h1 class="xero-tool__title">Free timesheet generator</h1>
 
       <!-- Employee & Employer -->
       <div class="xero-section">
@@ -774,10 +758,10 @@
       <div class="xero-section">
         <div class="xero-section__title">Pay Period</div>
 
-        <div class="period-tabs">
-          <button class="period-tab active" data-period="weekly" onclick="setPeriod('weekly')">Weekly</button>
-          <button class="period-tab" data-period="fortnightly" onclick="setPeriod('fortnightly')">Fortnightly</button>
-          <button class="period-tab" data-period="custom" onclick="setPeriod('custom')">Custom</button>
+        <div class="xero-period-tabs">
+          <button class="xero-period-tab active" data-period="weekly" onclick="setPeriod('weekly')">Weekly</button>
+          <button class="xero-period-tab" data-period="fortnightly" onclick="setPeriod('fortnightly')">Fortnightly</button>
+          <button class="xero-period-tab" data-period="custom" onclick="setPeriod('custom')">Custom</button>
         </div>
 
         <div class="xero-fields" id="period-dates-wrap">
@@ -798,30 +782,30 @@
         <div class="xero-fields">
           <div>
             <label class="xero-field__label" for="reg-rate">Regular rate ($/hr)</label>
-            <div class="rate-input-wrap">
-              <span class="rate-prefix">$</span>
+            <div class="xero-rate-input">
+              <span class="xero-rate-input__prefix">$</span>
               <input class="xero-input--plain" type="number" id="reg-rate" min="0" step="0.01" placeholder="25.00" oninput="updateOTRate(); updateTotals(); updatePreview()">
             </div>
           </div>
           <div>
             <label class="xero-field__label" for="ot-rate">Overtime rate ($/hr)</label>
-            <div class="rate-input-wrap">
-              <span class="rate-prefix">$</span>
+            <div class="xero-rate-input">
+              <span class="xero-rate-input__prefix">$</span>
               <input class="xero-input--plain" type="number" id="ot-rate" min="0" step="0.01" placeholder="37.50" oninput="updateTotals(); updatePreview()">
             </div>
           </div>
           <div class="xero-field--full">
-            <div class="ot-config">
+            <div class="xero-ts-ot-config">
               <label for="ot-threshold">OT after</label>
-              <input class="ot-num-input" type="number" id="ot-threshold" min="1" max="24" step="0.5" value="8" oninput="recalcAll(); updateTotals(); updatePreview()">
+              <input class="xero-ts-ot-input" type="number" id="ot-threshold" min="1" max="24" step="0.5" value="8" oninput="recalcAll(); updateTotals(); updatePreview()">
               <label for="ot-threshold">hrs/day</label>
             </div>
           </div>
           <div class="xero-field--full">
             <div class="xero-toggle-row">
-              <label class="toggle-switch">
+              <label class="xero-toggle">
                 <input type="checkbox" id="show-pay" checked onchange="updateTotals(); updatePreview()">
-                <span class="toggle-slider"></span>
+                <span class="xero-toggle__slider"></span>
               </label>
               <label for="show-pay">Show pay totals on timesheet</label>
             </div>
@@ -832,8 +816,8 @@
       <!-- Time Entries -->
       <div class="xero-section">
         <div class="xero-section__title">Time Entries</div>
-        <div class="ts-table-wrap">
-          <table class="ts-table" id="ts-table">
+        <div class="xero-table-scroll">
+          <table class="xero-ts-table" id="ts-table">
             <thead>
               <tr>
                 <th>Day</th>
@@ -853,32 +837,32 @@
         </div>
 
         <!-- Totals summary -->
-        <div class="ts-totals" id="ts-totals">
-          <div class="ts-total-item">
+        <div class="xero-ts-totals" id="ts-totals">
+          <div class="xero-ts-total-item">
             <span class="lbl">Regular hours</span>
             <span class="val" id="total-reg">0.00</span>
           </div>
-          <div class="ts-total-item">
+          <div class="xero-ts-total-item">
             <span class="lbl">Overtime hours</span>
             <span class="val" id="total-ot">0.00</span>
           </div>
-          <div class="ts-total-item">
+          <div class="xero-ts-total-item">
             <span class="lbl">Total hours</span>
             <span class="val" id="total-hrs">0.00</span>
           </div>
         </div>
 
         <!-- Pay totals -->
-        <div class="pay-totals" id="pay-totals-section" style="display:none;">
-          <div class="pay-totals__row">
+        <div class="xero-ts-pay" id="pay-totals-section" style="display:none;">
+          <div class="xero-ts-pay__row">
             <span id="pay-reg-lbl">Regular pay (0.00 hrs × $0.00)</span>
             <span id="pay-reg-val">$0.00</span>
           </div>
-          <div class="pay-totals__row">
+          <div class="xero-ts-pay__row">
             <span id="pay-ot-lbl">Overtime pay (0.00 hrs × $0.00)</span>
             <span id="pay-ot-val">$0.00</span>
           </div>
-          <div class="pay-totals__row grand">
+          <div class="xero-ts-pay__row grand">
             <span>Total pay</span>
             <span id="pay-total-val">$0.00</span>
           </div>
@@ -912,32 +896,32 @@
     <div class="xero-preview">
       <div class="xero-preview__label">Timesheet preview</div>
 
-      <div class="inv-doc" id="preview-doc">
+      <div class="xero-preview__doc" id="preview-doc">
 
         <!-- Header -->
-        <div class="inv-doc__header">
-          <div class="inv-doc__logo" id="prev-logo">LOGO</div>
-          <div class="inv-doc__title">Timesheet</div>
+        <div class="xero-preview__doc-header">
+          <div class="xero-preview__doc-logo" id="prev-logo">LOGO</div>
+          <div class="xero-preview__doc-title">Timesheet</div>
         </div>
 
-        <hr class="inv-doc__divider">
+        <hr class="xero-preview__doc-divider">
 
         <!-- Meta -->
-        <div class="inv-doc__meta">
-          <div class="inv-meta__block">
+        <div class="xero-preview__doc-meta">
+          <div class="xero-preview__doc-meta-block">
             <div class="meta-lbl">Employee</div>
             <div class="meta-val" id="prev-emp-name">—</div>
             <div class="meta-val muted" id="prev-emp-sub"></div>
             <div class="meta-val muted" id="prev-company"></div>
           </div>
-          <div class="inv-meta__block" style="text-align:right;">
+          <div class="xero-preview__doc-meta-block" style="text-align:right;">
             <div class="meta-lbl">Period</div>
             <div class="meta-val" id="prev-period">—</div>
           </div>
         </div>
 
         <!-- Timesheet table -->
-        <table class="prev-table" id="prev-table">
+        <table class="xero-preview__doc-table" id="prev-table">
           <thead>
             <tr>
               <th>Day</th>
@@ -964,37 +948,37 @@
         </table>
 
         <!-- Pay totals in preview -->
-        <div class="prev-pay" id="prev-pay-section" style="display:none;">
-          <div class="prev-pay__row">
+        <div class="xero-preview__doc-pay" id="prev-pay-section" style="display:none;">
+          <div class="xero-preview__doc-pay-row">
             <span id="prev-pay-reg-lbl">Regular pay</span>
             <span id="prev-pay-reg-val">$0.00</span>
           </div>
-          <div class="prev-pay__row">
+          <div class="xero-preview__doc-pay-row">
             <span id="prev-pay-ot-lbl">Overtime pay</span>
             <span id="prev-pay-ot-val">$0.00</span>
           </div>
-          <div class="prev-pay__row grand">
+          <div class="xero-preview__doc-pay-row grand">
             <span>Total pay</span>
             <span id="prev-pay-total">$0.00</span>
           </div>
         </div>
 
         <!-- Signatures -->
-        <div class="prev-sigs">
+        <div class="xero-preview__doc-sigs">
           <div>
-            <div class="prev-sig__line"></div>
-            <div class="prev-sig__label" id="prev-sig-emp">Employee: —</div>
+            <div class="xero-preview__doc-sig-line"></div>
+            <div class="xero-preview__doc-sig-label" id="prev-sig-emp">Employee: —</div>
           </div>
           <div>
-            <div class="prev-sig__line"></div>
-            <div class="prev-sig__label" id="prev-sig-approver">Approved by: —</div>
+            <div class="xero-preview__doc-sig-line"></div>
+            <div class="xero-preview__doc-sig-label" id="prev-sig-approver">Approved by: —</div>
           </div>
           <div>
-            <div class="prev-sig__label" id="prev-sig-date">Date: —</div>
+            <div class="xero-preview__doc-sig-label" id="prev-sig-date">Date: —</div>
           </div>
         </div>
 
-      </div><!-- /inv-doc -->
+      </div><!-- /xero-preview__doc -->
 
       <!-- Download strip -->
       <div class="xero-preview__dl">
@@ -1020,16 +1004,12 @@
           HTML
         </button>
       </div>
-      <p class="xero-cta">Track team hours and manage timesheets with Xero. Start a 30 day <a href="https://www.xero.com/signup/" target="_blank">free trial</a>.</p>
+      <p class="xero-cta">Track team hours and manage timesheets with Xero. Start a 30 day <a href="https://www.xero.com/au/signup/" target="_blank">free trial</a>.</p>
       <p class="xero-disclaimer">*This tool generates timesheet documents only and is not financial or tax advice.</p>
-
-      <!-- CTA -->
 
     </div><!-- /xero-preview -->
 
   </div><!-- /layout -->
-
-  <p class="xero-footnote">*This tool generates timesheet documents only and is not financial or tax advice.</p>
 </div>
 
 <script>
@@ -1091,7 +1071,7 @@ const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 // ─── Period ───────────────────────────────────────────
 function setPeriod(type) {
   periodType = type;
-  document.querySelectorAll('.period-tab').forEach(b => {
+  document.querySelectorAll('.xero-period-tab').forEach(b => {
     b.classList.toggle('active', b.dataset.period === type);
   });
   const customEnd = document.getElementById('custom-end-wrap');
@@ -1151,14 +1131,14 @@ function renderTimesheet() {
   days.forEach((day, i) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td class="ts-day-label">${day.dayName}</td>
-      <td class="ts-date-label">${fmtDateShort(day.dateObj)}</td>
-      <td><input class="ts-time-input" type="time" value="${day.start}" data-i="${i}" data-f="start" onchange="updateDay(${i},'start',this.value)"></td>
-      <td><input class="ts-time-input" type="time" value="${day.end}" data-i="${i}" data-f="end" onchange="updateDay(${i},'end',this.value)"></td>
-      <td><input class="ts-break-input" type="number" min="0" step="5" value="${day.breakMin || ''}" placeholder="0" data-i="${i}" oninput="updateDay(${i},'breakMin',+this.value||0)"></td>
-      <td class="ts-calc-val${day.regularHrs === 0 ? ' zero' : ''}" id="reg-${i}">${fmtHrs(day.regularHrs)}</td>
-      <td class="ts-calc-val${day.otHrs === 0 ? ' zero' : ''}" id="ot-${i}">${fmtHrs(day.otHrs)}</td>
-      <td><input class="ts-notes-input" type="text" value="${day.notes}" placeholder="—" oninput="updateDay(${i},'notes',this.value)"></td>
+      <td class="xero-ts-day-label">${day.dayName}</td>
+      <td class="xero-ts-date-label">${fmtDateShort(day.dateObj)}</td>
+      <td><input class="xero-ts-time-input" type="time" value="${day.start}" data-i="${i}" data-f="start" onchange="updateDay(${i},'start',this.value)"></td>
+      <td><input class="xero-ts-time-input" type="time" value="${day.end}" data-i="${i}" data-f="end" onchange="updateDay(${i},'end',this.value)"></td>
+      <td><input class="xero-ts-break-input" type="number" min="0" step="5" value="${day.breakMin || ''}" placeholder="0" data-i="${i}" oninput="updateDay(${i},'breakMin',+this.value||0)"></td>
+      <td class="xero-ts-calc-val${day.regularHrs === 0 ? ' zero' : ''}" id="reg-${i}">${fmtHrs(day.regularHrs)}</td>
+      <td class="xero-ts-calc-val${day.otHrs === 0 ? ' zero' : ''}" id="ot-${i}">${fmtHrs(day.otHrs)}</td>
+      <td><input class="xero-ts-notes-input" type="text" value="${day.notes}" placeholder="—" oninput="updateDay(${i},'notes',this.value)"></td>
     `;
     tbody.appendChild(tr);
   });
@@ -1176,11 +1156,11 @@ function updateDay(index, field, value) {
   const otCell  = document.getElementById(`ot-${index}`);
   if (regCell) {
     regCell.textContent = fmtHrs(days[index].regularHrs);
-    regCell.className = 'ts-calc-val' + (days[index].regularHrs === 0 ? ' zero' : '');
+    regCell.className = 'xero-ts-calc-val' + (days[index].regularHrs === 0 ? ' zero' : '');
   }
   if (otCell) {
     otCell.textContent = fmtHrs(days[index].otHrs);
-    otCell.className = 'ts-calc-val' + (days[index].otHrs === 0 ? ' zero' : '');
+    otCell.className = 'xero-ts-calc-val' + (days[index].otHrs === 0 ? ' zero' : '');
   }
 
   updateTotals();
@@ -1335,8 +1315,8 @@ function downloadPDF() {
     thead tr { background: #000856; color: white; }
     thead th { padding: 5px 6px; text-align: left; font-size: 9px; text-transform: uppercase; }
     thead th.r { text-align: right; }
-    tbody tr:nth-child(even) { background: #f7f9fb; }
-    tbody td { padding: 3px 6px; border-bottom: 1px solid #e8edf1; }
+    tbody tr:nth-child(even) { background: #F2F1EE; }
+    tbody td { padding: 3px 6px; border-bottom: 1px solid #C2CDD6; }
     tbody td.r { text-align: right; font-weight: 600; }
     tfoot tr { border-top: 2px solid #000856; }
     tfoot td { padding: 5px 6px; font-weight: 800; }
@@ -1541,32 +1521,32 @@ function downloadHTML() {
     <meta charset="UTF-8"><title>Timesheet</title>
     <style>
       body { font-family: Arial, sans-serif; padding: 40px; color: #000856; max-width: 900px; margin: 0 auto; }
-      .inv-doc { border: 1px solid #C2CDD6; border-radius: 4px; padding: 28px; }
-      .inv-doc__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-      .inv-doc__title { font-size: 1.2rem; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; }
-      .inv-doc__divider { border: none; border-top: 2px solid #000856; margin: 12px 0; }
-      .inv-doc__meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
-      .inv-meta__block .meta-lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #4A6070; margin-bottom: 3px; }
-      .inv-meta__block .meta-val { font-size: 12px; font-weight: 600; line-height: 1.4; }
-      .inv-meta__block .meta-val.muted { font-weight: 400; color: #4A6070; }
-      .prev-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-      .prev-table thead tr { background: #000856; color: white; }
-      .prev-table thead th { padding: 6px; text-transform: uppercase; font-size: 9px; text-align: left; }
-      .prev-table thead th.right { text-align: right; }
-      .prev-table tbody tr:nth-child(even) { background: #f7f9fb; }
-      .prev-table tbody td { padding: 4px 6px; border-bottom: 1px solid #e8edf1; }
-      .prev-table tbody td.right { text-align: right; font-weight: 600; }
-      .prev-table tbody td.muted { color: #4A6070; }
-      .prev-table tfoot tr { border-top: 2px solid #000856; }
-      .prev-table tfoot td { padding: 6px; font-weight: 800; }
-      .prev-table tfoot td.right { text-align: right; }
-      .prev-pay { margin-top: 12px; border-top: 1px solid #C2CDD6; padding-top: 10px; }
-      .prev-pay__row { display: flex; justify-content: space-between; padding: 2px 0; font-size: 11px; }
-      .prev-pay__row.grand { font-weight: 800; font-size: 13px; border-top: 1px solid #000856; padding-top: 6px; margin-top: 4px; }
-      .prev-sigs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; padding-top: 12px; border-top: 1px solid #C2CDD6; }
-      .prev-sig__line { border-bottom: 1px solid #000856; height: 20px; margin-bottom: 4px; }
-      .prev-sig__label { font-size: 9px; color: #4A6070; text-transform: uppercase; letter-spacing: 1px; }
-      .inv-doc__logo { width: 80px; height: 40px; background: #F2F1EE; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #4A6070; font-weight: 600; }
+      .xero-preview__doc { border: 1px solid #C2CDD6; border-radius: 6px; padding: 28px; }
+      .xero-preview__doc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+      .xero-preview__doc-title { font-size: 1.2rem; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; }
+      .xero-preview__doc-divider { border: none; border-top: 2px solid #000856; margin: 12px 0; }
+      .xero-preview__doc-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+      .xero-preview__doc-meta-block .meta-lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #4A6070; margin-bottom: 3px; }
+      .xero-preview__doc-meta-block .meta-val { font-size: 12px; font-weight: 600; line-height: 1.4; }
+      .xero-preview__doc-meta-block .meta-val.muted { font-weight: 400; color: #4A6070; }
+      .xero-preview__doc-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+      .xero-preview__doc-table thead tr { background: #000856; color: white; }
+      .xero-preview__doc-table thead th { padding: 6px; text-transform: uppercase; font-size: 9px; text-align: left; }
+      .xero-preview__doc-table thead th.right { text-align: right; }
+      .xero-preview__doc-table tbody tr:nth-child(even) { background: #F2F1EE; }
+      .xero-preview__doc-table tbody td { padding: 4px 6px; border-bottom: 1px solid #C2CDD6; }
+      .xero-preview__doc-table tbody td.right { text-align: right; font-weight: 600; }
+      .xero-preview__doc-table tbody td.muted { color: #4A6070; }
+      .xero-preview__doc-table tfoot tr { border-top: 2px solid #000856; }
+      .xero-preview__doc-table tfoot td { padding: 6px; font-weight: 800; }
+      .xero-preview__doc-table tfoot td.right { text-align: right; }
+      .xero-preview__doc-pay { margin-top: 12px; border-top: 1px solid #C2CDD6; padding-top: 10px; }
+      .xero-preview__doc-pay-row { display: flex; justify-content: space-between; padding: 2px 0; font-size: 11px; }
+      .xero-preview__doc-pay-row.grand { font-weight: 800; font-size: 13px; border-top: 1px solid #000856; padding-top: 6px; margin-top: 4px; }
+      .xero-preview__doc-sigs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; padding-top: 12px; border-top: 1px solid #C2CDD6; }
+      .xero-preview__doc-sig-line { border-bottom: 1px solid #000856; height: 20px; margin-bottom: 4px; }
+      .xero-preview__doc-sig-label { font-size: 9px; color: #4A6070; text-transform: uppercase; letter-spacing: 1px; }
+      .xero-preview__doc-logo { width: 80px; height: 40px; background: #F2F1EE; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #4A6070; font-weight: 600; }
     </style>
   </head><body>${content}</body></html>`;
 

@@ -53,7 +53,7 @@
     Notes for devs:
       - Live calculation — no submit button
       - UK standard VAT = 20%, reduced = 5%, zero = 0%
-      - GT Walsheim → Plus Jakarta Sans substitution (flag for prod)
+      - National2 / National2Condensed are stand-ins loaded from xero.com CDN + inline base64; GT Walsheim is the licensed production font
       - Full-width band; inner content max-width 1200px
       - Mobile stacks at 900px breakpoint
       - When rate = 0: VAT = £0.00, base = total = raw regardless of mode
@@ -62,22 +62,32 @@
   <style>
     /* ─── Xero Brand Tokens ─── */
     :root {
+      /* Brand */
       --xero-navy:       #000856;
+      --xero-text:       #000856;
       --xero-blue:       #13B5EA;
       --xero-blue-dark:  #0D8FBD;
-      --xero-panel-bg:   #F2F1EE;
-      --xero-border:     #C2CDD6;
-    --xero-input-border: #000856;
-      --xero-input-border-grey: #CBCAC9;
-      --xero-bg:         #FFFFFF;
-      --xero-text:       #000856;
-      --xero-text-muted: #4A6070;
-      --xero-input-bg:   #FFFFFF;
       --xero-green:      #186241;
       --xero-red:        #E05A5A;
+
+      /* Surfaces */
+      --xero-panel-bg:   #F2F1EE;
+      --xero-bg:         #FFFFFF;
+      --xero-input-bg:   #FFFFFF;
+
+      /* Lines */
+      --xero-input-border:      #000856;
+      --xero-input-border-grey: #CBCAC9;
+      --xero-border:            #C2CDD6;
+
+      /* Text */
+      --xero-text-muted: #4A6070;
+      --xero-placeholder: #6E7481;
+
+      /* Geometry + type */
       --radius:          6px;
       --font: 'National2', -apple-system, BlinkMacSystemFont, sans-serif;
-      --font-heading: 'National2Condensed', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-heading: 'National2Condensed', var(--font);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -175,13 +185,13 @@
       font-size: 0.9375rem;
       font-weight: 700;
       padding: 12px 24px;
-      border-radius: 6px;
+      border-radius: var(--radius);
       text-decoration: none;
       white-space: nowrap;
       transition: background 0.15s;
     }
 
-    .xero-hero__btn:hover { background: #00063d; }
+    .xero-hero__btn:hover { background: #000640; }
 
     .xero-hero__link {
       font-size: 0.9375rem;
@@ -198,8 +208,8 @@
     /* ─── Right: calculator card ─── */
     .xero-hero__card {
       background: var(--xero-panel-bg);
-      border-radius: 8px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 24px rgba(0,8,86,0.08);
       padding: 32px;
     }
 
@@ -230,7 +240,7 @@
       margin-bottom: 20px;
     }
 
-    .xero-input-wrap:hover { box-shadow: 0 2px 8px rgba(33,59,85,0.12); }
+    .xero-input-wrap:hover { box-shadow: 0 2px 8px rgba(0,8,86,0.12); }
     .xero-input-wrap:focus-within {
       border-color: var(--xero-blue);
     }
@@ -258,7 +268,7 @@
       min-width: 0;
     }
 
-    .xero-input::placeholder { color: #6E7481; }
+    .xero-input::placeholder { color: var(--xero-placeholder); }
 
     /* ─── Radio group section label ─── */
     .xero-radio-section-label {
@@ -290,14 +300,14 @@
       transition: border-color 0.15s, background 0.15s;
     }
 
-    .xero-radio:has(input:checked) { border-color: var(--xero-navy); background: #f5f8fa; }
+    .xero-radio:has(input:checked) { border-color: var(--xero-blue); background: var(--xero-bg); }
 
     .xero-radio input { position: absolute; opacity: 0; width: 0; height: 0; }
 
     .xero-radio__box {
       width: 18px;
       height: 18px;
-      border: 2px solid var(--xero-input-border-grey);
+      border: 2px solid var(--xero-input-border);
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -306,13 +316,13 @@
       transition: border-color 0.15s;
     }
 
-    .xero-radio:has(input:checked) .xero-radio__box { border-color: var(--xero-navy); }
+    .xero-radio:has(input:checked) .xero-radio__box { border-color: var(--xero-blue); }
 
     .xero-radio__dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: var(--xero-navy);
+      background: var(--xero-blue);
       opacity: 0;
       transition: opacity 0.15s;
     }
@@ -326,7 +336,7 @@
     }
 
     /* ─── Result band inside card ─── */
-    .xero-hero__result-band {
+    .xero-result-band {
       background: #ffffff;
       border-radius: var(--radius);
       padding: 20px;
@@ -481,7 +491,7 @@
       </div>
 
       <!-- Result band -->
-      <div class="xero-hero__result-band" aria-live="polite" aria-atomic="true">
+      <div class="xero-result-band" aria-live="polite" aria-atomic="true">
         <div class="xero-result-row">
           <span class="xero-result__label">Amount (ex VAT)</span>
           <span class="xero-result__value" id="result-base">—</span>

@@ -7,8 +7,14 @@
   Metrics: Late payments — average late days (seasonally adjusted)
   Pattern: 2 – Chart only, single metric. Embed in a full-width content column (~960px).
   Notes for devs: Drop into any AEM content column. No metric switcher — single series only.
-    GT Walsheim → DM Sans for prototyping.
+    National2 / National2Condensed are stand-ins (xero.com CDN + inline base64); GT Walsheim is the licensed production font.
 -->
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xero Small Business Insights – US late payment days</title>
 <style>
   @font-face {
     font-family: 'National2';
@@ -44,71 +50,87 @@
   font-display: swap;
 }
 
-    @media (max-width: 768px) {
-      .xero-hero__inner {
-        grid-template-columns: 1fr;
-        gap: 40px;
-      }
-      .xero-hero__card {
-        max-width: 100%;
-      }
-    }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    /* Brand */
+    --xero-navy:        #000856;
+    --xero-text:        #000856;
+    --xero-blue:        #13B5EA;
+    --xero-blue-dark:   #0D8FBD;
+    --xero-green:       #186241;
+    --xero-red:         #E05A5A;
+    /* Surfaces */
+    --xero-panel-bg:    #F2F1EE;
+    --xero-bg:          #FFFFFF;
+    --xero-input-bg:    #FFFFFF;
+    /* Lines */
+    --xero-input-border:      #000856;
+    --xero-input-border-grey: #CBCAC9;
+    --xero-border:            #C2CDD6;
+    /* Text */
+    --xero-text-muted:  #4A6070;
+    --xero-placeholder: #6E7481;
+    /* Geometry + type */
+    --radius:        6px;
+    --font:          'National2', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-heading:  'National2Condensed', var(--font);
+  }
+  .xero-viz{font-family:var(--font);color:var(--xero-navy);max-width:960px;margin:0 auto;padding:36px 24px}
+  .xero-viz__title{font-family:var(--font-heading);font-weight:800;font-size:1.75rem;line-height:1.15;color:var(--xero-navy);margin-bottom:20px}
+  .xero-viz__top{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:24px}
+  .xero-eyebrow{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--xero-blue);margin-bottom:8px}
+  .xero-viz__val-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .xero-viz__val{font-size:3rem;font-weight:700;line-height:1;color:var(--xero-navy)}
+  .xero-delta{font-size:.8125rem;font-weight:600;padding:3px 10px;border-radius:20px}
+  .xero-delta.pos{background:rgba(24,98,65,.12);color:var(--xero-green)}
+  .xero-delta.neg{background:rgba(255,196,210,0.5);color:var(--xero-red)}
+  .xero-viz__period{font-size:.875rem;color:var(--xero-text-muted);margin-top:6px}
+  .xero-range{display:flex;gap:4px}
+  .xero-range__btn{background:none;border:1px solid var(--xero-border);border-radius:20px;padding:5px 14px;font-family:inherit;font-size:.8125rem;font-weight:600;color:var(--xero-text-muted);cursor:pointer;transition:all .15s}
+  .xero-range__btn:hover{border-color:var(--xero-navy);color:var(--xero-navy)}
+  .xero-range__btn.on{background:var(--xero-navy);border-color:var(--xero-navy);color:#fff}
+  .xero-viz__card{background:var(--xero-bg);border:1px solid var(--xero-border);border-radius:var(--radius);padding:24px}
+  .xero-viz__card-title{font-size:1rem;font-weight:700;color:var(--xero-navy);margin-bottom:4px}
+  .xero-viz__card-desc{font-size:.8125rem;color:var(--xero-text-muted);margin-bottom:20px}
+  .xero-viz__chart{height:280px;width:100%;max-width:100%}
+  .xero-viz__legend{display:flex;align-items:center;gap:16px;margin-top:14px;padding-top:14px;border-top:1px solid var(--xero-border);flex-wrap:wrap}
+  .xero-viz__legend-item{display:flex;align-items:center;gap:7px;font-size:.75rem;color:var(--xero-text-muted)}
+  .xero-viz__legend-sw{width:20px;height:3px;border-radius:2px}
+  .xero-viz__footnote{margin-top:16px;font-size:.75rem;color:var(--xero-text-muted);line-height:1.6}
+  @media(max-width:600px){.xero-viz__top{flex-direction:column;align-items:flex-start}.xero-viz__val{font-size:2.25rem}.xero-viz__chart{height:220px;width:100%;max-width:100%}}
   </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<style>
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  :root{--xero-navy:#000856;--blue:#13B5EA;--xero-panel-bg:#F2F1EE;--border:#C2CDD6;--muted:#4A6070;--green:#186241;--red:#E05A5A;--radius:6px;--font-heading:'National2Condensed',-apple-system,BlinkMacSystemFont,sans-serif}
-  .w{font-family:'National2',-apple-system,sans-serif;color:var(--xero-navy);max-width:960px;margin:0 auto;padding:36px 24px}
-  .top{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:24px}
-  .eyebrow{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);margin-bottom:8px}
-  .val-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-  .val{font-size:3rem;font-weight:700;line-height:1;color:var(--xero-navy)}
-  .delta{font-size:.8125rem;font-weight:600;padding:3px 10px;border-radius:20px}
-  .delta.pos{background:rgba(24, 98, 65,.12);color:var(--green)}
-  .delta.neg{background:rgba(255,196,210,0.5);color:var(--red)}
-  .period{font-size:.875rem;color:var(--muted);margin-top:6px}
-  .range{display:flex;gap:4px}
-  .rb{background:none;border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-family:inherit;font-size:.8125rem;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s}
-  .rb:hover{border-color:var(--xero-navy);color:var(--xero-navy)}
-  .rb.on{background:var(--xero-navy);border-color:var(--xero-navy);color:#fff}
-  .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:24px}
-  .card-title{font-size:1rem;font-weight:700;color:var(--xero-navy);margin-bottom:4px;font-family:var(--font-heading)}
-  .card-desc{font-size:.8125rem;color:var(--muted);margin-bottom:20px}
-  .chart-wrap{height:280px;width:100%;max-width:100%}
-  .leg{display:flex;align-items:center;gap:16px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);flex-wrap:wrap}
-  .leg-item{display:flex;align-items:center;gap:7px;font-size:.75rem;color:var(--muted)}
-  .leg-sw{width:20px;height:3px;border-radius:2px}
-  .fn{margin-top:16px;font-size:.75rem;color:var(--muted);line-height:1.6}
-  @media(max-width:600px){.top{flex-direction:column;align-items:flex-start}.val{font-size:2.25rem}.chart-wrap{height:220px;width:100%;max-width:100%}}
-</style>
-<div class="w">
-  <div class="top">
+</head>
+<body>
+<section class="xero-viz">
+  <h1 class="xero-viz__title">US small business late payment days</h1>
+  <div class="xero-viz__top">
     <div>
-      <div class="eyebrow">Xero Small Business Insights · United States</div>
-      <div class="val-row">
-        <div class="val">8.4 <span style="font-size:1.5rem;font-weight:600">days</span></div>
-        <span class="delta pos">▼ 0.4d vs Feb</span>
+      <div class="xero-eyebrow">Xero Small Business Insights · United States</div>
+      <div class="xero-viz__val-row">
+        <div class="xero-viz__val">8.4 <span style="font-size:1.5rem;font-weight:600">days</span></div>
+        <span class="xero-delta pos">▼ 0.4d vs Feb</span>
       </div>
-      <div class="period">Average late payment days · Seasonally adjusted · Mar 2026</div>
+      <div class="xero-viz__period">Average late payment days · Seasonally adjusted · Mar 2026</div>
     </div>
-    <div class="range">
-      <button class="rb" data-r="1" onclick="sr(1)">1Y</button>
-      <button class="rb" data-r="3" onclick="sr(3)">3Y</button>
-      <button class="rb" data-r="5" onclick="sr(5)">5Y</button>
-      <button class="rb on" data-r="0" onclick="sr(0)">All</button>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-title">Late payment days — average overdue (seasonally adjusted)</div>
-    <div class="card-desc">Average number of days US small businesses receive payment beyond their agreed invoice terms.</div>
-    <div class="chart-wrap"><canvas id="c"></canvas></div>
-    <div class="leg">
-      <div class="leg-item"><div class="leg-sw" style="background:#E05A5A"></div>Avg. late payment days (seasonally adjusted)</div>
-      <div class="leg-item"><div class="leg-sw" style="background:rgba(255,196,210,0.5);height:10px;border-radius:2px"></div>COVID period (Apr–Dec 2020)</div>
+    <div class="xero-range">
+      <button class="xero-range__btn" data-r="1" onclick="sr(1)">1Y</button>
+      <button class="xero-range__btn" data-r="3" onclick="sr(3)">3Y</button>
+      <button class="xero-range__btn" data-r="5" onclick="sr(5)">5Y</button>
+      <button class="xero-range__btn on" data-r="0" onclick="sr(0)">All</button>
     </div>
   </div>
-  <p class="fn">Source: Xero Small Business Insights, US national data, March 2026 release. Seasonally adjusted.</p>
-</div>
+  <div class="xero-viz__card">
+    <div class="xero-viz__card-title">Late payment days — average overdue (seasonally adjusted)</div>
+    <div class="xero-viz__card-desc">Average number of days US small businesses receive payment beyond their agreed invoice terms.</div>
+    <div class="xero-viz__chart"><canvas id="c"></canvas></div>
+    <div class="xero-viz__legend">
+      <div class="xero-viz__legend-item"><div class="xero-viz__legend-sw" style="background:#E05A5A"></div>Avg. late payment days (seasonally adjusted)</div>
+      <div class="xero-viz__legend-item"><div class="xero-viz__legend-sw" style="background:rgba(255,196,210,0.5);height:10px;border-radius:2px"></div>COVID period (Apr–Dec 2020)</div>
+    </div>
+  </div>
+  <p class="xero-viz__footnote">Source: Xero Small Business Insights, US national data, March 2026 release. Seasonally adjusted.</p>
+</section>
 <script>
 const L=["01/2017","02/2017","03/2017","04/2017","05/2017","06/2017","07/2017","08/2017","09/2017","10/2017","11/2017","12/2017","01/2018","02/2018","03/2018","04/2018","05/2018","06/2018","07/2018","08/2018","09/2018","10/2018","11/2018","12/2018","01/2019","02/2019","03/2019","04/2019","05/2019","06/2019","07/2019","08/2019","09/2019","10/2019","11/2019","12/2019","01/2020","02/2020","03/2020","04/2020","05/2020","06/2020","07/2020","08/2020","09/2020","10/2020","11/2020","12/2020","01/2021","02/2021","03/2021","04/2021","05/2021","06/2021","07/2021","08/2021","09/2021","10/2021","11/2021","12/2021","01/2022","02/2022","03/2022","04/2022","05/2022","06/2022","07/2022","08/2022","09/2022","10/2022","11/2022","12/2022","01/2023","02/2023","03/2023","04/2023","05/2023","06/2023","07/2023","08/2023","09/2023","10/2023","11/2023","12/2023","01/2024","02/2024","03/2024","04/2024","05/2024","06/2024","07/2024","08/2024","09/2024","10/2024","11/2024","12/2024","01/2025","02/2025","03/2025","04/2025","05/2025","06/2025","07/2025","08/2025","09/2025","10/2025","11/2025","12/2025","01/2026","02/2026","03/2026"];
 const D=[10.2,9.3,10.3,9.2,10.1,8.7,10.1,9.7,9.2,11.1,9.3,9.1,9.8,9.4,8.7,9.3,8.5,8.6,8.5,9.1,8.9,8.1,8.8,9.3,8.4,9.6,8.9,9.3,9.1,10.1,8.9,9.1,8.9,9.1,9,9,9.1,8.8,9.2,9.7,9.7,9.9,9.4,8.6,8.8,8.1,8.8,7.6,7.6,6.8,7,6.4,6.3,5.9,6.2,6.2,6.9,7.7,7.5,7.6,7.9,8.6,8.9,8.4,8.5,8,8.9,9.2,8.7,9.1,8.5,9,9,9.4,9.5,9.1,9.4,9.1,8.6,9.1,9.4,8.5,8.8,15.1,8.4,7.8,9.1,9.2,9.1,9.5,9.4,9.1,7.8,8.7,8.6,10.4,9.3,9.3,8.3,8.8,8.3,8.3,8.6,8.5,8.2,9.8,8.8,8.4];
@@ -127,9 +149,11 @@ function build(){
   ch=new Chart(canvas,{type:'line',data:{labels,datasets:[{data,borderColor:'#E05A5A',borderWidth:2,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#E05A5A',pointHoverBorderColor:'#fff',pointHoverBorderWidth:2,fill:true,backgroundColor:grad,tension:.3}]},
     plugins:[covidPlugin(COVID_S,COVID_E,off,n)],
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(27,58,75,.95)',titleColor:'#fff',bodyColor:'rgba(255,255,255,.8)',padding:12,cornerRadius:6,titleFont:{family:"'National2',sans-serif",weight:'600',size:13},bodyFont:{family:"'National2',sans-serif",size:13},callbacks:{title:i=>i[0].label,label:i=>' '+i.raw.toFixed(1)+' days'}}},
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(0,8,86,.95)',titleColor:'#fff',bodyColor:'rgba(255,255,255,.8)',padding:12,cornerRadius:6,titleFont:{family:"'National2',sans-serif",weight:'600',size:13},bodyFont:{family:"'National2',sans-serif",size:13},callbacks:{title:i=>i[0].label,label:i=>' '+i.raw.toFixed(1)+' days'}}},
       scales:{x:{grid:{display:false},border:{display:false},ticks:{color:'#4A6070',font:{family:"'National2',sans-serif",size:11},maxTicksLimit:10,maxRotation:0}},y:{grid:{color:'rgba(194,205,214,.5)'},border:{display:false},ticks:{color:'#4A6070',font:{family:"'National2',sans-serif",size:11},callback:v=>v+'d'}}}}});
 }
-function sr(r){rng=r;document.querySelectorAll('.rb').forEach(b=>b.classList.toggle('on',+b.dataset.r===r));build()}
+function sr(r){rng=r;document.querySelectorAll('.xero-range__btn').forEach(b=>b.classList.toggle('on',+b.dataset.r===r));build()}
 build();
 </script>
+</body>
+</html>

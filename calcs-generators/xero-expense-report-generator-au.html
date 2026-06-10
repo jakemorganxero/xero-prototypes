@@ -1,3 +1,19 @@
+<!--
+  XERO PROTOTYPE
+  Tool: Expense Report Generator (AU)
+  Locale: AU
+  Pattern: Two-column generator with live preview
+  Built: 2026-04-16
+  Inputs: Employee details, report period, expense rows (date/category/description/amount/receipt), notes
+  Output: Styled expense report — download PDF/Word/Excel/CSV/HTML
+  Notes for devs:
+    - expenses[] array is source of truth; renderExpenses() only on add/remove
+    - updateExpense() patches individual fields without re-render
+    - National2 / National2Condensed are stand-ins loaded from xero.com CDN + inline base64; GT Walsheim is the licensed production font
+    - Currency: $AUD, locale string en-AU
+    - Date format: DD/MM/YYYY
+    - Signup URL: xero.com/au/signup/
+-->
 <!DOCTYPE html>
 <html lang="en-AU">
 <head>
@@ -39,16 +55,6 @@
   font-display: swap;
 }
 
-    @media (max-width: 768px) {
-      .xero-hero__inner {
-        grid-template-columns: 1fr;
-        gap: 40px;
-      }
-      .xero-hero__card {
-        max-width: 100%;
-      }
-    }
-  
     .xero-cta {
       font-size: 0.8125rem;
       color: var(--xero-text-muted);
@@ -65,41 +71,25 @@
       color: var(--xero-text-muted);
       margin-top: 6px;
     }
-  </style>
-  <!--
-    XERO PROTOTYPE
-    Tool: Expense Report Generator (AU)
-    Locale: AU
-    Pattern: Two-column generator with live preview
-    Built: 2026-04-16
-    Inputs: Employee details, report period, expense rows (date/category/description/amount/receipt), notes
-    Output: Styled expense report — download PDF/Word/Excel/CSV/HTML
-    Notes for devs:
-      - expenses[] array is source of truth; renderExpenses() only on add/remove
-      - updateExpense() patches individual fields without re-render
-      - GT Walsheim → Plus Jakarta Sans (flag for prod)
-      - Currency: $AUD, locale string en-AU
-      - Date format: DD/MM/YYYY
-      - Signup URL: xero.com/au/signup/
-  -->
-  <style>
+
     :root {
-      --xero-navy:       #000856;
-      --xero-blue:       #13B5EA;
-      --xero-blue-dark:  #0D8FBD;
-      --xero-panel-bg:   #F2F1EE;
-      --xero-border:     #C2CDD6;
-    --xero-input-border: #000856;
+      --xero-navy:        #000856;
+      --xero-text:        #000856;
+      --xero-blue:        #13B5EA;
+      --xero-blue-dark:   #0D8FBD;
+      --xero-green:       #186241;
+      --xero-red:         #E05A5A;
+      --xero-panel-bg:    #F2F1EE;
+      --xero-bg:          #FFFFFF;
+      --xero-input-bg:    #FFFFFF;
+      --xero-input-border:      #000856;
       --xero-input-border-grey: #CBCAC9;
-      --xero-bg:         #FFFFFF;
-      --xero-text:       #000856;
-      --xero-text-muted: #4A6070;
-      --xero-input-bg:   #FFFFFF;
-      --xero-green:      #186241;
-      --xero-red:        #E05A5A;
-      --radius: 6px;
-      --font: 'National2', -apple-system, BlinkMacSystemFont, sans-serif;
-      --font-heading: 'National2Condensed', -apple-system, BlinkMacSystemFont, sans-serif;
+      --xero-border:            #C2CDD6;
+      --xero-text-muted:  #4A6070;
+      --xero-placeholder: #6E7481;
+      --radius:        6px;
+      --font:          'National2', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-heading:  'National2Condensed', var(--font);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -133,8 +123,8 @@
 
     /* ─── Form ─── */
     .xero-form__title {
-      font-family: var(--font);
-      font-size: 1.375rem;
+      font-family: var(--font-heading);
+      font-size: 1.75rem;
       font-weight: 800;
       color: var(--xero-navy);
       letter-spacing: -0.02em;
@@ -197,7 +187,7 @@
     }
 
     .xero-input--plain:focus { border-color: var(--xero-blue); }
-    .xero-input--plain::placeholder { color: #6E7481; }
+    .xero-input--plain::placeholder { color: var(--xero-placeholder); }
 
     .xero-select {
       border: 1px solid var(--xero-input-border);
@@ -235,9 +225,9 @@
 
     .xero-textarea:focus { border-color: var(--xero-blue); }
     .xero-input--plain:hover, .xero-select:hover, .xero-textarea:hover {
-      box-shadow: 0 2px 8px rgba(33,59,85,0.12);
+      box-shadow: 0 2px 8px rgba(0,8,86,0.12);
     }
-    .xero-textarea::placeholder { color: #6E7481; }
+    .xero-textarea::placeholder { color: var(--xero-placeholder); }
 
     /* ─── Expense rows table ─── */
     .xero-exp-table-wrap { overflow-x: auto; }
@@ -271,7 +261,7 @@
       vertical-align: middle;
     }
 
-    .exp-remove {
+    .xero-exp-remove {
       background: none;
       border: none;
       color: var(--xero-text-muted);
@@ -281,7 +271,7 @@
       padding: 2px 4px;
       transition: color 0.15s;
     }
-    .exp-remove:hover { color: var(--xero-red); }
+    .xero-exp-remove:hover { color: var(--xero-red); }
 
     .xero-add-exp {
       background: none;
@@ -297,7 +287,7 @@
     .xero-add-exp:hover { color: var(--xero-blue-dark); }
 
     /* receipt checkbox */
-    .exp-receipt-cb {
+    .xero-exp-receipt-cb {
       width: 16px;
       height: 16px;
       cursor: pointer;
@@ -333,12 +323,14 @@
     .xero-amt-wrap {
       display: flex;
       align-items: center;
-      border: 1px solid var(--xero-border);
+      border: 1px solid var(--xero-input-border);
       border-radius: var(--radius);
       background: var(--xero-input-bg);
       overflow: hidden;
     }
+    .xero-amt-wrap:hover { box-shadow: 0 2px 8px rgba(0,8,86,0.12); }
     .xero-amt-wrap:focus-within { border-color: var(--xero-blue); }
+    .xero-amt-input::placeholder { color: var(--xero-placeholder); }
     .xero-amt-prefix {
       padding: 6px 4px 6px 8px;
       font-size: 0.8125rem;
@@ -371,48 +363,48 @@
     }
 
     /* ─── Document styles ─── */
-    .inv-doc {
+    .xero-preview__doc {
       background: #fff;
       border: 1px solid var(--xero-border);
-      border-radius: 4px 4px 0 0;
+      border-radius: var(--radius) var(--radius) 0 0;
       padding: 28px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      box-shadow: 0 4px 20px rgba(0,8,86,0.06);
       font-size: 0.8125rem;
       line-height: 1.5;
     }
 
-    .inv-header {
+    .xero-preview__doc-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       margin-bottom: 16px;
     }
 
-    .inv-logo-placeholder {
+    .xero-preview__doc-logo {
       width: 80px; height: 36px;
       border: 1px dashed var(--xero-border);
-      border-radius: 3px;
+      border-radius: var(--radius);
       display: flex; align-items: center; justify-content: center;
       font-size: 0.5625rem; color: var(--xero-text-muted);
     }
 
-    .inv-title {
+    .xero-preview__doc-title {
       font-size: 1.25rem;
       font-weight: 800;
       color: var(--xero-navy);
       letter-spacing: -0.01em;
     }
 
-    .inv-rule { border: none; border-top: 2px solid var(--xero-navy); margin-bottom: 16px; }
+    .xero-preview__doc-rule { border: none; border-top: 2px solid var(--xero-navy); margin-bottom: 16px; }
 
-    .inv-meta {
+    .xero-preview__doc-meta {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 16px;
       margin-bottom: 16px;
     }
 
-    .inv-block__label {
+    .xero-preview__doc-block-label {
       font-size: 0.5625rem;
       font-weight: 700;
       text-transform: uppercase;
@@ -421,28 +413,28 @@
       margin-bottom: 3px;
     }
 
-    .inv-block__name { font-size: 0.8125rem; font-weight: 700; color: var(--xero-navy); }
-    .inv-block__line { font-size: 0.6875rem; color: var(--xero-text-muted); line-height: 1.4; }
+    .xero-preview__doc-block-name { font-size: 0.8125rem; font-weight: 700; color: var(--xero-navy); }
+    .xero-preview__doc-block-line { font-size: 0.6875rem; color: var(--xero-text-muted); line-height: 1.4; }
 
-    .inv-detail-row {
+    .xero-preview__doc-detail-row {
       display: flex;
       gap: 6px;
       font-size: 0.6875rem;
       margin-bottom: 2px;
     }
-    .inv-detail-row .k { font-weight: 700; color: var(--xero-navy); white-space: nowrap; }
-    .inv-detail-row .v { color: var(--xero-text-muted); }
+    .xero-preview__doc-detail-row .k { font-weight: 700; color: var(--xero-navy); white-space: nowrap; }
+    .xero-preview__doc-detail-row .v { color: var(--xero-text-muted); }
 
     /* ─── Expense table in preview ─── */
-    .inv-table {
+    .xero-preview__doc-table {
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 10px;
       font-size: 0.6875rem;
     }
 
-    .inv-table thead tr { background: var(--xero-navy); }
-    .inv-table th {
+    .xero-preview__doc-table thead tr { background: var(--xero-navy); }
+    .xero-preview__doc-table th {
       padding: 6px 8px;
       color: #fff;
       font-size: 0.5625rem;
@@ -451,17 +443,17 @@
       text-align: left;
       white-space: nowrap;
     }
-    .inv-table th.r, .inv-table td.r { text-align: right; }
-    .inv-table th.c, .inv-table td.c { text-align: center; }
-    .inv-table td {
+    .xero-preview__doc-table th.r, .xero-preview__doc-table td.r { text-align: right; }
+    .xero-preview__doc-table th.c, .xero-preview__doc-table td.c { text-align: center; }
+    .xero-preview__doc-table td {
       padding: 5px 8px;
       border-bottom: 1px solid var(--xero-border);
     }
-    .inv-table tbody tr:nth-child(even) { background: #f8fafb; }
-    .inv-table tbody tr:last-child td { border-bottom: none; }
+    .xero-preview__doc-table tbody tr:nth-child(even) { background: var(--xero-panel-bg); }
+    .xero-preview__doc-table tbody tr:last-child td { border-bottom: none; }
 
     /* ─── Total in preview ─── */
-    .inv-grand-total {
+    .xero-preview__doc-total {
       display: flex;
       justify-content: flex-end;
       align-items: center;
@@ -470,12 +462,12 @@
       padding-top: 8px;
       border-top: 1.5px solid var(--xero-navy);
     }
-    .inv-grand-total .k {
+    .xero-preview__doc-total .k {
       font-size: 0.75rem;
       font-weight: 700;
       color: var(--xero-navy);
     }
-    .inv-grand-total .v {
+    .xero-preview__doc-total .v {
       font-size: 1rem;
       font-weight: 800;
       color: var(--xero-navy);
@@ -483,13 +475,13 @@
       text-align: right;
     }
 
-    .inv-notes {
+    .xero-preview__doc-notes {
       border-top: 1px solid var(--xero-border);
       padding-top: 12px;
       font-size: 0.6875rem;
       color: var(--xero-text-muted);
     }
-    .inv-notes-heading {
+    .xero-preview__doc-notes-heading {
       font-weight: 700;
       color: var(--xero-navy);
       margin-bottom: 2px;
@@ -500,7 +492,7 @@
       background: var(--xero-panel-bg);
       border: 1px solid var(--xero-border);
       border-top: none;
-      border-radius: 0 0 4px 4px;
+      border-radius: 0 0 var(--radius) var(--radius);
       padding: 12px 16px;
       display: flex;
       align-items: center;
@@ -525,7 +517,7 @@
       color: var(--xero-navy);
       background: #fff;
       border: 1px solid var(--xero-border);
-      border-radius: 4px;
+      border-radius: var(--radius);
       cursor: pointer;
       transition: border-color 0.15s, box-shadow 0.15s;
       white-space: nowrap;
@@ -550,7 +542,7 @@
 
     <!-- ── LEFT: Form ── -->
     <div>
-      <h2 class="xero-form__title">Create expense report</h2>
+      <h1 class="xero-form__title">Create expense report</h1>
 
       <!-- Employee Details -->
       <div class="xero-section">
@@ -657,7 +649,7 @@
     <!-- ── RIGHT: Preview ── -->
     <div class="xero-preview">
       <p class="xero-preview__label">Expense report preview</p>
-      <div class="inv-doc" id="exp-preview"></div>
+      <div class="xero-preview__doc" id="exp-preview"></div>
       <div class="xero-preview__dl">
         <span class="xero-preview__dl-label">Download as:</span>
         <button class="xero-dl-btn" onclick="downloadPDF()">
@@ -681,7 +673,7 @@
           HTML
         </button>
       </div>
-      <p class="xero-cta">Track and manage expenses automatically with Xero. Start a 30 day <a href="https://www.xero.com/signup/" target="_blank">free trial</a>.</p>
+      <p class="xero-cta">Track and manage expenses automatically with Xero. Start a 30 day <a href="https://www.xero.com/au/signup/" target="_blank">free trial</a>.</p>
       <p class="xero-disclaimer">*This tool generates expense report documents only and is not financial or tax advice.</p>
     </div>
 
@@ -829,11 +821,11 @@
           </div>
         </td>
         <td class="center">
-          <input type="checkbox" class="exp-receipt-cb" ${exp.hasReceipt ? 'checked' : ''}
+          <input type="checkbox" class="xero-exp-receipt-cb" ${exp.hasReceipt ? 'checked' : ''}
             onchange="updateExpense(${exp.id},'hasReceipt',this.checked)">
         </td>
         <td>
-          <button class="exp-remove" type="button" onclick="removeExpense(${exp.id})" title="Remove">×</button>
+          <button class="xero-exp-remove" type="button" onclick="removeExpense(${exp.id})" title="Remove">×</button>
         </td>
       </tr>
     `).join('');
@@ -868,17 +860,17 @@
       : (rptStart ? `From ${fmtDate(rptStart)}` : '—');
 
     const submittedByLines = [
-      empName  ? `<div class="inv-block__name">${esc(empName)}</div>` : '<div class="inv-block__name" style="color:#6E7481">Employee Name</div>',
-      empDept  ? `<div class="inv-block__line">${esc(empDept)}</div>` : '',
-      empPos   ? `<div class="inv-block__line">${esc(empPos)}</div>` : '',
-      empId    ? `<div class="inv-block__line">ID: ${esc(empId)}</div>` : '',
+      empName  ? `<div class="xero-preview__doc-block-name">${esc(empName)}</div>` : '<div class="xero-preview__doc-block-name" style="color:#6E7481">Employee Name</div>',
+      empDept  ? `<div class="xero-preview__doc-block-line">${esc(empDept)}</div>` : '',
+      empPos   ? `<div class="xero-preview__doc-block-line">${esc(empPos)}</div>` : '',
+      empId    ? `<div class="xero-preview__doc-block-line">ID: ${esc(empId)}</div>` : '',
     ].join('');
 
     const reportDetailLines = [
-      `<div class="inv-detail-row"><span class="k">Report:</span><span class="v">${esc(rptTitle || 'Expense Report')}</span></div>`,
-      `<div class="inv-detail-row"><span class="k">Period:</span><span class="v">${esc(periodStr)}</span></div>`,
-      rptSub   ? `<div class="inv-detail-row"><span class="k">Submitted:</span><span class="v">${fmtDate(rptSub)}</span></div>` : '',
-      approver ? `<div class="inv-detail-row"><span class="k">Approved by:</span><span class="v">${esc(approver)}</span></div>` : '',
+      `<div class="xero-preview__doc-detail-row"><span class="k">Report:</span><span class="v">${esc(rptTitle || 'Expense Report')}</span></div>`,
+      `<div class="xero-preview__doc-detail-row"><span class="k">Period:</span><span class="v">${esc(periodStr)}</span></div>`,
+      rptSub   ? `<div class="xero-preview__doc-detail-row"><span class="k">Submitted:</span><span class="v">${fmtDate(rptSub)}</span></div>` : '',
+      approver ? `<div class="xero-preview__doc-detail-row"><span class="k">Approved by:</span><span class="v">${esc(approver)}</span></div>` : '',
     ].join('');
 
     const rows = expenses.map(e => `
@@ -892,29 +884,29 @@
 
     const coBlock = (coName || coAddr) ? `
       <div style="margin-bottom:12px;">
-        <div class="inv-block__label">Submitted to</div>
-        ${coName ? `<div class="inv-block__name">${esc(coName)}</div>` : ''}
-        ${coAddr ? `<div class="inv-block__line">${esc(coAddr)}</div>` : ''}
+        <div class="xero-preview__doc-block-label">Submitted to</div>
+        ${coName ? `<div class="xero-preview__doc-block-name">${esc(coName)}</div>` : ''}
+        ${coAddr ? `<div class="xero-preview__doc-block-line">${esc(coAddr)}</div>` : ''}
       </div>` : '';
 
     return `
-      <div class="inv-header">
+      <div class="xero-preview__doc-header">
         <div style="font-size:0.625rem;color:var(--xero-text-muted);font-weight:600;letter-spacing:0.04em;">${esc(coName) || ''}</div>
-        <div class="inv-title">EXPENSE REPORT</div>
+        <div class="xero-preview__doc-title">EXPENSE REPORT</div>
       </div>
-      <hr class="inv-rule">
-      <div class="inv-meta">
+      <hr class="xero-preview__doc-rule">
+      <div class="xero-preview__doc-meta">
         <div>
-          <div class="inv-block__label">Submitted by</div>
+          <div class="xero-preview__doc-block-label">Submitted by</div>
           ${submittedByLines}
         </div>
         <div>
-          <div class="inv-block__label">Report details</div>
+          <div class="xero-preview__doc-block-label">Report details</div>
           ${reportDetailLines}
         </div>
       </div>
       ${coBlock}
-      <table class="inv-table">
+      <table class="xero-preview__doc-table">
         <thead>
           <tr>
             <th style="width:36px">Date</th>
@@ -928,12 +920,12 @@
           ${rows || '<tr><td colspan="5" style="color:#6E7481;text-align:center;padding:12px;">No expenses added yet</td></tr>'}
         </tbody>
       </table>
-      <div class="inv-grand-total">
+      <div class="xero-preview__doc-total">
         <span class="k">TOTAL (${LOCALE.currencyCode}):</span>
         <span class="v">${fmt(total)}</span>
       </div>
-      ${notes ? `<div class="inv-notes"><div class="inv-notes-heading">Notes</div><div>${esc(notes)}</div></div>` : ''}
-      <div class="inv-cta">Track and manage expenses automatically with Xero. Start a 30 day <a href="${LOCALE.signupUrl}" target="_blank">free trial</a>.</div>
+      ${notes ? `<div class="xero-preview__doc-notes"><div class="xero-preview__doc-notes-heading">Notes</div><div>${esc(notes)}</div></div>` : ''}
+      <div class="xero-preview__doc-cta">Track and manage expenses automatically with Xero. Start a 30 day <a href="${LOCALE.signupUrl}" target="_blank">free trial</a>.</div>
     `;
   }
 
@@ -948,32 +940,32 @@
       <style>
         /* Font loaded via <link> tag */
         *{box-sizing:border-box;margin:0;padding:0}
-        body{font-family:'DM Sans',Arial,sans-serif;color:#000856;padding:40px;max-width:780px}
-        .inv-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
-        .inv-title{font-size:22px;font-weight:800;color:#000856;letter-spacing:-0.01em}
-        .inv-rule{border:none;border-top:2px solid #000856;margin-bottom:16px}
-        .inv-meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
-        .inv-block__label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#4A6070;margin-bottom:3px}
-        .inv-block__name{font-size:13px;font-weight:700;color:#000856}
-        .inv-block__line{font-size:11px;color:#4A6070;line-height:1.4}
-        .inv-detail-row{display:flex;gap:6px;font-size:11px;margin-bottom:2px}
-        .inv-detail-row .k{font-weight:700;color:#000856;white-space:nowrap}
-        .inv-detail-row .v{color:#4A6070}
-        .inv-table{width:100%;border-collapse:collapse;margin-bottom:10px;font-size:11px}
-        .inv-table thead tr{background:#000856}
-        .inv-table th{padding:6px 8px;color:#fff;font-size:9px;text-transform:uppercase;letter-spacing:0.05em;text-align:left;white-space:nowrap}
-        .inv-table th.r,.inv-table td.r{text-align:right}
-        .inv-table th.c,.inv-table td.c{text-align:center}
-        .inv-table td{padding:5px 8px;border-bottom:1px solid #C2CDD6}
-        .inv-table tbody tr:nth-child(even){background:#f8fafb}
-        .inv-table tbody tr:last-child td{border-bottom:none}
-        .inv-grand-total{display:flex;justify-content:flex-end;align-items:center;gap:16px;margin-bottom:14px;padding-top:8px;border-top:1.5px solid #000856}
-        .inv-grand-total .k{font-size:12px;font-weight:700;color:#000856}
-        .inv-grand-total .v{font-size:16px;font-weight:800;color:#000856;min-width:70px;text-align:right}
-        .inv-notes{border-top:1px solid #C2CDD6;padding-top:12px;font-size:11px;color:#4A6070}
-        .inv-notes-heading{font-weight:700;color:#000856;margin-bottom:2px}
-        .inv-cta{font-size:11px;color:#4A6070;margin-top:12px;padding-top:12px;border-top:1px solid #C2CDD6}
-        .inv-cta a{color:#13B5EA}
+        body{font-family:'National2',Arial,sans-serif;color:#000856;padding:40px;max-width:780px}
+        .xero-preview__doc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+        .xero-preview__doc-title{font-size:22px;font-weight:800;color:#000856;letter-spacing:-0.01em}
+        .xero-preview__doc-rule{border:none;border-top:2px solid #000856;margin-bottom:16px}
+        .xero-preview__doc-meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+        .xero-preview__doc-block-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#4A6070;margin-bottom:3px}
+        .xero-preview__doc-block-name{font-size:13px;font-weight:700;color:#000856}
+        .xero-preview__doc-block-line{font-size:11px;color:#4A6070;line-height:1.4}
+        .xero-preview__doc-detail-row{display:flex;gap:6px;font-size:11px;margin-bottom:2px}
+        .xero-preview__doc-detail-row .k{font-weight:700;color:#000856;white-space:nowrap}
+        .xero-preview__doc-detail-row .v{color:#4A6070}
+        .xero-preview__doc-table{width:100%;border-collapse:collapse;margin-bottom:10px;font-size:11px}
+        .xero-preview__doc-table thead tr{background:#000856}
+        .xero-preview__doc-table th{padding:6px 8px;color:#fff;font-size:9px;text-transform:uppercase;letter-spacing:0.05em;text-align:left;white-space:nowrap}
+        .xero-preview__doc-table th.r,.xero-preview__doc-table td.r{text-align:right}
+        .xero-preview__doc-table th.c,.xero-preview__doc-table td.c{text-align:center}
+        .xero-preview__doc-table td{padding:5px 8px;border-bottom:1px solid #C2CDD6}
+        .xero-preview__doc-table tbody tr:nth-child(even){background:#F2F1EE}
+        .xero-preview__doc-table tbody tr:last-child td{border-bottom:none}
+        .xero-preview__doc-total{display:flex;justify-content:flex-end;align-items:center;gap:16px;margin-bottom:14px;padding-top:8px;border-top:1.5px solid #000856}
+        .xero-preview__doc-total .k{font-size:12px;font-weight:700;color:#000856}
+        .xero-preview__doc-total .v{font-size:16px;font-weight:800;color:#000856;min-width:70px;text-align:right}
+        .xero-preview__doc-notes{border-top:1px solid #C2CDD6;padding-top:12px;font-size:11px;color:#4A6070}
+        .xero-preview__doc-notes-heading{font-weight:700;color:#000856;margin-bottom:2px}
+        .xero-preview__doc-cta{font-size:11px;color:#4A6070;margin-top:12px;padding-top:12px;border-top:1px solid #C2CDD6}
+        .xero-preview__doc-cta a{color:#13B5EA}
       </style>
       ${buildDocument()}`;
   }

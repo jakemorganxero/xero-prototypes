@@ -9,11 +9,17 @@
   Formula:
     Straight-line: annual dep = (cost - salvage) / life
     Declining balance: annual dep = opening value × rate (capped at salvage)
-  Notes: GT Walsheim → Plus Jakarta Sans (flag for prod).
-         Currency: USD ($). Locale: en-US.
-         Signup URL: xero.com/us/signup/
+  Notes for devs: National2 / National2Condensed are stand-ins loaded from xero.com CDN +
+         inline base64; GT Walsheim is the licensed production font.
+         Currency: USD ($). Locale: en-US. Signup URL: xero.com/us/signup/
          No GST; "check" not "cheque".
 -->
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xero's free depreciation calculator – US</title>
 <style>
   @font-face {
     font-family: 'National2';
@@ -59,27 +65,29 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --xero-navy: #000856;
-    --xero-blue: #13B5EA;
-    --xero-blue-dark: #0D8FBD;
-    --xero-panel-bg: #F2F1EE;
-    --xero-border: #C2CDD6;
-    --xero-input-border: #000856;
-      --xero-input-border-grey: #CBCAC9;
-    --xero-bg: #FFFFFF;
-    --xero-text: #000856;
-    --xero-text-muted: #4A6070;
-    --xero-green: #186241;
-    --xero-red: #E05A5A;
-    --radius: 6px;
-    --font: 'National2', -apple-system, BlinkMacSystemFont, sans-serif;
-      --font-heading: 'National2Condensed', -apple-system, BlinkMacSystemFont, sans-serif;
+    --xero-navy:        #000856;
+    --xero-text:        #000856;
+    --xero-blue:        #13B5EA;
+    --xero-blue-dark:   #0D8FBD;
+    --xero-green:       #186241;
+    --xero-red:         #E05A5A;
+    --xero-panel-bg:    #F2F1EE;
+    --xero-bg:          #FFFFFF;
+    --xero-input-bg:    #FFFFFF;
+    --xero-input-border:      #000856;
+    --xero-input-border-grey: #CBCAC9;
+    --xero-border:            #C2CDD6;
+    --xero-text-muted:  #4A6070;
+    --xero-placeholder: #6E7481;
+    --radius:        6px;
+    --font:          'National2', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-heading:  'National2Condensed', var(--font);
   }
 
   .xero-dep-wrap {
     font-family: var(--font);
     color: var(--xero-text);
-    background: #F2F1EE;
+    background: var(--xero-panel-bg);
     padding: 72px 5%;
     -webkit-font-smoothing: antialiased;
   }
@@ -116,9 +124,9 @@
   }
 
   .xero-dep-card {
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    background: var(--xero-panel-bg);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 24px rgba(0,8,86,0.08);
     padding: 28px;
   }
 
@@ -171,12 +179,20 @@
     font-size: 0.9375rem;
     font-weight: 500;
     color: var(--xero-navy);
-    border: 1.5px solid var(--xero-input-border-grey);
+    border: 1px solid var(--xero-input-border-grey);
     border-radius: var(--radius);
     padding: 10px 12px;
     outline: none;
-    transition: border-color 0.15s;
-    background: #fff;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    background: var(--xero-input-bg);
+  }
+
+  .xero-dep-input::placeholder {
+    color: var(--xero-placeholder);
+  }
+
+  .xero-dep-input:hover {
+    box-shadow: 0 2px 8px rgba(0,8,86,0.12);
   }
 
   .xero-dep-input:focus {
@@ -202,7 +218,8 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    border: 1.5px solid var(--xero-input-border-grey);
+    background: var(--xero-input-bg);
+    border: 1px solid var(--xero-border);
     border-radius: var(--radius);
     padding: 10px 14px;
     cursor: pointer;
@@ -314,8 +331,8 @@
 
   .xero-dep-table-wrap {
     background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 24px rgba(0,8,86,0.08);
     overflow: hidden;
     min-height: 200px;
   }
@@ -378,11 +395,11 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--xero-text-muted);
+    color: #fff;
     padding: 10px 16px;
     border-bottom: 1px solid var(--xero-border);
     text-align: right;
-    background: #fff;
+    background: var(--xero-navy);
     white-space: nowrap;
   }
 
@@ -404,7 +421,7 @@
   }
 
   .xero-dep-table tbody tr:nth-child(even) td {
-    background: #f8fafb;
+    background: var(--xero-panel-bg);
   }
 
   .xero-dep-table tbody tr:last-child td {
@@ -420,13 +437,6 @@
   }
 
   @media (max-width: 900px) {
-      .xero-hero__inner {
-        grid-template-columns: 1fr;
-        gap: 40px;
-      }
-      .xero-hero__card {
-        max-width: 100%;
-      }
     .xero-dep-grid {
       grid-template-columns: 1fr;
       gap: 32px;
@@ -444,6 +454,8 @@
     }
   }
 </style>
+</head>
+<body>
 
 <div class="xero-dep-wrap">
   <div class="xero-dep-inner">
@@ -568,9 +580,10 @@
           </thead>
           <tbody id="schedule-tbody"></tbody>
         </table>
-      </div>
+        </div><!-- /scroll -->
+      </div><!-- /right -->
 
-    </div>
+    </div><!-- /grid -->
 
     <p class="xero-dep-disclaimer">*This calculator provides estimates only. Depreciation rates and methods may vary based on jurisdiction and asset type. Not financial or tax advice.</p>
 
@@ -698,3 +711,5 @@
     URL.revokeObjectURL(url);
   }
 </script>
+</body>
+</html>

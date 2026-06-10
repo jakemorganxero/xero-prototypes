@@ -1,9 +1,26 @@
+<!--
+  XERO PROTOTYPE
+  Tool: GST Calculator
+  Locale: NZ
+  Pattern: C — Hero, half-width card only
+  Built: 2026-04-16
+  Inputs: Amount (NZD), Mode (add GST / remove GST)
+  Output/formula:
+    Add GST:    GST = amount × 0.15 | Total = amount × 1.15
+    Remove GST: Net = amount / 1.15 | GST = amount − net
+  Notes for devs:
+    *** DROP THIS CARD INTO THE RIGHT COLUMN OF THE EXISTING AEM HERO SECTION ***
+    - Do not prototype the full hero — the surrounding page (heading, image, copy) is AEM's job
+    - Card is warm-grey (--xero-panel-bg) with a white result band; max-width 400px
+    - Live calculation (no submit button) — results update on input; NZ GST rate is 15%
+    - National2 / National2Condensed are stand-ins (CDN + inline base64); GT Walsheim is the licensed production font
+-->
 <!DOCTYPE html>
 <html lang="en-NZ">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Xero NZ GST Calculator — Card (Pattern C)</title>
+  <title>Xero's free GST calculator – NZ</title>
   <style>
   @font-face {
     font-family: 'National2';
@@ -39,55 +56,34 @@
   font-display: swap;
 }
 
-    @media (max-width: 768px) {
-      .xero-hero__inner {
-        grid-template-columns: 1fr;
-        gap: 40px;
-      }
-      .xero-hero__card {
-        max-width: 100%;
-      }
-    }
-  </style>
-
-  <!--
-    XERO PROTOTYPE
-    Tool: GST Calculator (NZ)
-    Locale: NZ
-    Pattern: C — Hero, half-width card only
-    Built: 2026-04-16
-    Inputs: Amount (NZD), Mode (add GST / remove GST)
-    Output/formula:
-      Add GST:    GST = amount × 0.15 | Total = amount × 1.15
-      Remove GST: Net = amount / 1.15 | GST = amount − net
-    Notes for devs:
-      *** DROP THIS CARD INTO THE RIGHT COLUMN OF THE EXISTING AEM HERO SECTION ***
-      - Do not prototype the full hero — the surrounding page (heading, image, copy) is AEM's job
-      - Card is max-width 400px; constrained to sit beside existing hero content
-      - Live calculation (no submit button) — results update on input
-      - GT Walsheim → DM Sans substitution (flag for prod)
-      - NZ GST rate is 15% (hardcoded — update via CMS variable if needed)
-  -->
-
-  <style>
-    /* ─── Xero Brand Tokens ─── */
+    /* ─── Xero Brand Tokens (canonical) ─── */
     :root {
-      --xero-navy:       #000856;
-      --xero-blue:       #13B5EA;
-      --xero-blue-dark:  #0D8FBD;
-      --xero-panel-bg:   #F2F1EE;
-      --xero-border:     #C2CDD6;
-    --xero-input-border: #000856;
+      /* Brand */
+      --xero-navy:        #000856;
+      --xero-text:        #000856;
+      --xero-blue:        #13B5EA;
+      --xero-blue-dark:   #0D8FBD;
+      --xero-green:       #186241;
+      --xero-red:         #E05A5A;
+
+      /* Surfaces */
+      --xero-panel-bg:    #F2F1EE;
+      --xero-bg:          #FFFFFF;
+      --xero-input-bg:    #FFFFFF;
+
+      /* Lines */
+      --xero-input-border:      #000856;
       --xero-input-border-grey: #CBCAC9;
-      --xero-bg:         #FFFFFF;
-      --xero-text:       #000856;
-      --xero-text-muted: #4A6070;
-      --xero-input-bg:   #FFFFFF;
-      --xero-green:      #186241;
-      --xero-red:        #E05A5A;
-      --radius:          6px;
-      --font: 'National2', -apple-system, BlinkMacSystemFont, sans-serif;
-      --font-heading: 'National2Condensed', -apple-system, BlinkMacSystemFont, sans-serif;
+      --xero-border:            #C2CDD6;
+
+      /* Text */
+      --xero-text-muted:  #4A6070;
+      --xero-placeholder: #6E7481;
+
+      /* Geometry + type */
+      --radius:        6px;
+      --font:          'National2', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-heading:  'National2Condensed', var(--font);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -105,20 +101,23 @@
       min-height: 100vh;
     }
 
-    /* ─── The card — this is the deliverable ─── */
-    .xero-gst-card {
-      background: var(--xero-bg);
-      border-radius: 8px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    /* ─── The card — this is the deliverable (warm-grey, per design system) ─── */
+    .xero-hero__card {
+      background: var(--xero-panel-bg);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 24px rgba(0,8,86,0.08);
       padding: 28px;
       width: 100%;
       max-width: 400px;
     }
 
-    .xero-gst-card__title {
-      font-size: 1.0625rem;
-      font-weight: 700;
+    .xero-hero__card-title {
+      font-family: var(--font-heading);
+      font-size: clamp(1.375rem, 5vw, 1.625rem);
+      font-weight: 800;
       color: var(--xero-navy);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
       margin-bottom: 18px;
     }
 
@@ -141,10 +140,10 @@
       margin-bottom: 16px;
     }
 
-    .xero-input-wrap:hover { box-shadow: 0 2px 8px rgba(33,59,85,0.12); }
+    .xero-input-wrap:hover { box-shadow: 0 2px 8px rgba(0,8,86,0.12); }
     .xero-input-wrap:focus-within { border-color: var(--xero-blue); }
 
-    .xero-input-prefix {
+    .xero-input-wrap__prefix {
       display: flex;
       align-items: center;
       padding: 0 8px 0 14px;
@@ -167,7 +166,7 @@
       min-width: 0;
     }
 
-    .xero-input::placeholder { color: #6E7481; }
+    .xero-input::placeholder { color: var(--xero-placeholder); }
 
     /* ─── Radio group ─── */
     .xero-radio-group {
@@ -188,14 +187,14 @@
       transition: border-color 0.15s;
     }
 
-    .xero-radio:has(input:checked) { border-color: var(--xero-navy); background: #f5f8fa; }
+    .xero-radio:has(input:checked) { border-color: var(--xero-navy); background: #fff; }
 
     .xero-radio input { position: absolute; opacity: 0; width: 0; height: 0; }
 
     .xero-radio__box {
       width: 16px;
       height: 16px;
-      border: 2px solid var(--xero-input-border-grey);
+      border: 2px solid var(--xero-input-border);
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -204,13 +203,13 @@
       transition: border-color 0.15s;
     }
 
-    .xero-radio:has(input:checked) .xero-radio__box { border-color: var(--xero-navy); }
+    .xero-radio:has(input:checked) .xero-radio__box { border-color: var(--xero-blue); }
 
     .xero-radio__dot {
       width: 7px;
       height: 7px;
       border-radius: 50%;
-      background: var(--xero-navy);
+      background: var(--xero-blue);
       opacity: 0;
       transition: opacity 0.15s;
     }
@@ -259,23 +258,23 @@
     }
 
     /* ─── CTA ─── */
-    .xero-gst-card__cta {
+    .xero-hero__card-cta {
       font-size: 0.8125rem;
       color: var(--xero-text-muted);
       line-height: 1.5;
       margin-top: 16px;
     }
 
-    .xero-gst-card__cta a {
+    .xero-hero__card-cta a {
       color: var(--xero-blue);
       font-weight: 700;
       text-decoration: underline;
     }
 
-    .xero-gst-card__cta a:hover { color: var(--xero-blue-dark); }
+    .xero-hero__card-cta a:hover { color: var(--xero-blue-dark); }
 
     /* ─── Disclaimer ─── */
-    .xero-gst-card__disclaimer {
+    .xero-hero__disclaimer {
       font-size: 0.75rem;
       color: var(--xero-text-muted);
       margin-top: 12px;
@@ -287,19 +286,19 @@
 
 <!--
   *** PATTERN C — CARD ONLY ***
-  Drop this .xero-gst-card element into the right column of the existing AEM hero section.
+  Drop this .xero-hero__card element into the right column of the existing AEM hero section.
   The surrounding hero (heading, body copy, background) is managed by AEM — do not replicate it here.
   Remove the <body> padding/centering styles above when embedding.
 -->
 
-<div class="xero-gst-card" role="region" aria-label="GST Calculator">
+<div class="xero-hero__card" role="region" aria-label="GST Calculator">
 
-  <h2 class="xero-gst-card__title">Calculate GST</h2>
+  <h1 class="xero-hero__card-title">Xero's free GST calculator</h1>
 
   <!-- Amount input -->
   <label class="xero-field__label" for="amount">Amount (NZD)</label>
   <div class="xero-input-wrap">
-    <span class="xero-input-prefix">$</span>
+    <span class="xero-input-wrap__prefix">$</span>
     <input
       class="xero-input"
       type="number"
@@ -342,11 +341,11 @@
     </div>
   </div>
 
-  <p class="xero-gst-card__cta">
+  <p class="xero-hero__card-cta">
     Get a real time view of your GST with Xero. Start a 30 day <a href="https://www.xero.com/nz/signup/" target="_blank" rel="noopener">free trial</a>.
   </p>
 
-  <p class="xero-gst-card__disclaimer">*This calculator provides estimates only and is not financial or accounting advice.</p>
+  <p class="xero-hero__disclaimer">*This calculator provides estimates only and is not financial or accounting advice.</p>
 
 </div>
 

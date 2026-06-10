@@ -39,16 +39,6 @@
   font-display: swap;
 }
 
-    @media (max-width: 768px) {
-      .xero-hero__inner {
-        grid-template-columns: 1fr;
-        gap: 40px;
-      }
-      .xero-hero__card {
-        max-width: 100%;
-      }
-    }
-  
     .xero-cta {
       font-size: 0.8125rem;
       color: var(--xero-text-muted);
@@ -84,7 +74,7 @@
       - Earnings toggle: Salary (fixed period amount) vs Hourly (hours × rate)
       - Net Pay = Gross − income tax − NI − pension − student loan − other deductions
       - Currency: £GBP
-      - GT Walsheim → Plus Jakarta Sans (flag for prod)
+      - National2 / National2Condensed are stand-ins loaded from xero.com CDN + inline base64; GT Walsheim is the licensed production font
       - Date display: DD/MM/YYYY format
   -->
   <style>
@@ -99,12 +89,13 @@
       --xero-bg:         #FFFFFF;
       --xero-text:       #000856;
       --xero-text-muted: #4A6070;
+      --xero-placeholder: #6E7481;
       --xero-input-bg:   #FFFFFF;
       --xero-green:      #186241;
       --xero-red:        #E05A5A;
       --radius: 6px;
       --font: 'National2', -apple-system, BlinkMacSystemFont, sans-serif;
-      --font-heading: 'National2Condensed', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-heading: 'National2Condensed', var(--font);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -131,9 +122,9 @@
       .xero-preview, .xero-preview-col { position: static; } .xero-tool__layout { grid-template-columns: 1fr; } }
 
     .xero-form__title {
-      font-family: var(--font);
-      font-size: 1.375rem; font-weight: 800;
-      color: var(--xero-navy); letter-spacing: -0.02em; margin-bottom: 28px;
+      font-family: var(--font-heading);
+      font-size: 2rem; font-weight: 800;
+      color: var(--xero-navy); letter-spacing: -0.01em; margin-bottom: 28px;
     }
 
     .xero-section { padding-bottom: 24px; border-bottom: 1px solid var(--xero-border); margin-bottom: 24px; }
@@ -162,7 +153,7 @@
       transition: border-color 0.15s; background: var(--xero-input-bg);
     }
     .xero-input--plain:focus { border-color: var(--xero-blue); }
-    .xero-input--plain::placeholder { color: #6E7481; }
+    .xero-input--plain::placeholder { color: var(--xero-placeholder); }
 
     .xero-select {
       border: 1px solid var(--xero-input-border); border-radius: var(--radius);
@@ -174,7 +165,7 @@
     }
     .xero-select:focus { border-color: var(--xero-blue); }
     .xero-input--plain:hover, .xero-select:hover, .xero-textarea:hover {
-      box-shadow: 0 2px 8px rgba(33,59,85,0.12);
+      box-shadow: 0 2px 8px rgba(0,8,86,0.12);
     }
 
     .xero-input-wrap {
@@ -182,7 +173,7 @@
       border: 1px solid var(--xero-input-border); border-radius: var(--radius);
       background: var(--xero-input-bg); transition: border-color 0.15s;
     }
-    .xero-input-wrap:hover { box-shadow: 0 2px 8px rgba(33,59,85,0.12); }
+    .xero-input-wrap:hover { box-shadow: 0 2px 8px rgba(0,8,86,0.12); }
     .xero-input-wrap:focus-within { border-color: var(--xero-blue); }
     .xero-input-prefix {
       display: flex; align-items: center; padding: 0 6px 0 12px;
@@ -199,7 +190,7 @@
       font-family: var(--font); font-size: 0.875rem; color: var(--xero-text);
       background: transparent; width: 100%; min-width: 0;
     }
-    .xero-input::placeholder { color: #6E7481; }
+    .xero-input::placeholder { color: var(--xero-placeholder); }
 
     /* Logo */
     .xero-logo-upload { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
@@ -217,19 +208,19 @@
     .xero-logo-upload-btn:hover { border-color: var(--xero-navy); }
 
     /* Pay type toggle */
-    .pay-type-toggle { display: flex; gap: 0; margin-bottom: 14px; border: 1px solid var(--xero-border); border-radius: var(--radius); overflow: hidden; width: fit-content; }
-    .pay-type-btn {
+    .xero-toggle { display: flex; gap: 0; margin-bottom: 14px; border: 1px solid var(--xero-border); border-radius: var(--radius); overflow: hidden; width: fit-content; }
+    .xero-toggle__btn {
       background: none; border: none; padding: 7px 18px;
       font-family: var(--font); font-size: 0.8125rem; font-weight: 600;
       color: var(--xero-text-muted); cursor: pointer; transition: all 0.15s;
     }
-    .pay-type-btn.active { background: var(--xero-navy); color: #fff; }
-    .pay-type-btn:not(.active):hover { background: var(--xero-panel-bg); }
+    .xero-toggle__btn.active { background: var(--xero-navy); color: #fff; }
+    .xero-toggle__btn:not(.active):hover { background: var(--xero-panel-bg); }
 
     /* Repeat rows */
     .xero-repeat-row { display: grid; grid-template-columns: 1fr 120px 28px; gap: 6px; align-items: end; margin-bottom: 6px; }
-    .row-remove { background: none; border: none; color: var(--xero-text-muted); cursor: pointer; font-size: 1.1rem; padding: 8px 4px; transition: color 0.15s; }
-    .row-remove:hover { color: var(--xero-red); }
+    .xero-row-remove { background: none; border: none; color: var(--xero-text-muted); cursor: pointer; font-size: 1.1rem; padding: 8px 4px; transition: color 0.15s; }
+    .xero-row-remove:hover { color: var(--xero-red); }
     .xero-add-row { background: none; border: none; color: var(--xero-blue); font-family: var(--font); font-size: 0.8125rem; font-weight: 600; cursor: pointer; padding: 6px 0 2px; display: block; }
     .xero-add-row:hover { color: var(--xero-blue-dark); }
 
@@ -241,36 +232,36 @@
     .xero-preview { position: sticky; top: 24px; }
     .xero-preview__label { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--xero-text-muted); margin-bottom: 10px; }
 
-    .inv-doc { background: #fff; border: 1px solid var(--xero-border); border-radius: 4px 4px 0 0; padding: 28px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); font-size: 0.8125rem; line-height: 1.5; }
+    .xero-preview__doc { background: #fff; border: 1px solid var(--xero-border); border-radius: var(--radius) var(--radius) 0 0; padding: 28px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); font-size: 0.8125rem; line-height: 1.5; }
 
-    .ps-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
-    .ps-logo-placeholder { width: 80px; height: 36px; border: 1px dashed var(--xero-border); border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 0.5625rem; color: var(--xero-text-muted); }
-    .ps-title { font-size: 1.375rem; font-weight: 800; color: var(--xero-navy); letter-spacing: -0.02em; }
-    .ps-rule { border: none; border-top: 2px solid var(--xero-navy); margin-bottom: 14px; }
-    .ps-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px; }
-    .ps-block__label { font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--xero-text-muted); margin-bottom: 2px; }
-    .ps-block__name { font-size: 0.8125rem; font-weight: 700; color: var(--xero-navy); }
-    .ps-block__line { font-size: 0.6875rem; color: var(--xero-text-muted); line-height: 1.4; }
+    .xero-preview__doc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .xero-preview__doc-logo-placeholder { width: 80px; height: 36px; border: 1px dashed var(--xero-border); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 0.5625rem; color: var(--xero-text-muted); }
+    .xero-preview__doc-title { font-size: 1.375rem; font-weight: 800; color: var(--xero-navy); letter-spacing: -0.02em; }
+    .xero-preview__doc-rule { border: none; border-top: 2px solid var(--xero-navy); margin-bottom: 14px; }
+    .xero-preview__doc-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px; }
+    .xero-preview__doc-block__label { font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--xero-text-muted); margin-bottom: 2px; }
+    .xero-preview__doc-block__name { font-size: 0.8125rem; font-weight: 700; color: var(--xero-navy); }
+    .xero-preview__doc-block__line { font-size: 0.6875rem; color: var(--xero-text-muted); line-height: 1.4; }
 
-    .ps-period-row { display: flex; justify-content: space-between; font-size: 0.75rem; padding: 7px 10px; background: var(--xero-panel-bg); border-radius: var(--radius); margin-bottom: 12px; }
-    .ps-period-row span { font-weight: 600; color: var(--xero-navy); }
-    .ps-period-row em { font-weight: 400; color: var(--xero-text-muted); font-style: normal; margin-right: 4px; }
+    .xero-preview__doc-period-row { display: flex; justify-content: space-between; font-size: 0.75rem; padding: 7px 10px; background: var(--xero-panel-bg); border-radius: var(--radius); margin-bottom: 12px; }
+    .xero-preview__doc-period-row span { font-weight: 600; color: var(--xero-navy); }
+    .xero-preview__doc-period-row em { font-weight: 400; color: var(--xero-text-muted); font-style: normal; margin-right: 4px; }
 
-    .ps-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-bottom: 0; }
-    .ps-table thead tr { background: var(--xero-navy); }
-    .ps-table th { padding: 6px 8px; color: #fff; font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; text-align: left; }
-    .ps-table th.r, .ps-table td.r { text-align: right; }
-    .ps-table td { padding: 6px 8px; border-bottom: 1px solid var(--xero-border); }
-    .ps-table tbody tr:last-child td { border-bottom: none; }
-    .ps-subtotal-row td { font-weight: 700; color: var(--xero-navy); border-top: 1px solid var(--xero-border); background: #fafbfc; }
-    .ps-net-row td { font-size: 0.9375rem; font-weight: 800; color: var(--xero-navy); border-top: 2px solid var(--xero-navy); background: var(--xero-panel-bg); }
+    .xero-preview__doc-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-bottom: 0; }
+    .xero-preview__doc-table thead tr { background: var(--xero-navy); }
+    .xero-preview__doc-table th { padding: 6px 8px; color: #fff; font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; text-align: left; }
+    .xero-preview__doc-table th.r, .xero-preview__doc-table td.r { text-align: right; }
+    .xero-preview__doc-table td { padding: 6px 8px; border-bottom: 1px solid var(--xero-border); }
+    .xero-preview__doc-table tbody tr:last-child td { border-bottom: none; }
+    .xero-preview__doc-subtotal-row td { font-weight: 700; color: var(--xero-navy); border-top: 1px solid var(--xero-border); background: var(--xero-panel-bg); }
+    .xero-preview__doc-net-row td { font-size: 0.9375rem; font-weight: 800; color: var(--xero-navy); border-top: 2px solid var(--xero-navy); background: var(--xero-panel-bg); }
 
     /* ── Download strip ── */
     .xero-preview__dl {
       background: var(--xero-panel-bg);
       border: 1px solid var(--xero-border);
       border-top: none;
-      border-radius: 0 0 4px 4px;
+      border-radius: 0 0 var(--radius) var(--radius);
       padding: 12px 16px;
       display: flex;
       align-items: center;
@@ -295,7 +286,7 @@
       color: var(--xero-navy);
       background: #fff;
       border: 1px solid var(--xero-border);
-      border-radius: 4px;
+      border-radius: var(--radius);
       cursor: pointer;
       transition: border-color 0.15s, box-shadow 0.15s;
       white-space: nowrap;
@@ -304,8 +295,6 @@
       border-color: var(--xero-navy);
       box-shadow: 0 2px 6px rgba(0,8,86,0.1);
     }
-
-    .xero-tool__disclaimer { font-size: 0.75rem; color: var(--xero-text-muted); margin-top: 28px; max-width: 1200px; margin-left: auto; margin-right: auto; line-height: 1.5; }
 
     @media print { body > * { display: none !important; } #payslip-print-area { display: block !important; } }
     #payslip-print-area { display: none; }
@@ -318,7 +307,7 @@
 
     <!-- ══ LEFT: Form ══ -->
     <div>
-      <h2 class="xero-form__title">Create payslip</h2>
+      <h1 class="xero-form__title">Create payslip</h1>
 
       <!-- Employer -->
       <div class="xero-section">
@@ -414,9 +403,9 @@
 
         <div style="margin-bottom:14px;">
           <label class="xero-field__label" style="margin-bottom:8px;">Pay type</label>
-          <div class="pay-type-toggle">
-            <button class="pay-type-btn active" id="btn-salary" type="button" onclick="setPayType('salary')">Salary</button>
-            <button class="pay-type-btn" id="btn-hourly" type="button" onclick="setPayType('hourly')">Hourly</button>
+          <div class="xero-toggle">
+            <button class="xero-toggle__btn active" id="btn-salary" type="button" onclick="setPayType('salary')">Salary</button>
+            <button class="xero-toggle__btn" id="btn-hourly" type="button" onclick="setPayType('hourly')">Hourly</button>
           </div>
         </div>
 
@@ -525,37 +514,37 @@
     <div class="xero-preview">
       <p class="xero-preview__label">Live preview</p>
 
-      <div class="inv-doc" id="payslip-preview">
+      <div class="xero-preview__doc" id="payslip-preview">
 
-        <div class="ps-header">
-          <div id="prev-logo"><div class="ps-logo-placeholder">YOUR LOGO</div></div>
-          <div class="ps-title">PAYSLIP</div>
+        <div class="xero-preview__doc-header">
+          <div id="prev-logo"><div class="xero-preview__doc-logo-placeholder">YOUR LOGO</div></div>
+          <div class="xero-preview__doc-title">PAYSLIP</div>
         </div>
-        <hr class="ps-rule">
+        <hr class="xero-preview__doc-rule">
 
-        <div class="ps-meta">
+        <div class="xero-preview__doc-meta">
           <div>
-            <div class="ps-block__label">Employer</div>
-            <div class="ps-block__name" id="prev-biz-name">Company Name</div>
-            <div class="ps-block__line" id="prev-biz-address"></div>
-            <div class="ps-block__line" id="prev-biz-paye"></div>
+            <div class="xero-preview__doc-block__label">Employer</div>
+            <div class="xero-preview__doc-block__name" id="prev-biz-name">Company Name</div>
+            <div class="xero-preview__doc-block__line" id="prev-biz-address"></div>
+            <div class="xero-preview__doc-block__line" id="prev-biz-paye"></div>
           </div>
           <div>
-            <div class="ps-block__label">Employee</div>
-            <div class="ps-block__name" id="prev-emp-name">Employee Name</div>
-            <div class="ps-block__line" id="prev-emp-id"></div>
-            <div class="ps-block__line" id="prev-emp-position"></div>
-            <div class="ps-block__line" id="prev-emp-ni"></div>
-            <div class="ps-block__line" id="prev-emp-taxcode"></div>
+            <div class="xero-preview__doc-block__label">Employee</div>
+            <div class="xero-preview__doc-block__name" id="prev-emp-name">Employee Name</div>
+            <div class="xero-preview__doc-block__line" id="prev-emp-id"></div>
+            <div class="xero-preview__doc-block__line" id="prev-emp-position"></div>
+            <div class="xero-preview__doc-block__line" id="prev-emp-ni"></div>
+            <div class="xero-preview__doc-block__line" id="prev-emp-taxcode"></div>
           </div>
         </div>
 
-        <div class="ps-period-row">
+        <div class="xero-preview__doc-period-row">
           <div><em>Pay Period:</em><span id="prev-period">—</span></div>
           <div><em>Pay Date:</em><span id="prev-pay-date">—</span></div>
         </div>
 
-        <table class="ps-table">
+        <table class="xero-preview__doc-table">
           <thead>
             <tr>
               <th>Earnings</th>
@@ -567,7 +556,7 @@
           <tbody id="prev-earnings-body"></tbody>
         </table>
 
-        <table class="ps-table" style="margin-top:0;">
+        <table class="xero-preview__doc-table" style="margin-top:0;">
           <thead>
             <tr>
               <th>Deductions</th>
@@ -577,16 +566,16 @@
           <tbody id="prev-deductions-body"></tbody>
         </table>
 
-        <table class="ps-table" style="margin-top:0;">
+        <table class="xero-preview__doc-table" style="margin-top:0;">
           <tbody>
-            <tr class="ps-net-row">
+            <tr class="xero-preview__doc-net-row">
               <td colspan="3"><strong>NET PAY</strong></td>
               <td class="r"><strong id="prev-net">£0.00</strong></td>
             </tr>
           </tbody>
         </table>
 
-      </div><!-- /inv-doc -->
+      </div><!-- /xero-preview__doc -->
 
       <!-- Download strip -->
       <div class="xero-preview__dl">
@@ -612,12 +601,11 @@
           HTML
         </button>
       </div>
-      <p class="xero-cta">Pay your team and manage payroll with Xero. Start a 30 day <a href="https://www.xero.com/signup/" target="_blank">free trial</a>.</p>
-      <p class="xero-disclaimer">*This tool generates payslip documents only and is not financial or tax advice.</p>
+      <p class="xero-cta">Pay your team and manage payroll with Xero. Start a 30 day <a href="https://www.xero.com/uk/signup/" target="_blank">free trial</a>.</p>
+      <p class="xero-disclaimer">*This tool generates payslip documents only. Tax figures must be verified against official HMRC tax tables. Not financial or tax advice.</p>
     </div>
 
   </div><!-- /layout -->
-  <p class="xero-tool__disclaimer">*This tool generates payslip documents only. Tax figures must be verified against official HMRC tax tables. Not financial or tax advice.</p>
 </div>
 
 <div id="payslip-print-area"></div>
@@ -745,7 +733,7 @@
           <input class="xero-input" type="number" min="0" step="0.01" placeholder="0.00"
             value="${e.amount||''}" oninput="otherEarnings.find(x=>x.id===${e.id}).amount=parseFloat(this.value)||0; calcGross(); updatePreview()">
         </div></div>
-        <button class="row-remove" type="button" onclick="removeOtherEarning(${e.id})" title="Remove">×</button>
+        <button class="xero-row-remove" type="button" onclick="removeOtherEarning(${e.id})" title="Remove">×</button>
       </div>`).join('');
   }
 
@@ -770,7 +758,7 @@
           <input class="xero-input" type="number" min="0" step="0.01" placeholder="0.00"
             value="${d.amount||''}" oninput="otherDeductions.find(x=>x.id===${d.id}).amount=parseFloat(this.value)||0; calcNet(); updatePreview()">
         </div></div>
-        <button class="row-remove" type="button" onclick="removeOtherDeduction(${d.id})" title="Remove">×</button>
+        <button class="xero-row-remove" type="button" onclick="removeOtherDeduction(${d.id})" title="Remove">×</button>
       </div>`).join('');
   }
 
@@ -778,7 +766,7 @@
     // Logo
     document.getElementById('prev-logo').innerHTML = logoDataUrl
       ? `<img src="${logoDataUrl}" style="max-height:36px;max-width:90px;object-fit:contain;">`
-      : `<div class="ps-logo-placeholder">YOUR LOGO</div>`;
+      : `<div class="xero-preview__doc-logo-placeholder">YOUR LOGO</div>`;
 
     // Employer
     document.getElementById('prev-biz-name').textContent    = gs('biz-name')    || 'Company Name';
@@ -819,7 +807,7 @@
         eRows += `<tr><td>${e.desc||'Other earnings'}</td><td class="r">—</td><td class="r">—</td><td class="r">${fmtGBP(e.amount)}</td></tr>`;
     });
 
-    eRows += `<tr class="ps-subtotal-row"><td colspan="3" class="r">GROSS PAY</td><td class="r">${fmtGBP(gross)}</td></tr>`;
+    eRows += `<tr class="xero-preview__doc-subtotal-row"><td colspan="3" class="r">GROSS PAY</td><td class="r">${fmtGBP(gross)}</td></tr>`;
     document.getElementById('prev-earnings-body').innerHTML = eRows;
 
     // Deductions
@@ -840,7 +828,7 @@
       if (d.amount > 0 || d.desc) dRows += `<tr><td>${d.desc||'Other deduction'}</td><td class="r" colspan="3">${fmtGBP(d.amount)}</td></tr>`;
     });
     if (!dRows) dRows = `<tr><td colspan="4" style="color:var(--xero-text-muted);font-style:italic;">No deductions entered</td></tr>`;
-    dRows += `<tr class="ps-subtotal-row"><td colspan="3" class="r">TOTAL DEDUCTIONS</td><td class="r">${fmtGBP(totalDed)}</td></tr>`;
+    dRows += `<tr class="xero-preview__doc-subtotal-row"><td colspan="3" class="r">TOTAL DEDUCTIONS</td><td class="r">${fmtGBP(totalDed)}</td></tr>`;
     document.getElementById('prev-deductions-body').innerHTML = dRows;
 
     document.getElementById('prev-net').textContent = fmtGBP(net);
@@ -883,11 +871,48 @@
     return rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
   }
 
+  function buildExcelHTML() {
+    const gross = calcGrossValue();
+    const it = gv('income-tax'), ni = gv('ni-employee'), pen = gv('pension'), sl = gv('student-loan');
+    const others = otherDeductions.reduce((s,d)=>s+(d.amount||0),0);
+    const totalDed = it + ni + pen + sl + others;
+    const net = Math.max(0, gross - totalDed);
+    const f = n => (n || 0).toFixed(2);
+    const basicRow = payType==='salary'
+      ? `<tr><td>Basic pay</td><td></td><td></td><td>${f(gv('basic-pay'))}</td></tr>`
+      : `<tr><td>Basic pay (hourly)</td><td>${gv('ord-hours').toFixed(2)}</td><td>${f(gv('ord-rate'))}</td><td>${f(gv('ord-hours')*gv('ord-rate'))}</td></tr>`;
+    return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Payslip</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>
+<body><table border="1">
+<tr><th colspan="4" style="background:#000856;color:#fff;">PAYSLIP — UK</th></tr>
+<tr><td><b>Employer</b></td><td>${gs('biz-name')}</td><td><b>PAYE ref</b></td><td>${gs('biz-paye-ref')}</td></tr>
+<tr><td><b>Employee</b></td><td>${gs('emp-name')}</td><td><b>Payroll no</b></td><td>${gs('emp-id')}</td></tr>
+<tr><td><b>NI number</b></td><td>${maskNI(gs('emp-ni'))}</td><td><b>Tax code</b></td><td>${gs('emp-taxcode')}</td></tr>
+<tr><td><b>Tax year</b></td><td>${gs('tax-year')}</td><td><b>Pay date</b></td><td>${fmtDate(gs('pay-date'))}</td></tr>
+<tr><td><b>Pay period</b></td><td colspan="3">${fmtDate(gs('period-start'))} - ${fmtDate(gs('period-end'))}</td></tr>
+<tr></tr>
+<tr style="background:#000856;color:#fff;"><th>Earnings</th><th>Hours</th><th>Rate</th><th>Amount</th></tr>
+${basicRow}
+${gv('ot-hours')>0?`<tr><td>Overtime</td><td>${gv('ot-hours').toFixed(2)}</td><td>${f(gv('ot-rate'))}</td><td>${f(gv('ot-hours')*gv('ot-rate'))}</td></tr>`:''}
+${otherEarnings.map(e=>`<tr><td>${e.desc||'Other earnings'}</td><td></td><td></td><td>${f(e.amount)}</td></tr>`).join('')}
+<tr><td colspan="3"><b>GROSS PAY</b></td><td><b>${f(gross)}</b></td></tr>
+<tr></tr>
+<tr style="background:#000856;color:#fff;"><th>Deductions</th><th colspan="3">Amount</th></tr>
+${it>0?`<tr><td>Income tax</td><td colspan="3">${f(it)}</td></tr>`:''}
+${ni>0?`<tr><td>National Insurance (Class 1)</td><td colspan="3">${f(ni)}</td></tr>`:''}
+${pen>0?`<tr><td>Pension</td><td colspan="3">${f(pen)}</td></tr>`:''}
+${sl>0?`<tr><td>Student loan</td><td colspan="3">${f(sl)}</td></tr>`:''}
+${otherDeductions.map(d=>`<tr><td>${d.desc||'Other'}</td><td colspan="3">${f(d.amount)}</td></tr>`).join('')}
+<tr><td colspan="3"><b>TOTAL DEDUCTIONS</b></td><td><b>${f(totalDed)}</b></td></tr>
+<tr style="background:#F2F1EE;"><td colspan="3"><b>NET PAY</b></td><td><b>${f(net)}</b></td></tr>
+</table></body></html>`;
+  }
+
   function downloadExcel() {
-    const blob = new Blob([buildCSV()], { type:'text/csv;charset=utf-8;' });
+    const blob = new Blob(['﻿'+buildExcelHTML()], { type:'application/vnd.ms-excel;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href=url;
-    a.download=`payslip-${gs('emp-name').replace(/\s+/g,'-')||'uk'}.csv`;
+    a.download=`payslip-${gs('emp-name').replace(/\s+/g,'-')||'uk'}.xls`;
     a.click(); URL.revokeObjectURL(url);
   }
 
@@ -899,7 +924,7 @@
 h1{font-size:22px;font-weight:900}hr{border:none;border-top:2px solid #000856;margin:12px 0}
 table{width:100%;border-collapse:collapse;margin-bottom:8px}th{background:#000856;color:#fff;padding:5px 8px;font-size:10px;text-align:left}
 th.r,td.r{text-align:right}td{padding:5px 8px;border-bottom:1px solid #C2CDD6}
-.sub td{font-weight:700;background:#f0f5f8}.net td{font-size:14px;font-weight:900;background:#F2F1EE;border-top:2px solid #000856}</style></head><body>
+.sub td{font-weight:700;background:#F2F1EE}.net td{font-size:14px;font-weight:900;background:#F2F1EE;border-top:2px solid #000856}</style></head><body>
 <div style="display:flex;justify-content:space-between"><div>${gs('biz-name')}<br>${gs('biz-address')}${gs('biz-paye-ref')?'<br>PAYE ref: '+gs('biz-paye-ref'):''}</div><h1>PAYSLIP</h1></div>
 <hr>
 <table><tr><td><b>Employee:</b> ${gs('emp-name')}</td><td><b>Payroll no:</b> ${gs('emp-id')}</td></tr>

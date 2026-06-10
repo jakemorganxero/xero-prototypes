@@ -15,8 +15,7 @@
     - Secondary income calculation simplified — full implementation needs tax code logic (M SL, ME, etc.)
     - Sole trader path: same marginal rates apply to net profit; provisional tax not modelled
     - KiwiSaver for sole traders is voluntary — calculator shows a note rather than the contribution section
-    - GT Walsheim → Plus Jakarta Sans substitution used in this prototype (flag for prod)
-    - Font: Plus Jakarta Sans from Google Fonts (not GT Walsheim — licensed separately by Xero)
+    - National2 / National2Condensed are stand-ins (xero.com CDN + inline base64); GT Walsheim is the licensed production font
 -->
 <!DOCTYPE html>
 <html lang="en-NZ">
@@ -62,22 +61,32 @@
   <style>
     /* ─── Xero Brand Tokens ─── */
     :root {
-      --xero-navy:       #000856;
-      --xero-blue:       #13B5EA;
-      --xero-blue-dark:  #0D8FBD;
-      --xero-panel-bg:   #F2F1EE;
-      --xero-border:     #C2CDD6;
-    --xero-input-border: #000856;
+      /* Brand */
+      --xero-navy:        #000856;
+      --xero-text:        #000856;
+      --xero-blue:        #13B5EA;
+      --xero-blue-dark:   #0D8FBD;
+      --xero-green:       #186241;
+      --xero-red:         #E05A5A;
+
+      /* Surfaces */
+      --xero-panel-bg:    #F2F1EE;
+      --xero-bg:          #FFFFFF;
+      --xero-input-bg:    #FFFFFF;
+
+      /* Lines */
+      --xero-input-border:      #000856;
       --xero-input-border-grey: #CBCAC9;
-      --xero-bg:         #FFFFFF;
-      --xero-text:       #000856;
-      --xero-text-muted: #4A6070;
-      --xero-input-bg:   #FFFFFF;
-      --xero-green:      #186241;
-      --xero-red:        #E05A5A;
-      --radius:          6px;
-      --font: 'National2', -apple-system, BlinkMacSystemFont, sans-serif;
-      --font-heading: 'National2Condensed', -apple-system, BlinkMacSystemFont, sans-serif;
+      --xero-border:            #C2CDD6;
+
+      /* Text */
+      --xero-text-muted:  #4A6070;
+      --xero-placeholder: #6E7481;
+
+      /* Geometry + type */
+      --radius:        6px;
+      --font:          'National2', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-heading:  'National2Condensed', var(--font);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -97,7 +106,7 @@
     }
 
     .xero-tool__heading {
-      font-family: var(--font);
+      font-family: var(--font-heading);
       font-size: 1.75rem;
       font-weight: 800;
       color: var(--xero-navy);
@@ -120,18 +129,11 @@
     }
 
     @media (max-width: 768px) {
-      .xero-hero__inner {
-        grid-template-columns: 1fr;
-        gap: 40px;
-      }
-      .xero-hero__card {
-        max-width: 100%;
-      }
       .xero-tool__layout {
         grid-template-columns: 1fr;
       }
       .xero-tool__panel {
-        order: -1;
+        position: static;
       }
     }
 
@@ -170,13 +172,13 @@
     .xero-input-wrap {
       display: flex;
       align-items: stretch;
-      border: 1px solid var(--xero-input-border-grey);
+      border: 1px solid var(--xero-input-border);
       border-radius: var(--radius);
       background: var(--xero-input-bg);
       transition: border-color 0.15s;
     }
 
-    .xero-input-wrap:hover { box-shadow: 0 2px 8px rgba(33,59,85,0.12); }
+    .xero-input-wrap:hover { box-shadow: 0 2px 8px rgba(0,8,86,.12); }
     .xero-input-wrap:focus-within {
       border-color: var(--xero-blue);
       outline: 2px solid rgba(19, 181, 234, 0.2);
@@ -206,7 +208,7 @@
       min-width: 0;
     }
 
-    .xero-input::placeholder { color: #6E7481; }
+    .xero-input::placeholder { color: var(--xero-placeholder); }
 
     /* Remove number input spinners */
     .xero-input::-webkit-outer-spin-button,
@@ -239,8 +241,7 @@
     }
 
     .xero-radio:has(input:checked) {
-      border-color: var(--xero-navy);
-      background: rgba(27, 58, 75, 0.03);
+      border-color: var(--xero-blue);
     }
 
     .xero-radio-group--inline .xero-radio {
@@ -260,7 +261,7 @@
     .xero-radio__box {
       width: 18px;
       height: 18px;
-      border: 2px solid var(--xero-input-border-grey);
+      border: 2px solid var(--xero-input-border);
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -270,14 +271,14 @@
     }
 
     .xero-radio:has(input:checked) .xero-radio__box {
-      border-color: var(--xero-navy);
+      border-color: var(--xero-blue);
     }
 
     .xero-radio__dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: var(--xero-navy);
+      background: var(--xero-blue);
       opacity: 0;
       transition: opacity 0.15s;
     }
@@ -319,7 +320,7 @@
       margin-top: 32px;
     }
 
-    .xero-btn {
+    .xero-btn-primary {
       background: var(--xero-navy);
       color: #fff;
       border: none;
@@ -333,60 +334,68 @@
       white-space: nowrap;
     }
 
-    .xero-btn:hover  { background: #00063d; }
-    .xero-btn:active { background: #162e3a; }
-    .xero-btn:focus-visible {
+    .xero-btn-primary:hover  { background: #000640; }
+    .xero-btn-primary:active { background: #000640; }
+    .xero-btn-primary:focus-visible {
       outline: 3px solid var(--xero-blue);
       outline-offset: 2px;
     }
 
-    .xero-reset {
+    .xero-btn-secondary {
       background: none;
       border: none;
-      color: var(--xero-blue);
+      color: var(--xero-navy);
       font-family: var(--font);
       font-size: 0.9375rem;
       font-weight: 600;
       cursor: pointer;
       text-decoration: underline;
+      text-decoration-color: var(--xero-blue);
       padding: 0;
     }
 
-    .xero-reset:hover { color: var(--xero-blue-dark); }
+    .xero-btn-secondary:hover { text-decoration-color: var(--xero-blue-dark); }
 
     /* ─── Results panel ─── */
     .xero-tool__panel {
       background: var(--xero-panel-bg);
       border-radius: var(--radius);
-      padding: 28px;
+      padding: 16px;
       position: sticky;
       top: 24px;
     }
 
-    /* Pre-calculate state */
-    .panel-placeholder {
-      text-align: center;
-      padding: 20px 0 8px;
+    /* White result band inside the warm-grey panel (card = grey, band = white) */
+    .xero-result-band {
+      background: var(--xero-bg);
+      border-radius: var(--radius);
+      padding: 24px;
     }
 
-    .panel-placeholder__icon {
+    /* Pre-calculate state */
+    .xero-tax-placeholder {
+      text-align: center;
+      padding: 28px 4px 16px;
+    }
+
+    .xero-tax-placeholder__icon {
       font-size: 2.5rem;
       margin-bottom: 12px;
       display: block;
       opacity: 0.35;
     }
 
-    .panel-placeholder__text {
+    .xero-tax-placeholder__text {
       font-size: 0.9375rem;
       color: var(--xero-text-muted);
       line-height: 1.5;
     }
 
     /* Results content */
-    .panel-results { display: none; }
-    .panel-results.is-visible { display: block; }
+    .xero-tax-results { display: none; }
+    .xero-tax-results.is-visible { display: block; }
 
-    .panel-primary-label {
+    .xero-tax-primary-label {
       font-size: 0.8125rem;
       font-weight: 700;
       color: var(--xero-text-muted);
@@ -395,7 +404,7 @@
       margin-bottom: 4px;
     }
 
-    .panel-primary-value {
+    .xero-tax-primary-value {
       font-size: 2rem;
       font-weight: 800;
       color: var(--xero-green);
@@ -403,21 +412,21 @@
       margin-bottom: 4px;
     }
 
-    .panel-primary-sub {
+    .xero-tax-primary-sub {
       font-size: 0.8125rem;
       color: var(--xero-text-muted);
       margin-bottom: 20px;
     }
 
     /* Frequency table */
-    .freq-table {
+    .xero-tax-freq {
       width: 100%;
       border-collapse: collapse;
       font-size: 0.875rem;
       margin-bottom: 20px;
     }
 
-    .freq-table thead th {
+    .xero-tax-freq thead th {
       font-size: 0.75rem;
       font-weight: 700;
       color: var(--xero-text-muted);
@@ -426,46 +435,46 @@
       border-bottom: 1px solid var(--xero-border);
     }
 
-    .freq-table thead th:not(:first-child) {
+    .xero-tax-freq thead th:not(:first-child) {
       text-align: right;
     }
 
-    .freq-table tbody tr {
+    .xero-tax-freq tbody tr {
       border-bottom: 1px solid var(--xero-border);
     }
 
-    .freq-table tbody tr:last-child {
+    .xero-tax-freq tbody tr:last-child {
       border-bottom: none;
     }
 
-    .freq-table td {
+    .xero-tax-freq td {
       padding: 9px 0;
       color: var(--xero-navy);
     }
 
-    .freq-table td:not(:first-child) {
+    .xero-tax-freq td:not(:first-child) {
       text-align: right;
       font-variant-numeric: tabular-nums;
     }
 
-    .freq-table td:first-child {
+    .xero-tax-freq td:first-child {
       font-weight: 600;
     }
 
-    .freq-table td.take-home {
+    .xero-tax-freq td.xero-tax-freq__take {
       font-weight: 700;
       color: var(--xero-green);
     }
 
     /* Divider */
-    .panel-divider {
+    .xero-tax-divider {
       border: none;
       border-top: 1px solid var(--xero-border);
       margin: 16px 0;
     }
 
     /* Breakdown heading */
-    .breakdown-heading {
+    .xero-tax-breakdown-heading {
       font-size: 0.875rem;
       font-weight: 700;
       color: var(--xero-navy);
@@ -473,7 +482,7 @@
     }
 
     /* Breakdown line items */
-    .breakdown-item {
+    .xero-tax-breakdown-item {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
@@ -483,40 +492,40 @@
       border-bottom: 1px solid var(--xero-border);
     }
 
-    .breakdown-item:last-child {
+    .xero-tax-breakdown-item:last-child {
       border-bottom: none;
     }
 
-    .breakdown-item__label {
+    .xero-tax-breakdown-item__label {
       color: var(--xero-text-muted);
       flex: 1;
       line-height: 1.3;
     }
 
-    .breakdown-item__value {
+    .xero-tax-breakdown-item__value {
       font-variant-numeric: tabular-nums;
       font-weight: 500;
       color: var(--xero-navy);
       white-space: nowrap;
     }
 
-    .breakdown-item--total .breakdown-item__label {
+    .xero-tax-breakdown-item--total .xero-tax-breakdown-item__label {
       font-weight: 700;
       color: var(--xero-navy);
     }
 
-    .breakdown-item--total .breakdown-item__value {
+    .xero-tax-breakdown-item--total .xero-tax-breakdown-item__value {
       font-weight: 800;
       color: var(--xero-green);
       font-size: 0.9375rem;
     }
 
-    .breakdown-item--deduction .breakdown-item__value {
+    .xero-tax-breakdown-item--deduction .xero-tax-breakdown-item__value {
       color: var(--xero-red);
     }
 
     /* Employer KiwiSaver note */
-    .employer-kiwi-note {
+    .xero-tax-kiwi-note {
       font-size: 0.8125rem;
       color: var(--xero-text-muted);
       line-height: 1.5;
@@ -528,7 +537,7 @@
     }
 
     /* CTA */
-    .xero-panel__cta {
+    .xero-cta {
       font-size: 0.875rem;
       color: var(--xero-text-muted);
       line-height: 1.55;
@@ -537,16 +546,16 @@
       margin-top: 16px;
     }
 
-    .xero-panel__cta a {
+    .xero-cta a {
       color: var(--xero-blue);
       font-weight: 700;
       text-decoration: underline;
     }
 
-    .xero-panel__cta a:hover { color: var(--xero-blue-dark); }
+    .xero-cta a:hover { color: var(--xero-blue-dark); }
 
     /* ─── Disclaimer ─── */
-    .xero-tool__disclaimer {
+    .xero-disclaimer {
       font-size: 0.8125rem;
       color: var(--xero-text-muted);
       margin-top: 28px;
@@ -725,10 +734,10 @@
 
       <!-- Actions -->
       <div class="xero-actions">
-        <button class="xero-btn" type="button" id="calc-btn" onclick="calculate()">
+        <button class="xero-btn-primary" type="button" id="calc-btn" onclick="calculate()">
           Calculate your income tax
         </button>
-        <button class="xero-reset" type="button" onclick="resetForm()">Reset</button>
+        <button class="xero-btn-secondary" type="button" onclick="resetForm()">Reset</button>
       </div>
 
     </form>
@@ -737,8 +746,8 @@
     <aside class="xero-tool__panel" id="results-panel" aria-live="polite" aria-label="Tax calculation results">
 
       <!-- Pre-calculate placeholder -->
-      <div class="panel-placeholder" id="panel-placeholder">
-        <span class="panel-placeholder__icon">
+      <div class="xero-tax-placeholder" id="panel-placeholder">
+        <span class="xero-tax-placeholder__icon">
           <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="8" y="6" width="32" height="36" rx="3" stroke="#C2CDD6" stroke-width="2" fill="none"/>
             <path d="M16 16h16M16 22h16M16 28h10" stroke="#C2CDD6" stroke-width="2" stroke-linecap="round"/>
@@ -746,22 +755,23 @@
             <path d="M32.5 34h5M35 31.5v5" stroke="#C2CDD6" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
         </span>
-        <p class="panel-placeholder__text">
+        <p class="xero-tax-placeholder__text">
           Enter your annual income and<br>hit <strong>Calculate</strong> to see your<br>estimated take-home pay.
         </p>
       </div>
 
       <!-- Results (hidden until calculated) -->
-      <div class="panel-results" id="panel-results">
+      <div class="xero-tax-results" id="panel-results">
+        <div class="xero-result-band">
 
-        <p class="panel-primary-label">Estimated take-home pay</p>
-        <p class="panel-primary-value" id="res-takehome-annual">$0</p>
-        <p class="panel-primary-sub">per year after tax &amp; deductions</p>
+        <p class="xero-tax-primary-label">Estimated take-home pay</p>
+        <p class="xero-tax-primary-value" id="res-takehome-annual">$0</p>
+        <p class="xero-tax-primary-sub">per year after tax &amp; deductions</p>
 
-        <hr class="panel-divider">
+        <hr class="xero-tax-divider">
 
         <!-- Frequency table -->
-        <table class="freq-table" aria-label="Pay frequency breakdown">
+        <table class="xero-tax-freq" aria-label="Pay frequency breakdown">
           <thead>
             <tr>
               <th>Frequency</th>
@@ -773,73 +783,74 @@
             <tr>
               <td>Weekly</td>
               <td id="freq-gross-weekly">—</td>
-              <td class="take-home" id="freq-net-weekly">—</td>
+              <td class="xero-tax-freq__take" id="freq-net-weekly">—</td>
             </tr>
             <tr>
               <td>Fortnightly</td>
               <td id="freq-gross-fortnightly">—</td>
-              <td class="take-home" id="freq-net-fortnightly">—</td>
+              <td class="xero-tax-freq__take" id="freq-net-fortnightly">—</td>
             </tr>
             <tr>
               <td>Monthly</td>
               <td id="freq-gross-monthly">—</td>
-              <td class="take-home" id="freq-net-monthly">—</td>
+              <td class="xero-tax-freq__take" id="freq-net-monthly">—</td>
             </tr>
             <tr>
               <td>Annually</td>
               <td id="freq-gross-annual">—</td>
-              <td class="take-home" id="freq-net-annual">—</td>
+              <td class="xero-tax-freq__take" id="freq-net-annual">—</td>
             </tr>
           </tbody>
         </table>
 
-        <hr class="panel-divider">
+        <hr class="xero-tax-divider">
 
         <!-- Breakdown -->
-        <p class="breakdown-heading">How it's calculated</p>
+        <p class="xero-tax-breakdown-heading">How it's calculated</p>
 
-        <div class="breakdown-item">
-          <span class="breakdown-item__label">Gross income</span>
-          <span class="breakdown-item__value" id="bd-gross">—</span>
+        <div class="xero-tax-breakdown-item">
+          <span class="xero-tax-breakdown-item__label">Gross income</span>
+          <span class="xero-tax-breakdown-item__value" id="bd-gross">—</span>
         </div>
-        <div class="breakdown-item breakdown-item--deduction">
-          <span class="breakdown-item__label">PAYE income tax</span>
-          <span class="breakdown-item__value" id="bd-paye">—</span>
+        <div class="xero-tax-breakdown-item xero-tax-breakdown-item--deduction">
+          <span class="xero-tax-breakdown-item__label">PAYE income tax</span>
+          <span class="xero-tax-breakdown-item__value" id="bd-paye">—</span>
         </div>
-        <div class="breakdown-item breakdown-item--deduction">
-          <span class="breakdown-item__label">ACC earners' levy</span>
-          <span class="breakdown-item__value" id="bd-acc">—</span>
+        <div class="xero-tax-breakdown-item xero-tax-breakdown-item--deduction">
+          <span class="xero-tax-breakdown-item__label">ACC earners' levy</span>
+          <span class="xero-tax-breakdown-item__value" id="bd-acc">—</span>
         </div>
-        <div class="breakdown-item breakdown-item--deduction is-hidden" id="bd-kiwi-row">
-          <span class="breakdown-item__label" id="bd-kiwi-label">KiwiSaver contribution</span>
-          <span class="breakdown-item__value" id="bd-kiwi">—</span>
+        <div class="xero-tax-breakdown-item xero-tax-breakdown-item--deduction is-hidden" id="bd-kiwi-row">
+          <span class="xero-tax-breakdown-item__label" id="bd-kiwi-label">KiwiSaver contribution</span>
+          <span class="xero-tax-breakdown-item__value" id="bd-kiwi">—</span>
         </div>
-        <div class="breakdown-item breakdown-item--deduction is-hidden" id="bd-student-row">
-          <span class="breakdown-item__label">Student loan repayment</span>
-          <span class="breakdown-item__value" id="bd-student">—</span>
+        <div class="xero-tax-breakdown-item xero-tax-breakdown-item--deduction is-hidden" id="bd-student-row">
+          <span class="xero-tax-breakdown-item__label">Student loan repayment</span>
+          <span class="xero-tax-breakdown-item__value" id="bd-student">—</span>
         </div>
-        <div class="breakdown-item breakdown-item--total">
-          <span class="breakdown-item__label">Net take-home (annual)</span>
-          <span class="breakdown-item__value" id="bd-net">—</span>
+        <div class="xero-tax-breakdown-item xero-tax-breakdown-item--total">
+          <span class="xero-tax-breakdown-item__label">Net take-home (annual)</span>
+          <span class="xero-tax-breakdown-item__value" id="bd-net">—</span>
         </div>
 
         <!-- Employer KiwiSaver note -->
-        <div class="employer-kiwi-note is-hidden" id="employer-kiwi-note">
+        <div class="xero-tax-kiwi-note is-hidden" id="employer-kiwi-note">
           Your employer also contributes 3% (<span id="employer-kiwi-amount">$0</span>) to your KiwiSaver — this doesn't reduce your take-home pay.
         </div>
 
         <!-- CTA -->
-        <div class="xero-panel__cta">
+        <p class="xero-cta">
           Get a real time view of your finances with Xero. Start a 30 day <a href="https://www.xero.com/nz/signup/" target="_blank" rel="noopener">free trial</a>.
-        </div>
+        </p>
 
-      </div><!-- /.panel-results -->
+        </div><!-- /.xero-result-band -->
+      </div><!-- /.xero-tax-results -->
 
     </aside>
 
   </div><!-- /.xero-tool__layout -->
 
-  <p class="xero-tool__disclaimer">*Estimates only. Based on 2025–26 IRD rates for NZ tax residents. Does not account for all credits or individual circumstances. Not financial or tax advice.</p>
+  <p class="xero-disclaimer">*Estimates only. Based on 2025–26 IRD rates for NZ tax residents. Does not account for all credits or individual circumstances. Not financial or tax advice.</p>
 
 </div><!-- /.xero-tool -->
 
