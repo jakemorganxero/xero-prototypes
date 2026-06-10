@@ -474,6 +474,39 @@
 
     .xero-preview__doc-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
+    /* ─── Logo upload ─── */
+    .xero-logo-upload { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+
+    .xero-logo-preview {
+      width: 80px;
+      height: 52px;
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--xero-panel-bg);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .xero-logo-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+    .xero-logo-upload-btn {
+      background: none;
+      border: 1px solid var(--xero-border);
+      border-radius: var(--radius);
+      padding: 7px 14px;
+      font-family: var(--font);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--xero-navy);
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .xero-logo-upload-btn:hover { border-color: var(--xero-navy); }
+
     .xero-preview__doc-title {
       font-size: 1.125rem;
       font-weight: 800;
@@ -730,6 +763,16 @@
       <!-- Employee & Employer -->
       <div class="xero-section">
         <div class="xero-section__title">Employee &amp; Employer</div>
+        <div class="xero-logo-upload">
+          <div class="xero-logo-preview" id="logo-preview-box">
+            <span style="font-size:0.625rem;color:var(--xero-text-muted);text-align:center;padding:4px;">Your logo</span>
+          </div>
+          <div>
+            <button class="xero-logo-upload-btn" type="button" onclick="document.getElementById('logo-file').click()">Upload logo</button>
+            <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="handleLogo(this)">
+            <p style="font-size:0.6875rem;color:var(--xero-text-muted);margin-top:4px;">PNG or JPG recommended</p>
+          </div>
+        </div>
         <div class="xero-fields">
           <div>
             <label class="xero-field__label" for="emp-name">Employee name</label>
@@ -1023,6 +1066,19 @@ const SIGNUP   = 'https://www.xero.com/nz/signup/';
 // ─── State ────────────────────────────────────────────
 let days        = [];
 let periodType  = 'weekly';
+let logoDataURL = null;
+
+// ─── Logo upload ──────────────────────────────────────
+function handleLogo(input) {
+  if (!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    logoDataURL = e.target.result;
+    document.getElementById('logo-preview-box').innerHTML = '<img src="' + logoDataURL + '" style="max-width:100%;max-height:100%;object-fit:contain;">';
+    updatePreview();
+  };
+  reader.readAsDataURL(input.files[0]);
+}
 
 // ─── Utilities ────────────────────────────────────────
 function timeToMins(t) {
@@ -1230,6 +1286,11 @@ function updateTotals() {
 
 // ─── Preview update ───────────────────────────────────
 function updatePreview() {
+  // Logo
+  document.getElementById('prev-logo').innerHTML = logoDataURL
+    ? '<img src="' + logoDataURL + '" style="max-width:100%;max-height:100%;object-fit:contain;">'
+    : 'LOGO';
+
   // Employee info
   const empName   = document.getElementById('emp-name').value   || '—';
   const empId     = document.getElementById('emp-id').value;
@@ -1374,9 +1435,13 @@ function downloadPDF() {
 
   let subLine = [empPos, empDept].filter(Boolean).join(', ');
 
+  const logoHTML = logoDataURL
+    ? `<img src="${logoDataURL}" style="max-height:48px;max-width:130px;object-fit:contain;">`
+    : `<div style="font-size:10px;color:#4A6070;">LOGO</div>`;
+
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Timesheet</title>${style}</head><body>
     <div style="display:flex;justify-content:space-between;align-items:center;">
-      <div style="font-size:10px;color:#4A6070;">LOGO</div>
+      ${logoHTML}
       <h1>Timesheet</h1>
     </div>
     <hr>

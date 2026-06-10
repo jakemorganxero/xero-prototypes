@@ -278,7 +278,13 @@
       background: #fff; border: 1px solid var(--xero-border); border-radius: var(--radius);
       padding: 28px; box-shadow: 0 4px 20px rgba(0,8,86,0.06); font-size: 0.8125rem; line-height: 1.5;
     }
+    .xero-logo-upload { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+    .xero-logo-preview { width: 80px; height: 52px; border: 1px solid var(--xero-border); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; background: var(--xero-panel-bg); overflow: hidden; flex-shrink: 0; }
+    .xero-logo-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .xero-logo-upload-btn { background: none; border: 1px solid var(--xero-border); border-radius: var(--radius); padding: 7px 14px; font-family: var(--font); font-size: 0.8125rem; font-weight: 600; color: var(--xero-navy); cursor: pointer; transition: border-color 0.15s; }
+    .xero-logo-upload-btn:hover { border-color: var(--xero-navy); }
     .xero-preview__doc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .xero-preview__doc-logo { width: 80px; height: 36px; border: 1px dashed var(--xero-border); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 0.5625rem; color: var(--xero-text-muted); }
     .xero-preview__doc-title { font-size: 1.25rem; font-weight: 800; color: var(--xero-navy); letter-spacing: -0.01em; }
     .xero-preview__doc-rule { border: none; border-top: 2px solid var(--xero-navy); margin-bottom: 16px; }
     .xero-preview__doc-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
@@ -358,6 +364,16 @@
       <!-- Employee Details -->
       <div class="xero-section">
         <p class="xero-section__title">Employee Details</p>
+        <div class="xero-logo-upload">
+          <div class="xero-logo-preview" id="logo-preview-box">
+            <span style="font-size:0.625rem;color:var(--xero-text-muted);text-align:center;padding:4px;">Your logo</span>
+          </div>
+          <div>
+            <button class="xero-logo-upload-btn" type="button" onclick="document.getElementById('logo-file').click()">Upload logo</button>
+            <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="handleLogo(this)">
+            <p style="font-size:0.6875rem;color:var(--xero-text-muted);margin-top:4px;">PNG or JPG recommended</p>
+          </div>
+        </div>
         <div class="xero-fields">
           <div>
             <label class="xero-field__label" for="emp-name">Employee name</label>
@@ -518,6 +534,18 @@
 
   let expenses = [];
   let nextId = 1;
+  let logoDataURL = null;
+
+  function handleLogo(input) {
+    if (!input.files || !input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      logoDataURL = e.target.result;
+      document.getElementById('logo-preview-box').innerHTML = '<img src="' + logoDataURL + '" style="max-width:100%;max-height:100%;object-fit:contain;">';
+      updatePreview();
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
 
   const $id = id => document.getElementById(id);
   const gv  = id => ($id(id) ? $id(id).value.trim() : '');
@@ -633,9 +661,13 @@
 
     const coBlock = (coName || coAddr) ? `<div style="margin-bottom:12px;"><div class="xero-preview__doc-block-label">Submitted to</div>${coName ? `<div class="xero-preview__doc-block-name">${esc(coName)}</div>` : ''}${coAddr ? `<div class="xero-preview__doc-block-line">${esc(coAddr)}</div>` : ''}</div>` : '';
 
+    const logoHTML = logoDataURL
+      ? `<img src="${logoDataURL}" style="max-height:48px;max-width:130px;object-fit:contain;">`
+      : (coName ? `<div style="font-size:0.625rem;color:var(--xero-text-muted);font-weight:600;letter-spacing:0.04em;">${esc(coName)}</div>` : `<div class="xero-preview__doc-logo">Your Logo</div>`);
+
     return `
       <div class="xero-preview__doc-header">
-        <div style="font-size:0.625rem;color:var(--xero-text-muted);font-weight:600;letter-spacing:0.04em;">${esc(coName) || ''}</div>
+        ${logoHTML}
         <div class="xero-preview__doc-title">EXPENSE REPORT</div>
       </div>
       <hr class="xero-preview__doc-rule">
@@ -666,7 +698,7 @@
       <style>
         /* Font loaded via <link> tag */
         *{box-sizing:border-box;margin:0;padding:0}body{font-family:'National2',Arial,sans-serif;color:#000856;padding:40px;max-width:780px}
-        .xero-preview__doc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}.xero-preview__doc-title{font-size:22px;font-weight:800;color:#000856;letter-spacing:-0.01em}
+        .xero-preview__doc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}.xero-preview__doc-logo{width:80px;height:36px;border:1px dashed #C2CDD6;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#4A6070}.xero-preview__doc-title{font-size:22px;font-weight:800;color:#000856;letter-spacing:-0.01em}
         .xero-preview__doc-rule{border:none;border-top:2px solid #000856;margin-bottom:16px}.xero-preview__doc-meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
         .xero-preview__doc-block-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#4A6070;margin-bottom:3px}.xero-preview__doc-block-name{font-size:13px;font-weight:700;color:#000856}.xero-preview__doc-block-line{font-size:11px;color:#4A6070;line-height:1.4}
         .xero-preview__doc-detail-row{display:flex;gap:6px;font-size:11px;margin-bottom:2px}.xero-preview__doc-detail-row .k{font-weight:700;color:#000856;white-space:nowrap}.xero-preview__doc-detail-row .v{color:#4A6070}
