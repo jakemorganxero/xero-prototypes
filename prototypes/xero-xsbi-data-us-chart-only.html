@@ -48,7 +48,17 @@
     .xsbi-wrap { padding: 24px 5%; }
     .xsbi-chart-wrap { width: 100%; }
   }
-</style>
+
+    @media (max-width: 768px) {
+      .xero-hero__inner {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+      .xero-hero__card {
+        max-width: 100%;
+      }
+    }
+  </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 
 <style>
@@ -142,7 +152,7 @@
     margin-bottom: 20px;
   }
   .xsbi-chart-title {
-      font-family: var(--font-heading); font-size: 1rem; font-weight: 700; color: var(--xero-navy); }
+      font-family: var(--font); font-size: 1rem; font-weight: 700; color: var(--xero-navy); }
   .xsbi-chart-desc { font-size: 0.8125rem; color: var(--xero-text-muted); margin-top: 3px; }
 
   .xsbi-range { display: flex; gap: 4px; }

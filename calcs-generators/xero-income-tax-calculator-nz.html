@@ -97,7 +97,7 @@
     }
 
     .xero-tool__heading {
-      font-family: var(--font-heading);
+      font-family: var(--font);
       font-size: 1.75rem;
       font-weight: 800;
       color: var(--xero-navy);
@@ -120,6 +120,13 @@
     }
 
     @media (max-width: 768px) {
+      .xero-hero__inner {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+      .xero-hero__card {
+        max-width: 100%;
+      }
       .xero-tool__layout {
         grid-template-columns: 1fr;
       }
@@ -142,7 +149,7 @@
     }
 
     .xero-section__title {
-      font-family: var(--font-heading);
+      font-family: var(--font);
       font-size: 1.0625rem;
       font-weight: 700;
       color: var(--xero-navy);
