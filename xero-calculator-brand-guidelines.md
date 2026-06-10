@@ -1,3 +1,8 @@
+> ⚠️ **`xero-design-system.md` is the canonical source of truth** for tokens, the document
+> scaffold, and all shared components (June 2026 redesign). Where this file's colour/font/radius
+> values disagree with `xero-design-system.md`, **follow `xero-design-system.md`**. The layout
+> patterns, copy structure, and tone guidance below remain current and useful.
+
 # Xero Calculator & Template Prototyping — Brand Guidelines
 
 ## What these files are for
@@ -8,25 +13,30 @@ Use this as the reference doc whenever prototyping a new calculator or template 
 ## Colours
 
 ```css
-/* Core palette — extracted from xero.com */
---xero-navy:       #1B3A4B;   /* Headings, primary button bg, result panel text */
---xero-blue:       #13B5EA;   /* Xero brand blue — links, hover accents */
---xero-blue-dark:  #0D8FBD;   /* Hover state for blue elements */
---xero-panel-bg:   #EBF0F4;   /* Results/sidebar panel background */
---xero-border:     #C2CDD6;   /* Input borders, dividers */
---xero-bg:         #FFFFFF;   /* Page / form background */
---xero-text:       #1B3A4B;   /* Body text (same as navy) */
---xero-text-muted: #4A6070;   /* Secondary/helper text */
+/* Canonical palette (June 2026) — see xero-design-system.md §1 */
+--xero-navy:       #000856;   /* Midnight — headings, body text, primary button, table header */
+--xero-blue:       #13B5EA;   /* accent / links / focus */
+--xero-blue-dark:  #0D8FBD;   /* hover for blue links/accents only */
+--xero-panel-bg:   #F2F1EE;   /* Warm Grey — calculator card background */
+--xero-border:     #C2CDD6;   /* dividers + table rules ONLY (never an input stroke) */
+--xero-input-border:      #000856;  /* input stroke on WHITE bg */
+--xero-input-border-grey: #CBCAC9;  /* input stroke on WARM-GREY card */
+--xero-bg:         #FFFFFF;
+--xero-text:       #000856;
+--xero-text-muted: #4A6070;   /* secondary/helper text */
+--xero-placeholder:#6E7481;   /* input placeholder */
 --xero-input-bg:   #FFFFFF;
---xero-green:      #1AB394;   /* Positive cash flow / success states */
---xero-red:        #E05A5A;   /* Negative cash flow / error states */
+--xero-green:      #186241;   /* Pine — accessible positive (NOT #1AB394) */
+--xero-red:        #E05A5A;   /* negative values */
+--radius:          6px;
+/* Type: --font 'National2' (body) · --font-heading 'National2Condensed' (H1 only) */
 ```
 
 ---
 
 ## Typography
 
-Xero.com uses **GT Walsheim** (licensed, loaded via their CDN). For prototypes, use **"DM Sans"** from Google Fonts as the closest freely available match — similar geometric warmth and weight range.
+Xero.com uses **GT Walsheim** (licensed) for body and **National 2 Condensed** for display headings. Prototypes use **National 2** (body, loaded from the xero.com font CDN) and **National 2 Condensed** (H1/display, inlined as base64) as the stand-ins. The condensed face is applied to the **H1 / page title only**; everything else uses National 2. (Older prototypes used DM Sans — no longer.)
 
 ```html
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">

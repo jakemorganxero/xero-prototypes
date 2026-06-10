@@ -1,3 +1,8 @@
+> ⚠️ **`xero-design-system.md` is the canonical source of truth** for tokens, the document
+> scaffold, and all shared components (June 2026 redesign). Where this file's colour/font/radius
+> values disagree with `xero-design-system.md`, **follow `xero-design-system.md`**. The layout
+> patterns, copy structure, and tone guidance below remain current and useful.
+
 # Xero Data Visualisation — Brand Guidelines
 
 Use this alongside `xero-calculator-brand-guidelines.md` when prototyping charts, graphs, and data index pages for xero.com. The same colour tokens, typography, and AEM constraints apply — this doc adds the chart-specific patterns on top.
