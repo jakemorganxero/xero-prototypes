@@ -1,0 +1,980 @@
+<!--
+  XERO PROTOTYPE
+  Tool: ROI Calculator — Sales Demo
+  Locale: US
+  Built: 2026-06-10
+  Inputs: Q1 client accounts (slider), Q2 competitor monthly rate, Q3 Xero rate,
+          Q4 analytics add-on, Q5 payments add-on, Q6 payroll add-on, Q7 Xero bundle rate,
+          Q8 hours saved/month (slider), Q9 hourly billing rate,
+          Q10 additional clients (slider), Q11 monthly revenue per new client
+  Output/formula:
+    R1 = (Q2-Q3)*Q1*12 — subscription savings
+    R2 = (Q4+Q5+Q6-Q7)*Q1*12 — bundle/add-on savings
+    R3 = Q8*Q9*12 — time savings
+    R4 = Q10*Q11*12 — revenue opportunity
+    R5 = R1+R2+R3+R4 — total annual savings
+    R6 = R5/((Q2*Q1*12)+((Q4+Q5+Q6)*Q1*12))*100 — ROI %
+  Notes for devs: Standalone sales demo page — NOT an AEM section embed. No-index.
+    PDF output via window.print() + @media print styles. Sticky results sidebar.
+    Font: DM Sans (stand-in for GT Walsheim — flag for production).
+    Deploy to separate repo, not xero-prototypes.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Xero ROI Calculator — Sales Demo</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ─── Design tokens ─── */
+    :root {
+      --navy:       #1C1C4B;
+      --blue:       #13B5EA;
+      --blue-dark:  #0D8FBD;
+      --panel-bg:   #EBF0F4;
+      --border:     #C2CDD6;
+      --bg:         #FFFFFF;
+      --text:       #1C1C4B;
+      --text-muted: #4A6070;
+      --input-bg:   #FFFFFF;
+      --green:      #1AB394;
+      --radius:     6px;
+      --shadow:     0 4px 24px rgba(0,0,0,0.08);
+    }
+
+    /* ─── Reset ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #F5F7FA;
+      color: var(--text);
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* ─── Page header ─── */
+    .page-header {
+      background: var(--navy);
+      padding: 0 32px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .xero-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .xero-logo__icon {
+      width: 36px;
+      height: 36px;
+    }
+    .xero-logo__wordmark {
+      color: #fff;
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .page-header__label {
+      color: rgba(255,255,255,0.6);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    /* ─── Hero band ─── */
+    .hero-band {
+      background: var(--navy);
+      padding: 40px 32px 48px;
+    }
+    .hero-band__inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .hero-band h1 {
+      font-size: clamp(1.75rem, 3vw, 2.5rem);
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .hero-band p {
+      color: rgba(255,255,255,0.7);
+      font-size: 1rem;
+      max-width: 560px;
+    }
+
+    /* ─── Main layout ─── */
+    .calc-wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 32px 64px;
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 28px;
+      align-items: start;
+    }
+
+    /* ─── Form column ─── */
+    .form-col { display: flex; flex-direction: column; gap: 20px; }
+
+    .form-section {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px 28px 24px;
+    }
+    .form-section__header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-number {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--blue);
+      color: #fff;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .form-section__title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    .fields-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field.full { grid-column: 1 / -1; }
+
+    .field label {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--navy);
+      letter-spacing: 0.01em;
+    }
+    .field .helper {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Currency input */
+    .input-wrap {
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--input-bg);
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+    .input-wrap:focus-within { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(19,181,234,0.12); }
+    .input-prefix {
+      padding: 10px 8px 10px 14px;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.9375rem;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    input[type="number"] {
+      border: none;
+      outline: none;
+      padding: 10px 14px 10px 2px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      width: 100%;
+      background: transparent;
+      color: var(--text);
+      -moz-appearance: textfield;
+    }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+    /* Slider */
+    .slider-field { display: flex; flex-direction: column; gap: 8px; }
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .slider-value-badge {
+      background: var(--navy);
+      color: #fff;
+      font-size: 0.875rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 20px;
+      min-width: 64px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    input[type="range"] {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--navy);
+      border: 3px solid #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+      cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--navy);
+      border: 3px solid #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+      cursor: pointer;
+    }
+
+    /* ─── Results panel ─── */
+    .results-col { position: sticky; top: 24px; }
+
+    .results-panel {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .results-panel__header {
+      background: var(--navy);
+      padding: 20px 24px 18px;
+    }
+    .results-panel__header h2 {
+      color: #fff;
+      font-size: 0.875rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .results-panel__header p {
+      color: rgba(255,255,255,0.55);
+      font-size: 0.75rem;
+    }
+
+    .results-hero {
+      padding: 24px 24px 20px;
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+    }
+    .results-hero__label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .results-hero__value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--green);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+    .results-hero__roi {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #E8F9F5;
+      color: var(--green);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 0.875rem;
+      font-weight: 700;
+      margin-top: 10px;
+    }
+
+    .results-breakdown {
+      padding: 16px 24px 0;
+    }
+    .result-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+    }
+    .result-line:last-child { border-bottom: none; }
+    .result-line__label {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      flex: 1;
+    }
+    .result-line__value {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: var(--navy);
+      white-space: nowrap;
+    }
+    .result-line__value.positive { color: var(--green); }
+
+    .results-cta {
+      padding: 20px 24px 24px;
+      background: var(--panel-bg);
+      border-top: 1px solid var(--border);
+    }
+    .results-cta p {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+    .btn-primary {
+      display: block;
+      width: 100%;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 12px 20px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s;
+      text-decoration: none;
+    }
+    .btn-primary:hover { background: var(--blue-dark); }
+    .btn-pdf {
+      display: block;
+      width: 100%;
+      background: transparent;
+      color: var(--navy);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 11px 20px;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      margin-top: 8px;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .btn-pdf:hover { border-color: var(--navy); background: #F5F7FA; }
+
+    /* ─── Disclaimer ─── */
+    .disclaimer {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 32px 48px;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 900px) {
+      .calc-wrap {
+        grid-template-columns: 1fr;
+        padding: 24px 16px 48px;
+      }
+      .results-col { position: static; }
+      .fields-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      .hero-band { padding: 28px 16px 36px; }
+      .page-header { padding: 0 16px; }
+      .disclaimer { padding: 0 16px 48px; }
+    }
+
+    /* ─── Print / PDF styles ─── */
+    @media print {
+      @page {
+        margin: 20mm 18mm;
+        size: A4;
+      }
+
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+      body { background: #fff; font-size: 11pt; }
+
+      .page-header,
+      .hero-band,
+      .form-col,
+      .disclaimer { display: none !important; }
+
+      .calc-wrap {
+        display: block;
+        padding: 0;
+        max-width: 100%;
+      }
+
+      .results-col {
+        position: static;
+        width: 100%;
+      }
+
+      /* PDF: show print-only report */
+      .pdf-report { display: block !important; }
+      .results-panel { box-shadow: none; border: 1px solid #ddd; }
+    }
+
+    /* ─── PDF Report (hidden on screen, shown in print) ─── */
+    .pdf-report { display: none; }
+
+    .pdf-report__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--navy);
+      margin-bottom: 24px;
+    }
+    .pdf-report__logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .pdf-report__logo-icon {
+      width: 32px;
+      height: 32px;
+    }
+    .pdf-report__logo-text {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--navy);
+    }
+    .pdf-report__title {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      text-align: right;
+    }
+    .pdf-report__date {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .pdf-section {
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .pdf-section__title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    .pdf-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    .pdf-table td {
+      padding: 5px 0;
+      color: var(--text);
+    }
+    .pdf-table td:last-child {
+      text-align: right;
+      font-weight: 600;
+      color: var(--navy);
+    }
+
+    .pdf-results {
+      background: #F5F7FA;
+      border-radius: 6px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+    }
+    .pdf-results__hero {
+      text-align: center;
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .pdf-results__hero-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .pdf-results__hero-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--green);
+      line-height: 1.2;
+    }
+    .pdf-results__roi {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--green);
+    }
+
+    .pdf-line {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      font-size: 0.875rem;
+      border-bottom: 1px solid #e4e8ec;
+    }
+    .pdf-line:last-child { border-bottom: none; }
+    .pdf-line__label { color: var(--text-muted); }
+    .pdf-line__value { font-weight: 700; color: var(--navy); }
+
+    .pdf-footer {
+      margin-top: 24px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Page header -->
+  <header class="page-header">
+    <div class="xero-logo">
+      <svg class="xero-logo__icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="18" cy="18" r="18" fill="#13B5EA"/>
+        <path d="M10 13l5.5 5L10 23h3.5l3.75-3.75L21 23h3.5l-5.5-5 5.5-5H21l-3.75 3.75L13.5 13H10z" fill="white"/>
+      </svg>
+      <span class="xero-logo__wordmark">Xero</span>
+    </div>
+    <span class="page-header__label">Sales Demo — Confidential</span>
+  </header>
+
+  <!-- Hero band -->
+  <div class="hero-band">
+    <div class="hero-band__inner">
+      <h1>ROI Calculator for Accounting Firms</h1>
+      <p>See the annual savings your firm could achieve by switching your client base to Xero. Adjust the inputs to match your firm — results update instantly.</p>
+    </div>
+  </div>
+
+  <!-- Calculator -->
+  <div class="calc-wrap">
+
+    <!-- Left: input sections -->
+    <div class="form-col">
+
+      <!-- Section 1: Subscription Costs -->
+      <div class="form-section">
+        <div class="form-section__header">
+          <span class="section-number">1</span>
+          <h2 class="form-section__title">Subscription Costs</h2>
+        </div>
+        <div class="fields-grid">
+
+          <!-- Q1 slider -->
+          <div class="field full slider-field">
+            <label for="q1">Number of client accounts</label>
+            <div class="slider-row">
+              <input type="range" id="q1" min="1" max="500" value="150" oninput="syncSlider('q1','q1val')">
+              <span class="slider-value-badge" id="q1val">150</span>
+            </div>
+            <span class="helper">Drag to set your current client count (1–500)</span>
+          </div>
+
+          <!-- Q2 -->
+          <div class="field">
+            <label for="q2">Competitor rate per account / mo</label>
+            <div class="input-wrap">
+              <span class="input-prefix">$</span>
+              <input type="number" id="q2" min="0" value="80" placeholder="80" oninput="calc()">
+            </div>
+            <span class="helper">E.g. QuickBooks Online rate</span>
+          </div>
+
+          <!-- Q3 -->
+          <div class="field">
+            <label for="q3">Xero rate per account / mo</label>
+            <div class="input-wrap">
+              <span class="input-prefix">$</span>
+              <input type="number" id="q3" min="0" value="60" placeholder="60" oninput="calc()">
+            </div>
+            <span class="helper">Your negotiated / discounted rate</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Section 2: Add-on Costs -->
+      <div class="form-section">
+        <div class="form-section__header">
+          <span class="section-number">2</span>
+          <h2 class="form-section__title">Add-on Costs</h2>
+        </div>
+        <div class="fields-grid">
+
+          <div class="field">
+            <label for="q4">Analytics add-on / account / mo</label>
+            <div class="input-wrap">
+              <span class="input-prefix">$</span>
+              <input type="number" id="q4" min="0" value="80" placeholder="80" oninput="calc()">
+            </div>
+            <span class="helper">Competitor analytics cost</span>
+          </div>
+
+          <div class="field">
+            <label for="q5">Payments add-on / account / mo</label>
+            <div class="input-wrap">
+              <span class="input-prefix">$</span>
+              <input type="number" id="q5" min="0" value="50" placeholder="50" oninput="calc()">
+            </div>
+            <span class="helper">Competitor payments cost</span>
+          </div>
+
+          <div class="field">
+            <label for="q6">Payroll add-on / account / mo</label>
+            <div class="input-wrap">
+              <span class="input-prefix">$</span>
+              <input type="number" id="q6" min="0" value="20" placeholder="20" oninput="calc()">
+            </div>
+            <span class="helper">Competitor payroll cost</span>
+          </div>
+
+          <div class="field">
+            <label for="q7">Xero bundle rate / account / mo</label>
+            <div class="input-wrap">
+              <span class="input-prefix">$</span>
+              <input type="number" id="q7" min="0" value="20" placeholder="20" oninput="calc()">
+            </div>
+            <span class="helper">All add-ons bundled in Xero</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Section 3: Efficiency & Growth -->
+      <div class="form-section">
+        <div class="form-section__header">
+          <span class="section-number">3</span>
+          <h2 class="form-section__title">Efficiency &amp; Growth</h2>
+        </div>
+        <div class="fields-grid">
+
+          <!-- Q8 slider -->
+          <div class="field full slider-field">
+            <label for="q8">Hours saved per month (firm-wide)</label>
+            <div class="slider-row">
+              <input type="range" id="q8" min="0" max="100" value="10" oninput="syncSlider('q8','q8val')">
+              <span class="slider-value-badge" id="q8val">10 hrs</span>
+            </div>
+            <span class="helper">Estimate hours freed up through automation and fewer manual processes</span>
+          </div>
+
+          <div class="field">
+            <label for="q9">Average hourly billing rate</label>
+            <div class="input-wrap">
+              <span class="input-prefix">$</span>
+              <input type="number" id="q9" min="0" value="200" placeholder="200" oninput="calc()">
+            </div>
+            <span class="helper">Your firm's average hourly rate</span>
+          </div>
+
+          <!-- Q10 slider -->
+          <div class="field slider-field">
+            <label for="q10">Additional clients you could take on</label>
+            <div class="slider-row">
+              <input type="range" id="q10" min="0" max="50" value="10" oninput="syncSlider('q10','q10val')">
+              <span class="slider-value-badge" id="q10val">10</span>
+            </div>
+            <span class="helper">Capacity freed up by efficiency gains</span>
+          </div>
+
+          <div class="field">
+            <label for="q11">Monthly revenue per new client</label>
+            <div class="input-wrap">
+              <span class="input-prefix">$</span>
+              <input type="number" id="q11" min="0" value="1000" placeholder="1000" oninput="calc()">
+            </div>
+            <span class="helper">Average monthly fees per new client</span>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+    <!-- /form-col -->
+
+    <!-- Right: results panel -->
+    <div class="results-col">
+
+      <!-- PDF report (hidden on screen, printed) -->
+      <div class="pdf-report">
+        <div class="pdf-report__header">
+          <div class="pdf-report__logo">
+            <svg class="pdf-report__logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="16" r="16" fill="#13B5EA"/>
+              <path d="M8.5 11l5 4.5-5 4.5h3l3.25-3.25L17.75 20h3l-5-4.5 5-4.5h-3l-3.25 3.25L11.5 11H8.5z" fill="white"/>
+            </svg>
+            <span class="pdf-report__logo-text">Xero ROI Calculator</span>
+          </div>
+          <div class="pdf-report__title">
+            <div>ROI Summary Report</div>
+            <div class="pdf-report__date" id="pdf-date"></div>
+          </div>
+        </div>
+
+        <div class="pdf-section">
+          <div class="pdf-section__title">1 — Subscription Costs</div>
+          <table class="pdf-table">
+            <tr><td>Number of client accounts</td><td id="p-q1">—</td></tr>
+            <tr><td>Competitor monthly rate per account</td><td id="p-q2">—</td></tr>
+            <tr><td>Xero monthly rate per account</td><td id="p-q3">—</td></tr>
+          </table>
+        </div>
+
+        <div class="pdf-section">
+          <div class="pdf-section__title">2 — Add-on Costs</div>
+          <table class="pdf-table">
+            <tr><td>Analytics add-on (competitor)</td><td id="p-q4">—</td></tr>
+            <tr><td>Payments add-on (competitor)</td><td id="p-q5">—</td></tr>
+            <tr><td>Payroll add-on (competitor)</td><td id="p-q6">—</td></tr>
+            <tr><td>Xero bundle rate (all add-ons)</td><td id="p-q7">—</td></tr>
+          </table>
+        </div>
+
+        <div class="pdf-section">
+          <div class="pdf-section__title">3 — Efficiency &amp; Growth</div>
+          <table class="pdf-table">
+            <tr><td>Hours saved per month</td><td id="p-q8">—</td></tr>
+            <tr><td>Average hourly billing rate</td><td id="p-q9">—</td></tr>
+            <tr><td>Additional clients achievable</td><td id="p-q10">—</td></tr>
+            <tr><td>Monthly revenue per new client</td><td id="p-q11">—</td></tr>
+          </table>
+        </div>
+
+        <div class="pdf-results">
+          <div class="pdf-results__hero">
+            <div class="pdf-results__hero-label">Total Annual Savings</div>
+            <div class="pdf-results__hero-value" id="p-r5">—</div>
+            <div class="pdf-results__roi">ROI: <span id="p-r6">—</span></div>
+          </div>
+          <div class="pdf-line">
+            <span class="pdf-line__label">Subscription Savings</span>
+            <span class="pdf-line__value" id="p-r1">—</span>
+          </div>
+          <div class="pdf-line">
+            <span class="pdf-line__label">Bundle / Add-on Savings</span>
+            <span class="pdf-line__value" id="p-r2">—</span>
+          </div>
+          <div class="pdf-line">
+            <span class="pdf-line__label">Time Savings (billable hours freed)</span>
+            <span class="pdf-line__value" id="p-r3">—</span>
+          </div>
+          <div class="pdf-line">
+            <span class="pdf-line__label">Revenue Opportunity (new clients)</span>
+            <span class="pdf-line__value" id="p-r4">—</span>
+          </div>
+        </div>
+
+        <div class="pdf-footer">
+          <span>* This calculator provides estimates only and is not financial or accounting advice.</span>
+          <span>Generated by Xero ROI Calculator</span>
+        </div>
+      </div>
+      <!-- /pdf-report -->
+
+      <!-- Screen results panel -->
+      <div class="results-panel">
+        <div class="results-panel__header">
+          <h2>Your Annual ROI</h2>
+          <p>Updates as you adjust the inputs</p>
+        </div>
+
+        <div class="results-hero">
+          <div class="results-hero__label">Total Annual Savings</div>
+          <div class="results-hero__value" id="r5">$414,000</div>
+          <div>
+            <span class="results-hero__roi">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2.5l4.5 4.5H8.5v4h-3v-4H2.5L7 2.5z" fill="currentColor"/></svg>
+              ROI: <span id="r6-badge">100.0%</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="results-breakdown">
+          <div class="result-line">
+            <span class="result-line__label">Subscription savings</span>
+            <span class="result-line__value positive" id="r1">$36,000</span>
+          </div>
+          <div class="result-line">
+            <span class="result-line__label">Bundle / add-on savings</span>
+            <span class="result-line__value positive" id="r2">$234,000</span>
+          </div>
+          <div class="result-line">
+            <span class="result-line__label">Time savings (billable hours)</span>
+            <span class="result-line__value positive" id="r3">$24,000</span>
+          </div>
+          <div class="result-line">
+            <span class="result-line__label">Revenue opportunity</span>
+            <span class="result-line__value positive" id="r4">$120,000</span>
+          </div>
+          <div class="result-line">
+            <span class="result-line__label">ROI percentage</span>
+            <span class="result-line__value positive" id="r6">100.0%</span>
+          </div>
+        </div>
+
+        <div class="results-cta">
+          <button class="btn-primary" onclick="downloadPDF()">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="vertical-align:-2px;margin-right:6px"><path d="M2 10v2.5h10V10h-1.5v1H3.5v-1H2zm5-8.5v7l-2-2-1 1 3.5 3.5L11 7.5l-1-1-2 2v-7H7z" fill="currentColor"/></svg>
+            Download ROI Report (PDF)
+          </button>
+        </div>
+      </div>
+
+    </div>
+    <!-- /results-col -->
+
+  </div>
+  <!-- /calc-wrap -->
+
+
+  <script>
+    // ─── Helpers ───────────────────────────────────────────────
+    const fmt = n => {
+      if (!isFinite(n)) return '—';
+      return '$' + Math.round(n).toLocaleString('en-US');
+    };
+    const fmtPct = n => {
+      if (!isFinite(n) || isNaN(n)) return '—';
+      return n.toFixed(1) + '%';
+    };
+    const val = id => Math.max(0, parseFloat(document.getElementById(id).value) || 0);
+
+    // ─── Slider sync ──────────────────────────────────────────
+    function syncSlider(inputId, badgeId) {
+      const v = document.getElementById(inputId).value;
+      const badge = document.getElementById(badgeId);
+      if (inputId === 'q8') {
+        badge.textContent = v + ' hrs';
+      } else {
+        badge.textContent = v;
+      }
+      // Update slider track fill
+      updateSliderFill(inputId);
+      calc();
+    }
+
+    function updateSliderFill(id) {
+      const el = document.getElementById(id);
+      const min = +el.min, max = +el.max, v = +el.value;
+      const pct = ((v - min) / (max - min)) * 100;
+      el.style.background = `linear-gradient(to right, var(--navy) ${pct}%, var(--border) ${pct}%)`;
+    }
+
+    // ─── Main calculation ────────────────────────────────────
+    function calc() {
+      const q1  = val('q1');
+      const q2  = val('q2');
+      const q3  = val('q3');
+      const q4  = val('q4');
+      const q5  = val('q5');
+      const q6  = val('q6');
+      const q7  = val('q7');
+      const q8  = val('q8');
+      const q9  = val('q9');
+      const q10 = val('q10');
+      const q11 = val('q11');
+
+      const R1 = (q2 - q3) * q1 * 12;
+      const R2 = (q4 + q5 + q6 - q7) * q1 * 12;
+      const R3 = q8 * q9 * 12;
+      const R4 = q10 * q11 * 12;
+      const R5 = R1 + R2 + R3 + R4;
+
+      const denominator = (q2 * q1 * 12) + ((q4 + q5 + q6) * q1 * 12);
+      const R6 = denominator > 0 ? (R5 / denominator) * 100 : 0;
+
+      // Update screen results
+      document.getElementById('r1').textContent = fmt(R1);
+      document.getElementById('r2').textContent = fmt(R2);
+      document.getElementById('r3').textContent = fmt(R3);
+      document.getElementById('r4').textContent = fmt(R4);
+      document.getElementById('r5').textContent = fmt(R5);
+      document.getElementById('r6').textContent = fmtPct(R6);
+      document.getElementById('r6-badge').textContent = fmtPct(R6);
+
+      // Color: positive = green, negative or zero = navy
+      ['r1','r2','r3','r4','r5'].forEach(id => {
+        const el = document.getElementById(id);
+        el.classList.toggle('positive', parseFloat(el.textContent.replace(/[^0-9.-]/g,'')) > 0);
+        el.style.color = parseFloat(el.textContent.replace(/[^0-9.-]/g,'')) >= 0
+          ? 'var(--green)' : 'var(--red, #E05A5A)';
+      });
+
+      // Update PDF inputs
+      document.getElementById('p-q1').textContent  = q1 + ' accounts';
+      document.getElementById('p-q2').textContent  = '$' + q2 + '/mo';
+      document.getElementById('p-q3').textContent  = '$' + q3 + '/mo';
+      document.getElementById('p-q4').textContent  = '$' + q4 + '/mo';
+      document.getElementById('p-q5').textContent  = '$' + q5 + '/mo';
+      document.getElementById('p-q6').textContent  = '$' + q6 + '/mo';
+      document.getElementById('p-q7').textContent  = '$' + q7 + '/mo';
+      document.getElementById('p-q8').textContent  = q8 + ' hrs/mo';
+      document.getElementById('p-q9').textContent  = '$' + q9 + '/hr';
+      document.getElementById('p-q10').textContent = q10 + ' clients';
+      document.getElementById('p-q11').textContent = '$' + q11 + '/mo';
+
+      document.getElementById('p-r1').textContent  = fmt(R1);
+      document.getElementById('p-r2').textContent  = fmt(R2);
+      document.getElementById('p-r3').textContent  = fmt(R3);
+      document.getElementById('p-r4').textContent  = fmt(R4);
+      document.getElementById('p-r5').textContent  = fmt(R5);
+      document.getElementById('p-r6').textContent  = fmtPct(R6);
+    }
+
+    // ─── PDF download ─────────────────────────────────────────
+    function downloadPDF() {
+      document.getElementById('pdf-date').textContent =
+        'Generated: ' + new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      window.print();
+    }
+
+    // ─── Init ─────────────────────────────────────────────────
+    function init() {
+      ['q1','q8','q10'].forEach(id => {
+        updateSliderFill(id);
+        const badgeMap = { q1: 'q1val', q8: 'q8val', q10: 'q10val' };
+        syncSlider(id, badgeMap[id]);
+      });
+      calc();
+    }
+
+    init();
+  </script>
+
+</body>
+</html>
