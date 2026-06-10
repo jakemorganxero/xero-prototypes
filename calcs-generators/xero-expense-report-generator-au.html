@@ -489,7 +489,7 @@
     .inv-cta a { color: var(--xero-blue); text-decoration: none; font-weight: 600; }
     .inv-cta a:hover { color: var(--xero-blue-dark); }
 
-    /* ─── Download strip ─── */
+/* ── Download strip ── */
     .xero-preview__dl {
       background: var(--xero-panel-bg);
       border: 1px solid var(--xero-border);
@@ -498,11 +498,9 @@
       padding: 12px 16px;
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 8px;
+      gap: 10px;
       flex-wrap: wrap;
     }
-
     .xero-preview__dl-label {
       font-size: 0.75rem;
       font-weight: 600;
@@ -510,24 +508,26 @@
       white-space: nowrap;
       flex-shrink: 0;
     }
-
     .xero-dl-btn {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      background: var(--xero-bg);
-      border: 1px solid var(--xero-border);
-      color: var(--xero-navy);
-      font-family: var(--font);
-      font-size: 0.75rem;
-      font-weight: 600;
+      gap: 6px;
       padding: 6px 10px;
-      border-radius: var(--radius);
+      font-family: var(--font);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--xero-navy);
+      background: #fff;
+      border: 1px solid var(--xero-border);
+      border-radius: 4px;
       cursor: pointer;
-      transition: border-color 0.15s;
+      transition: border-color 0.15s, box-shadow 0.15s;
       white-space: nowrap;
     }
-    .xero-dl-btn:hover { border-color: var(--xero-navy); }
+    .xero-dl-btn:hover {
+      border-color: var(--xero-navy);
+      box-shadow: 0 2px 6px rgba(0,8,86,0.1);
+    }
 
     /* ─── Print ─── */
     @media print {
@@ -669,11 +669,11 @@
           Excel
         </button>
         <button class="xero-dl-btn" onclick="downloadCSV()">
-          <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#0F9D58"/><rect x="4" y="5" width="8" height="1.5" fill="white" rx="0.5"/><rect x="4" y="7.5" width="8" height="1.5" fill="white" rx="0.5"/><rect x="4" y="10" width="5" height="1.5" fill="white" rx="0.5"/></svg>
+          <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#4CAF50"/><rect x="3" y="4.5" width="10" height="1.5" fill="white" rx="0.5"/><rect x="3" y="7.25" width="10" height="1.5" fill="white" rx="0.5"/><rect x="3" y="10" width="6" height="1.5" fill="white" rx="0.5"/></svg>
           CSV
         </button>
         <button class="xero-dl-btn" onclick="downloadHTML()">
-          <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#4285F4"/><text x="8" y="11" font-size="4.5" font-weight="700" fill="white" text-anchor="middle" font-family="Arial,sans-serif">HTML</text></svg>
+          <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#F97316"/><text x="8" y="11.5" font-size="5" font-weight="700" fill="white" text-anchor="middle" font-family="Arial,sans-serif">&lt;/&gt;</text></svg>
           HTML
         </button>
       </div>

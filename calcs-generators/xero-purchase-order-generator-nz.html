@@ -530,45 +530,46 @@
   .inv-doc-notes-heading { font-weight: 700; color: var(--xero-navy); margin-bottom: 2px; }
   .inv-doc-notes-text { color: var(--xero-text-muted); white-space: pre-wrap; }
 
-  .xpog-download-strip {
-    background: var(--xero-panel-bg);
-    border: 1px solid var(--xero-border);
-    border-top: none;
-    border-radius: 0 0 4px 4px;
-    padding: 14px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
+/* ── Download strip ── */
+    .xero-preview__dl {
+      background: var(--xero-panel-bg);
+      border: 1px solid var(--xero-border);
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .xero-preview__dl-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--xero-text-muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .xero-dl-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      font-family: var(--font);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--xero-navy);
+      background: #fff;
+      border: 1px solid var(--xero-border);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      white-space: nowrap;
+    }
+    .xero-dl-btn:hover {
+      border-color: var(--xero-navy);
+      box-shadow: 0 2px 6px rgba(0,8,86,0.1);
+    }
 
-  .xpog-dl-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 7px 13px;
-    border-radius: var(--radius);
-    font-size: 0.78rem;
-    font-weight: 600;
-    cursor: pointer;
-    border: 1px solid var(--xero-border);
-    background: #fff;
-    color: var(--xero-text);
-    text-decoration: none;
-    transition: background 0.15s, border-color 0.15s, color 0.15s;
-    font-family: var(--font);
-  }
-
-  .xpog-dl-btn:hover { background: var(--xero-navy); color: #fff; border-color: var(--xero-navy); }
-
-  .xpog-dl-btn.primary {
-    background: var(--xero-blue);
-    border-color: var(--xero-blue);
-    color: #fff;
-  }
-
-  .xpog-dl-btn.primary:hover { background: var(--xero-blue-dark); border-color: var(--xero-blue-dark); }
 
   .xpog-cta {
     background: var(--xero-panel-bg);
@@ -771,25 +772,26 @@
     <div class="xpog-preview-col">
       <div class="xpog-preview-label">Purchase order preview</div>
       <div class="inv-doc" id="invDoc"></div>
-      <div class="xpog-download-strip">
-        <button class="xpog-dl-btn primary" onclick="downloadPDF()">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3M2 11h10v2H2z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="xero-preview__dl">
+        <span class="xero-preview__dl-label">Download as:</span>
+        <button class="xero-dl-btn" onclick="downloadPDF()">
+          <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#E2574C"/><text x="8" y="11.5" font-size="5.5" font-weight="700" fill="white" text-anchor="middle" font-family="Arial,sans-serif">PDF</text></svg>
           PDF
         </button>
-        <button class="xpog-dl-btn" onclick="downloadWord()">
-          <svg width="14" height="14" viewBox="0 0 14 14"><rect x="1" y="1" width="12" height="12" rx="1.5" fill="#2B579A"/><path d="M3.5 4h7M3.5 6.5h7M3.5 9h4.5" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/></svg>
+        <button class="xero-dl-btn" onclick="downloadWord()">
+          <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#2B579A"/><text x="8" y="12.5" font-size="11" font-weight="700" fill="white" text-anchor="middle" font-family="Arial,sans-serif">W</text></svg>
           Word
         </button>
-        <button class="xpog-dl-btn" onclick="downloadExcel()">
-          <svg width="14" height="14" viewBox="0 0 14 14"><rect x="1" y="1" width="12" height="12" rx="1.5" fill="#217346"/><path d="M4 4l6 6M10 4L4 10" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <button class="xero-dl-btn" onclick="downloadExcel()">
+          <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#217346"/><text x="8" y="12.5" font-size="10" font-weight="700" fill="white" text-anchor="middle" font-family="Arial,sans-serif">X</text></svg>
           Excel
         </button>
-        <button class="xpog-dl-btn" onclick="downloadCSV()">
-          <svg width="14" height="14" viewBox="0 0 14 14"><rect x="1" y="1" width="12" height="12" rx="1.5" fill="#34A853"/><path d="M3.5 4.5h7M3.5 7h7M3.5 9.5h7" stroke="#fff" stroke-width="1.1" stroke-linecap="round"/></svg>
+        <button class="xero-dl-btn" onclick="downloadCSV()">
+          <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#4CAF50"/><rect x="3" y="4.5" width="10" height="1.5" fill="white" rx="0.5"/><rect x="3" y="7.25" width="10" height="1.5" fill="white" rx="0.5"/><rect x="3" y="10" width="6" height="1.5" fill="white" rx="0.5"/></svg>
           CSV
         </button>
-        <button class="xpog-dl-btn" onclick="downloadHTML()">
-          <svg width="14" height="14" viewBox="0 0 14 14"><rect x="1" y="1" width="12" height="12" rx="1.5" fill="#F48024"/><path d="M4 5l-2 2 2 2M10 5l2 2-2 2M8 3.5L6 10.5" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <button class="xero-dl-btn" onclick="downloadHTML()">
+          <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#F97316"/><text x="8" y="11.5" font-size="5" font-weight="700" fill="white" text-anchor="middle" font-family="Arial,sans-serif">&lt;/&gt;</text></svg>
           HTML
         </button>
       </div>

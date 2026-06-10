@@ -291,26 +291,45 @@
       min-height: 400px;
     }
 
-    .xero-dl-strip {
+    /* ── Download strip ── */
+    .xero-preview__dl {
       background: var(--xero-panel-bg);
       border: 1px solid var(--xero-border);
       border-top: none;
       border-radius: 0 0 4px 4px;
       padding: 12px 16px;
-      display: flex; align-items: center; justify-content: center;
-      gap: 10px; flex-wrap: wrap;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
     }
-    .xero-dl-strip__label { font-size: 0.75rem; color: var(--xero-text-muted); font-weight: 600; white-space: nowrap; }
-
+    .xero-preview__dl-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--xero-text-muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
     .xero-dl-btn {
-      display: inline-flex; align-items: center; gap: 5px;
-      background: #fff; border: 1px solid var(--xero-border);
-      color: var(--xero-navy); font-family: var(--font);
-      font-size: 0.75rem; font-weight: 600;
-      padding: 6px 11px; border-radius: var(--radius);
-      cursor: pointer; transition: border-color 0.15s, background 0.15s; white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      font-family: var(--font);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--xero-navy);
+      background: #fff;
+      border: 1px solid var(--xero-border);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      white-space: nowrap;
     }
-    .xero-dl-btn:hover { border-color: var(--xero-navy); background: var(--xero-panel-bg); }
+    .xero-dl-btn:hover {
+      border-color: var(--xero-navy);
+      box-shadow: 0 2px 6px rgba(0,8,86,0.1);
+    }
 
     .xero-cta { font-size: 0.8125rem; color: var(--xero-text-muted); margin-top: 20px; text-align: center; }
     .xero-cta a { color: var(--xero-blue); text-decoration: none; font-weight: 600; }
@@ -501,8 +520,8 @@
     <div class="xero-preview-col">
       <p class="xero-preview__label">Quote preview</p>
       <div class="inv-doc" id="quote-preview"></div>
-      <div class="xero-dl-strip">
-        <span class="xero-dl-strip__label">Download as:</span>
+      <div class="xero-preview__dl">
+        <span class="xero-preview__dl-label">Download as:</span>
         <button class="xero-dl-btn" onclick="downloadPDF()">
           <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#E2574C"/><text x="8" y="11.5" font-size="5.5" font-weight="700" fill="white" text-anchor="middle" font-family="Arial,sans-serif">PDF</text></svg>
           PDF
@@ -516,12 +535,12 @@
           Excel
         </button>
         <button class="xero-dl-btn" onclick="downloadCSV()">
-          <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#0F9D58"/><rect x="4" y="5" width="8" height="1.5" fill="white" rx="0.5"/><rect x="4" y="7.5" width="8" height="1.5" fill="white" rx="0.5"/><rect x="4" y="10" width="5" height="1.5" fill="white" rx="0.5"/><rect x="8.5" y="3.5" width="1" height="9" fill="rgba(0,0,0,0.2)"/></svg>
-          Google Sheets
+          <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#4CAF50"/><rect x="3" y="4.5" width="10" height="1.5" fill="white" rx="0.5"/><rect x="3" y="7.25" width="10" height="1.5" fill="white" rx="0.5"/><rect x="3" y="10" width="6" height="1.5" fill="white" rx="0.5"/></svg>
+          CSV
         </button>
-        <button class="xero-dl-btn" onclick="downloadGDoc()">
-          <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#4285F4"/><rect x="4" y="5" width="8" height="1.5" fill="white" rx="0.5"/><rect x="4" y="7.5" width="8" height="1.5" fill="white" rx="0.5"/><rect x="4" y="10" width="5" height="1.5" fill="white" rx="0.5"/></svg>
-          Google Doc
+        <button class="xero-dl-btn" onclick="downloadHTML()">
+          <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect width="16" height="16" rx="2.5" fill="#F97316"/><text x="8" y="11.5" font-size="5" font-weight="700" fill="white" text-anchor="middle" font-family="Arial,sans-serif">&lt;/&gt;</text></svg>
+          HTML
         </button>
       </div>
       <p class="xero-cta">Ready to invoice? Get paid faster with Xero. Start a 30 day <a href="https://www.xero.com/uk/signup/">free trial</a>.</p>
@@ -774,7 +793,7 @@
     dlBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `${gv('quo-number') || 'QUO-001'}.csv`);
   }
 
-  function downloadGDoc() {
+  function downloadHTML() {
     prepPrint();
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Quote ${gv('quo-number') || 'QUO-001'}</title></head><body style="font-family:Arial,sans-serif;max-width:780px;margin:40px auto;">${$id('quote-print-area').innerHTML}</body></html>`;
     dlBlob(new Blob([html], { type: 'text/html;charset=utf-8;' }), `${gv('quo-number') || 'QUO-001'}.html`);
