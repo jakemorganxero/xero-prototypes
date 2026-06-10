@@ -64,7 +64,7 @@
   .val-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
   .val{font-size:3rem;font-weight:700;line-height:1;color:var(--xero-navy)}
   .delta{font-size:.8125rem;font-weight:600;padding:3px 10px;border-radius:20px}
-  .delta.pos{background:rgba(26,179,148,.12);color:var(--green)}
+  .delta.pos{background:rgba(24, 98, 65,.12);color:var(--green)}
   .delta.neg{background:rgba(255,196,210,0.5);color:var(--red)}
   .period{font-size:.875rem;color:var(--muted);margin-top:6px}
   .range{display:flex;gap:4px}
@@ -128,7 +128,7 @@ function build(){
   const canvas=document.getElementById('c');
   if(ch){ch.destroy();ch=null}
   const grad=canvas.getContext('2d').createLinearGradient(0,0,0,280);
-  grad.addColorStop(0,'rgba(26,179,148,.13)');grad.addColorStop(1,'rgba(255,255,255,0)');
+  grad.addColorStop(0,'rgba(24, 98, 65,.13)');grad.addColorStop(1,'rgba(255,255,255,0)');
   ch=new Chart(canvas,{type:'line',data:{labels,datasets:[{data,borderColor:'#186241',borderWidth:2,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#186241',pointHoverBorderColor:'#fff',pointHoverBorderWidth:2,fill:true,backgroundColor:grad,tension:.3}]},
     plugins:[covidPlugin(COVID_S,COVID_E,off,n)],
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},

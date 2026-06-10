@@ -68,7 +68,7 @@
       --xero-bg:         #FFFFFF;
       --xero-text:       #000856;
       --xero-text-muted: #4A6070;
-      --xero-green:      #1AB394;
+      --xero-green:      #186241;
       --radius:          6px;
       --font: 'National2', -apple-system, BlinkMacSystemFont, sans-serif;
       --font-heading: 'National2Condensed', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -304,7 +304,7 @@
       padding: 20px;
     }
 
-    .xero-result__row {
+    .xero-result-row {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
@@ -312,8 +312,8 @@
       border-bottom: 1px solid var(--xero-border);
     }
 
-    .xero-result__row:first-of-type { padding-top: 0; }
-    .xero-result__row:last-of-type  { border-bottom: none; padding-bottom: 0; }
+    .xero-result-row:first-of-type { padding-top: 0; }
+    .xero-result-row:last-of-type  { border-bottom: none; padding-bottom: 0; }
 
     .xero-result__label {
       font-size: 0.875rem;
@@ -366,7 +366,7 @@
 
     @media (max-width: 480px) {
       .xero-hero__card { padding: 24px 20px; }
-      .xero-result__row { flex-direction: column; gap: 4px; }
+      .xero-result-row { flex-direction: column; gap: 4px; }
     }
   </style>
 </head>
@@ -431,15 +431,15 @@
       </div>
 
       <div class="xero-result-band" aria-live="polite">
-        <div class="xero-result__row">
+        <div class="xero-result-row">
           <span class="xero-result__label">Sale amount</span>
           <span class="xero-result__value" id="result-sale">—</span>
         </div>
-        <div class="xero-result__row">
+        <div class="xero-result-row">
           <span class="xero-result__label" id="label-rate">Sales tax</span>
           <span class="xero-result__value" id="result-tax">—</span>
         </div>
-        <div class="xero-result__row">
+        <div class="xero-result-row">
           <span class="xero-result__label">Total</span>
           <span class="xero-result__value xero-result__value--primary" id="result-total">—</span>
         </div>

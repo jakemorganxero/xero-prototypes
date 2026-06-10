@@ -271,7 +271,7 @@ const COVID_START = 39, COVID_END = 47;
 
 const METRICS = {
   sales: { label: 'Sales growth — year-over-year %', desc: 'Monthly change in sales revenue compared with the same month last year.', legendLabel: 'Sales growth (YoY %)', unit: '%', format: v => (v>=0?'+':'')+v.toFixed(1)+'%', color: '#13B5EA', fill: 'rgba(19,181,234,0.13)', zeroLine: true },
-  ttp:   { label: 'Time to be paid — days', desc: 'Average days to receive payment after issuing an invoice, seasonally adjusted.', legendLabel: 'Days to be paid', unit: 'd', format: v => v.toFixed(1)+' days', color: '#186241', fill: 'rgba(26,179,148,0.12)', zeroLine: false },
+  ttp:   { label: 'Time to be paid — days', desc: 'Average days to receive payment after issuing an invoice, seasonally adjusted.', legendLabel: 'Days to be paid', unit: 'd', format: v => v.toFixed(1)+' days', color: '#186241', fill: 'rgba(24, 98, 65,0.12)', zeroLine: false },
   late:  { label: 'Late payment days — average overdue', desc: 'Average days invoices are paid beyond agreed terms, seasonally adjusted.', legendLabel: 'Avg. late days', unit: 'd', format: v => v.toFixed(1)+' days', color: '#E05A5A', fill: 'rgba(255,196,210,0.5)', zeroLine: false },
 };
 

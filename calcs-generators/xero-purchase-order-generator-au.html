@@ -82,7 +82,7 @@
     --xero-bg: #FFFFFF;
     --xero-text: #000856;
     --xero-text-muted: #4A6070;
-    --xero-green: #1AB394;
+    --xero-green: #186241;
     --xero-red: #E05A5A;
     --radius: 6px;
     --font: 'National2', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -1137,7 +1137,8 @@
   function downloadPDF() {
     const d = buildDocument();
     const win = window.open('', '_blank');
-    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Purchase Order ${escHtml(d.order.poNumber)}</title>
+    win.document.write(`<!DOCTYPE html><html><head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><meta charset="utf-8"><title>Purchase Order ${escHtml(d.order.poNumber)}</title>
     <style>
   @font-face { font-family: 'National2'; font-weight: 400; src: url('https://www.xero.com/fonts/national2-web-regular.woff2') format('woff2'), url('https://www.xero.com/fonts/national2-web-regular.woff') format('woff'); font-display: swap; } @font-face { font-family: 'National2'; font-weight: 500; src: url('https://www.xero.com/fonts/national2-web-medium.woff2') format('woff2'), url('https://www.xero.com/fonts/national2-web-medium.woff') format('woff'); font-display: swap; } @font-face { font-family: 'National2'; font-weight: 700; src: url('https://www.xero.com/fonts/national2-web-bold.woff2') format('woff2'), url('https://www.xero.com/fonts/national2-web-bold.woff') format('woff'); font-display: swap; }
 </style>

@@ -83,7 +83,7 @@
       --xero-text:       #000856;
       --xero-text-muted: #4A6070;
       --xero-input-bg:   #FFFFFF;
-      --xero-green:      #1AB394;
+      --xero-green:      #186241;
       --xero-red:        #E05A5A;
       --radius:          6px;
       --font: 'National2', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -230,7 +230,7 @@
       padding: 16px;
     }
 
-    .xero-result__row {
+    .xero-result-row {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
@@ -238,8 +238,8 @@
       border-bottom: 1px solid var(--xero-border);
     }
 
-    .xero-result__row:first-of-type { padding-top: 0; }
-    .xero-result__row:last-of-type  { border-bottom: none; padding-bottom: 0; }
+    .xero-result-row:first-of-type { padding-top: 0; }
+    .xero-result-row:last-of-type  { border-bottom: none; padding-bottom: 0; }
 
     .xero-result__label {
       font-size: 0.8125rem;
@@ -328,15 +328,15 @@
 
   <!-- Results -->
   <div class="xero-result-band" aria-live="polite">
-    <div class="xero-result__row">
+    <div class="xero-result-row">
       <span class="xero-result__label" id="label-base">Price (ex GST)</span>
       <span class="xero-result__value" id="result-base">—</span>
     </div>
-    <div class="xero-result__row">
+    <div class="xero-result-row">
       <span class="xero-result__label">GST (15%)</span>
       <span class="xero-result__value" id="result-gst">—</span>
     </div>
-    <div class="xero-result__row">
+    <div class="xero-result-row">
       <span class="xero-result__label" id="label-total">Total (incl. GST)</span>
       <span class="xero-result__value xero-result__value--primary" id="result-total">—</span>
     </div>
