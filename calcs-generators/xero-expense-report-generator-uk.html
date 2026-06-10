@@ -106,7 +106,8 @@
       margin: 0 auto;
     }
 
-    @media (max-width: 1000px) { .xero-tool__layout { grid-template-columns: 1fr; } }
+    @media (max-width: 1000px) {
+      .xero-preview, .xero-preview-col { position: static; } .xero-tool__layout { grid-template-columns: 1fr; } }
 
     .xero-form__title {
       font-family: var(--font);
